@@ -1,7 +1,13 @@
 /**
- * Sleek Round Wizard & Quick Pad
+ * Mobile-First Sleek Round Wizard & Quick Betting Pad
  */
 import { SUITS, calculatePlayerScore, validateBetsHook, validateTricksSum } from '../engine/whist-rules.js';
+
+function triggerHaptic() {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(8); } catch (e) {}
+  }
+}
 
 export class RoundView {
   constructor(session, container, i18n, onRoundComplete) {
@@ -31,12 +37,12 @@ export class RoundView {
       <div class="card">
         <div class="stage-header">
           <div class="stage-title">
-            ${stage === 'TRUMP' ? this.i18n.stageTrump : 
-              stage === 'BETS' ? this.i18n.stageBets : 
-              stage === 'TRICKS' ? this.i18n.stageTricks : this.i18n.stageSummary}
+            ${stage === 'TRUMP' ? '1. Trump Auction' : 
+              stage === 'BETS' ? '2. Player Bids' : 
+              stage === 'TRICKS' ? '3. Actual Tricks' : '4. Round Summary'}
           </div>
           <div class="round-pill">
-            Round ${this.session.roundNumber}
+            Deal #${this.session.roundNumber}
           </div>
         </div>
     `;
@@ -60,15 +66,16 @@ export class RoundView {
 
     return `
       <div>
-        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
-          Dealer: <strong>${dealer.name}</strong> • First to Bid: <strong>${leadBidder.name}</strong>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.85rem; display: flex; justify-content: space-between;">
+          <span>Dealer: <strong>${dealer.name}</strong></span>
+          <span>Lead: <strong>${leadBidder.name}</strong></span>
         </div>
 
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">
-          1. Trump Auction Winner
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+          1. Auction Winner
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-bottom: 1rem;">
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; margin-bottom: 0.85rem;">
           ${this.session.players.map((p, idx) => `
             <button class="btn-outline trump-player-btn ${round.trump.winnerIndex === idx ? 'active' : ''}" 
                     data-player-idx="${idx}"
@@ -79,7 +86,7 @@ export class RoundView {
           `).join('')}
         </div>
 
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
           2. Denomination / Suit
         </div>
 
@@ -92,23 +99,22 @@ export class RoundView {
           `).join('')}
         </div>
 
-        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.5rem;">
-          3. Winning Bid Target (Tricks)
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+          3. Winning Target (Tricks)
         </div>
 
-        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem; margin-bottom: 1rem;">
           ${[5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => `
-            <button class="chip ${round.trump.bidAmount === n && !round.trump.isPasRound ? 'active' : ''} trump-target-chip" data-amount="${n}" style="flex: 1; height: 36px; font-size: 0.9rem;">
+            <button class="chip ${round.trump.bidAmount === n && !round.trump.isPasRound ? 'active' : ''} trump-target-chip" data-amount="${n}">
               ${n}
             </button>
           `).join('')}
         </div>
 
-        <!-- Pas Round Option -->
-        <div style="margin-bottom: 1.25rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
-            <input type="checkbox" id="chk-pas-round" ${round.trump.isPasRound ? 'checked' : ''} style="width: 16px; height: 16px;">
-            <span style="font-size: 0.85rem; font-weight: 600;">All 4 Passed (Play as Pas Round)</span>
+            <input type="checkbox" id="chk-pas-round" ${round.trump.isPasRound ? 'checked' : ''} style="width: 18px; height: 18px;">
+            <span style="font-size: 0.85rem; font-weight: 600;">All 4 Passed (Pas Round)</span>
           </label>
         </div>
 
@@ -128,30 +134,30 @@ export class RoundView {
 
     return `
       <div>
-        <!-- Summary Header -->
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
-          <div style="font-size: 0.85rem; font-weight: 600;">
+        <!-- Sticky Subheader -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+          <div style="font-size: 0.82rem; font-weight: 600;">
             ${round.trump.isPasRound ? 'Pas Round (No Trump)' : `Trump: <strong>${trumpWinner ? trumpWinner.name : ''}</strong> (${round.trump.bidAmount} ${trumpSuit.symbol})`}
           </div>
-          <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem;">Edit Trump</button>
+          <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem; min-height: 28px; padding: 2px 8px;">Edit</button>
         </div>
 
-        <!-- Hook Status Banner -->
+        <!-- Hook Banner -->
         <div class="hook-banner ${hook.status}">
           <div>
-            <span>Total Bets: <strong>${sum}</strong></span>
-            <span style="margin-left: 6px; opacity: 0.8;">
-              (${hook.status === 'OVER' ? 'Over' : hook.status === 'UNDER' ? 'Under' : 'Equal 13 - Forbidden'})
+            <span>Total: <strong>${sum}</strong></span>
+            <span style="margin-left: 4px; opacity: 0.85;">
+              (${hook.status === 'OVER' ? 'Over' : hook.status === 'UNDER' ? 'Under' : 'Equal 13'})
             </span>
           </div>
           ${forbidden !== null ? `
-            <span style="font-size: 0.8rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: var(--radius-sm);">
+            <span style="font-size: 0.78rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: var(--radius-sm);">
               Dealer cannot bid <strong>${forbidden}</strong>
             </span>
           ` : ''}
         </div>
 
-        <!-- Player Bet Rows -->
+        <!-- Player Input Cards -->
         ${this.session.players.map((p, idx) => {
           const isDealer = (idx === round.dealerIndex);
           const isTrump = (idx === round.trump.winnerIndex);
@@ -159,34 +165,34 @@ export class RoundView {
 
           return `
             <div class="input-row ${isDealer ? 'dealer-row' : ''}">
-              <div class="input-row-info">
+              <div class="input-row-header">
                 <div class="input-row-name">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
                   ${isDealer ? `<span class="tag-dealer" style="position:static;">DEALER</span>` : ''}
-                  ${isTrump ? `<span style="font-size: 0.7rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">Target: ${round.trump.bidAmount}+</span>` : ''}
+                  ${isTrump ? `<span style="font-size: 0.68rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">Target ${round.trump.bidAmount}+</span>` : ''}
                 </div>
-
-                <div class="chips-row">
-                  ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                    <button class="chip ${currentBet === n ? 'active' : ''} ${isDealer && forbidden === n ? 'forbidden' : ''}" 
-                            data-player-idx="${idx}" data-amount="${n}">
-                      ${n === 0 ? 'Pass (0)' : n}
-                    </button>
-                  `).join('')}
+                
+                <div class="stepper">
+                  <button class="stepper-btn btn-bet-dec" data-player-idx="${idx}" ${currentBet === null || currentBet <= 0 ? 'disabled' : ''}>−</button>
+                  <span class="stepper-val">${currentBet !== null ? currentBet : '—'}</span>
+                  <button class="stepper-btn btn-bet-inc" data-player-idx="${idx}" ${currentBet >= 13 ? 'disabled' : ''}>+</button>
                 </div>
               </div>
 
-              <div class="stepper">
-                <button class="stepper-btn btn-bet-dec" data-player-idx="${idx}" ${currentBet === null || currentBet <= 0 ? 'disabled' : ''}>−</button>
-                <span class="stepper-val">${currentBet !== null ? currentBet : '—'}</span>
-                <button class="stepper-btn btn-bet-inc" data-player-idx="${idx}" ${currentBet >= 13 ? 'disabled' : ''}>+</button>
+              <div class="chips-row">
+                ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
+                  <button class="chip ${currentBet === n ? 'active' : ''} ${isDealer && forbidden === n ? 'forbidden' : ''}" 
+                          data-player-idx="${idx}" data-amount="${n}">
+                    ${n === 0 ? '0' : n}
+                  </button>
+                `).join('')}
               </div>
             </div>
           `;
         }).join('')}
 
-        <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || round.bets.some(b => b === null) ? 'disabled' : ''} style="margin-top: 0.75rem;">
+        <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || round.bets.some(b => b === null) ? 'disabled' : ''} style="margin-top: 0.5rem;">
           Confirm Bids & Play Round →
         </button>
       </div>
@@ -201,12 +207,12 @@ export class RoundView {
 
     return `
       <div>
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
-          <div style="font-size: 0.85rem; font-weight: 700; color: ${isValidSum ? 'var(--success)' : 'var(--warning)'};">
-            ${isValidSum ? '✓ 13 Tricks Valid' : `Remaining Tricks to Assign: ${remaining}`}
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
+          <div style="font-size: 0.82rem; font-weight: 700; color: ${isValidSum ? 'var(--success)' : 'var(--warning)'};">
+            ${isValidSum ? '✓ 13 Tricks Total (Valid)' : `Remaining to Assign: ${remaining}`}
           </div>
-          <button class="btn-nav" id="btn-auto-fill-tricks" style="font-size: 0.75rem;">
-            Auto-Fill Remainder
+          <button class="btn-nav" id="btn-auto-fill-tricks" style="font-size: 0.75rem; min-height: 28px; padding: 2px 8px;">
+            Auto-Fill
           </button>
         </div>
 
@@ -217,30 +223,30 @@ export class RoundView {
 
           return `
             <div class="input-row" style="${isMatch ? 'border-color: rgba(16, 185, 129, 0.4);' : ''}">
-              <div class="input-row-info">
+              <div class="input-row-header">
                 <div class="input-row-name">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
-                  <span class="input-row-sub" style="margin-left: 6px;">
+                  <span class="input-row-sub">
                     (Bid: <strong>${round.trump.isPasRound ? 'Pas' : (bet !== null ? bet : '—')}</strong>)
                   </span>
-                  ${isMatch ? `<span style="color: var(--success); font-size: 0.75rem; font-weight: 700;">Exact</span>` : ''}
+                  ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">✓ Exact</span>` : ''}
                 </div>
 
-                <div class="chips-row">
-                  ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                    <button class="chip ${actual === n ? 'active' : ''}" 
-                            data-trick-player-idx="${idx}" data-amount="${n}">
-                      ${n}
-                    </button>
-                  `).join('')}
+                <div class="stepper">
+                  <button class="stepper-btn btn-trick-dec" data-player-idx="${idx}" ${actual === null || actual <= 0 ? 'disabled' : ''}>−</button>
+                  <span class="stepper-val">${actual !== null ? actual : '—'}</span>
+                  <button class="stepper-btn btn-trick-inc" data-player-idx="${idx}" ${actual >= 13 ? 'disabled' : ''}>+</button>
                 </div>
               </div>
 
-              <div class="stepper">
-                <button class="stepper-btn btn-trick-dec" data-player-idx="${idx}" ${actual === null || actual <= 0 ? 'disabled' : ''}>−</button>
-                <span class="stepper-val">${actual !== null ? actual : '—'}</span>
-                <button class="stepper-btn btn-trick-inc" data-player-idx="${idx}" ${actual >= 13 ? 'disabled' : ''}>+</button>
+              <div class="chips-row">
+                ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
+                  <button class="chip ${actual === n ? 'active' : ''}" 
+                          data-trick-player-idx="${idx}" data-amount="${n}">
+                    ${n}
+                  </button>
+                `).join('')}
               </div>
             </div>
           `;
@@ -248,12 +254,12 @@ export class RoundView {
 
         ${isValidSum ? this.renderScorePreview(round) : ''}
 
-        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
           <button class="btn-outline" id="btn-back-to-bets" style="flex: 1;">
             ← Edit Bids
           </button>
           <button class="btn-block" id="btn-commit-round" style="flex: 2;" ${!isValidSum ? 'disabled' : ''}>
-            Calculate & Next Round ✓
+            Next Round ✓
           </button>
         </div>
       </div>
@@ -266,8 +272,8 @@ export class RoundView {
 
     return `
       <div class="breakdown-box">
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-          Round Score Calculation
+        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+          Score Calculation Preview
         </div>
         ${this.session.players.map((p, idx) => {
           const calc = calculatePlayerScore(
@@ -282,8 +288,8 @@ export class RoundView {
           return `
             <div class="breakdown-item">
               <div>
-                <div style="font-size: 0.85rem; font-weight: 700;">${p.name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">${calc.explanation}</div>
+                <div style="font-size: 0.82rem; font-weight: 700;">${p.name}</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);">${calc.explanation}</div>
               </div>
               <span class="score-badge ${calc.score >= 0 ? 'plus' : 'minus'}">
                 ${calc.score >= 0 ? `+${calc.score}` : calc.score}
@@ -299,6 +305,7 @@ export class RoundView {
     if (stage === 'TRUMP') {
       this.container.querySelectorAll('.trump-player-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const idx = parseInt(btn.dataset.playerIdx, 10);
           this.session.activeRound.trump.winnerIndex = idx;
           this.session.activeRound.trump.isPasRound = false;
@@ -308,6 +315,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.suit-option').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const suitId = btn.dataset.suitId;
           this.session.activeRound.trump.suitId = suitId;
           this.session.activeRound.trump.isPasRound = false;
@@ -317,6 +325,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.trump-target-chip').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           this.session.activeRound.trump.bidAmount = parseInt(btn.dataset.amount, 10);
           this.session.activeRound.trump.isPasRound = false;
           this.render();
@@ -326,6 +335,7 @@ export class RoundView {
       const chkPas = this.container.querySelector('#chk-pas-round');
       if (chkPas) {
         chkPas.addEventListener('change', (e) => {
+          triggerHaptic();
           this.session.activeRound.trump.isPasRound = e.target.checked;
           if (e.target.checked) {
             this.session.activeRound.trump.winnerIndex = null;
@@ -337,6 +347,7 @@ export class RoundView {
       const btnConfirm = this.container.querySelector('#btn-confirm-trump');
       if (btnConfirm) {
         btnConfirm.addEventListener('click', () => {
+          triggerHaptic();
           const t = this.session.activeRound.trump;
           this.session.setTrump(t.winnerIndex, t.suitId, t.bidAmount, t.isPasRound);
           this.render();
@@ -345,6 +356,7 @@ export class RoundView {
     } else if (stage === 'BETS') {
       this.container.querySelectorAll('.chip[data-player-idx]').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.playerIdx, 10);
           const amount = parseInt(btn.dataset.amount, 10);
           this.session.setBet(pIdx, amount);
@@ -354,6 +366,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.btn-bet-dec').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.playerIdx, 10);
           const cur = this.session.activeRound.bets[pIdx] || 0;
           if (cur > 0) {
@@ -365,6 +378,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.btn-bet-inc').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.playerIdx, 10);
           const cur = this.session.activeRound.bets[pIdx] ?? -1;
           if (cur < 13) {
@@ -377,6 +391,7 @@ export class RoundView {
       const btnBack = this.container.querySelector('#btn-back-to-trump');
       if (btnBack) {
         btnBack.addEventListener('click', () => {
+          triggerHaptic();
           this.session.activeRound.stage = 'TRUMP';
           this.render();
         });
@@ -385,6 +400,7 @@ export class RoundView {
       const btnProceed = this.container.querySelector('#btn-proceed-to-tricks');
       if (btnProceed) {
         btnProceed.addEventListener('click', () => {
+          triggerHaptic();
           try {
             this.session.proceedToTricks();
             this.render();
@@ -396,6 +412,7 @@ export class RoundView {
     } else if (stage === 'TRICKS') {
       this.container.querySelectorAll('.chip[data-trick-player-idx]').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.trickPlayerIdx, 10);
           const amount = parseInt(btn.dataset.amount, 10);
           this.session.setTricks(pIdx, amount);
@@ -405,6 +422,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.btn-trick-dec').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.playerIdx, 10);
           const cur = this.session.activeRound.tricks[pIdx] || 0;
           if (cur > 0) {
@@ -416,6 +434,7 @@ export class RoundView {
 
       this.container.querySelectorAll('.btn-trick-inc').forEach(btn => {
         btn.addEventListener('click', () => {
+          triggerHaptic();
           const pIdx = parseInt(btn.dataset.playerIdx, 10);
           const cur = this.session.activeRound.tricks[pIdx] ?? -1;
           if (cur < 13) {
@@ -428,6 +447,7 @@ export class RoundView {
       const btnAuto = this.container.querySelector('#btn-auto-fill-tricks');
       if (btnAuto) {
         btnAuto.addEventListener('click', () => {
+          triggerHaptic();
           const success = this.session.autoFillLastPlayerTricks();
           if (success) this.render();
           else alert('Please enter tricks for at least 3 players.');
@@ -437,6 +457,7 @@ export class RoundView {
       const btnBackBets = this.container.querySelector('#btn-back-to-bets');
       if (btnBackBets) {
         btnBackBets.addEventListener('click', () => {
+          triggerHaptic();
           this.session.activeRound.stage = 'BETS';
           this.render();
         });
@@ -445,6 +466,7 @@ export class RoundView {
       const btnCommit = this.container.querySelector('#btn-commit-round');
       if (btnCommit) {
         btnCommit.addEventListener('click', () => {
+          triggerHaptic();
           try {
             this.session.commitRound();
             if (this.onRoundComplete) {
