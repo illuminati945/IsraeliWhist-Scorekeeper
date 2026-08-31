@@ -18,14 +18,18 @@
   <!-- Sleek Top Navbar -->
   <header class="navbar">
     <div class="brand">
-      <div class="brand-dot"></div>
+      <div class="brand-dot" id="sync-indicator" title="Live Sync Active"></div>
       <span class="brand-title">Whist Scorekeeper</span>
+      <button class="btn-nav" id="btn-room-badge" style="margin-left: 4px; padding: 2px 7px; font-size: 0.75rem; background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.3); color: #c7d2fe;">
+        <span id="room-code-display">Room: ...</span>
+        <span id="user-count-display" style="opacity: 0.8; margin-left: 3px;">(1)</span>
+      </button>
     </div>
 
     <div class="nav-actions">
+      <button class="btn-nav btn-nav-primary" id="btn-open-share" style="background: #2563eb; border-color: #2563eb;">Share Link</button>
       <button class="btn-nav" id="btn-open-rules">Rules</button>
       <button class="btn-nav" id="btn-open-stats">Stats</button>
-      <button class="btn-nav" id="btn-open-export">Export</button>
       <button class="btn-nav btn-nav-primary" id="btn-open-new-game">New Game</button>
     </div>
   </header>

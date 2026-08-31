@@ -1,7 +1,8 @@
 /**
- * Israeli Whist Scorekeeper - Main Entrypoint
+ * Israeli Whist Scorekeeper - Main Entrypoint with Real-Time Multiplayer Sync
  */
 import { GameSession } from './engine/game-state.js';
+import { SyncManager } from './engine/sync-manager.js';
 import { RoundView } from './ui/round-view.js';
 import { Scoreboard } from './ui/scoreboard.js';
 import { ChartView } from './ui/chart-view.js';
@@ -15,12 +16,18 @@ class IsraeliWhistApp {
     
     this.initElements();
     this.initControllers();
+    this.initSyncManager();
     this.bindGlobalEvents();
 
+    // Broadcast local state changes
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
       this.scoreboard.updateSession(this.session);
       this.chartView.updateSession(this.session);
+
+      if (this.syncManager) {
+        this.syncManager.broadcastLocalState();
+      }
     });
   }
 
@@ -29,6 +36,9 @@ class IsraeliWhistApp {
     this.roundContainer = document.getElementById('round-view-container');
     this.historyContainer = document.getElementById('history-view-container');
     this.chartContainer = document.getElementById('chart-view-container');
+    this.roomCodeDisplay = document.getElementById('room-code-display');
+    this.userCountDisplay = document.getElementById('user-count-display');
+    this.syncIndicator = document.getElementById('sync-indicator');
   }
 
   initControllers() {
@@ -64,9 +74,34 @@ class IsraeliWhistApp {
     );
   }
 
-  setSession(newSession) {
-    this.session = newSession;
+  initSyncManager() {
+    this.syncManager = new SyncManager(this, (remoteState) => {
+      // Apply remote state update from another connected user
+      this.applyRemoteState(remoteState);
+    });
+
+    this.syncManager.subscribe((info) => {
+      if (this.roomCodeDisplay) {
+        this.roomCodeDisplay.textContent = `Room: ${info.roomId}`;
+      }
+      if (this.userCountDisplay) {
+        this.userCountDisplay.textContent = `(${info.userCount} online)`;
+      }
+      if (this.syncIndicator) {
+        this.syncIndicator.style.background = info.connected ? '#10b981' : '#ef4444';
+        this.syncIndicator.style.boxShadow = info.connected ? '0 0 10px #10b981' : 'none';
+        this.syncIndicator.title = info.connected ? 'Real-time sync active' : 'Connecting to server...';
+      }
+    });
+
+    this.syncManager.notify();
+  }
+
+  applyRemoteState(remoteState) {
+    if (!remoteState) return;
+    this.session = new GameSession(remoteState);
     this.session.saveToStorage();
+
     this.roundView.updateSession(this.session);
     this.scoreboard.updateSession(this.session);
     this.chartView.updateSession(this.session);
@@ -75,14 +110,41 @@ class IsraeliWhistApp {
       this.roundView.updateSession(this.session);
       this.scoreboard.updateSession(this.session);
       this.chartView.updateSession(this.session);
+
+      if (this.syncManager) {
+        this.syncManager.broadcastLocalState();
+      }
+    });
+  }
+
+  setSession(newSession) {
+    this.session = newSession;
+    this.session.saveToStorage();
+    this.roundView.updateSession(this.session);
+    this.scoreboard.updateSession(this.session);
+    this.chartView.updateSession(this.session);
+
+    if (this.syncManager) {
+      this.syncManager.broadcastLocalState();
+    }
+
+    this.session.subscribe(() => {
+      this.roundView.updateSession(this.session);
+      this.scoreboard.updateSession(this.session);
+      this.chartView.updateSession(this.session);
+
+      if (this.syncManager) {
+        this.syncManager.broadcastLocalState();
+      }
     });
   }
 
   bindGlobalEvents() {
+    document.getElementById('btn-open-share').addEventListener('click', () => this.dialogs.showShareModal());
+    document.getElementById('btn-room-badge').addEventListener('click', () => this.dialogs.showShareModal());
     document.getElementById('btn-open-new-game').addEventListener('click', () => this.dialogs.showNewGameModal());
     document.getElementById('btn-open-rules').addEventListener('click', () => this.dialogs.showRulesModal());
     document.getElementById('btn-open-stats').addEventListener('click', () => this.dialogs.showStatsModal());
-    document.getElementById('btn-open-export').addEventListener('click', () => this.dialogs.showExportModal());
 
     const tabs = document.querySelectorAll('.tab-item');
     const panels = document.querySelectorAll('.tab-panel');
