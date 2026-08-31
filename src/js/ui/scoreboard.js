@@ -1,5 +1,5 @@
 /**
- * Scoreboard & Historical Round Table Component
+ * Sleek Leaderboard & Score History Table
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -35,8 +35,6 @@ export class Scoreboard {
     const topScore = rankings.length > 0 ? rankings[0].score : 0;
     const currentDealer = this.session.currentDealerIndex;
 
-    const rankIcons = ['🥇', '🥈', '🥉', '4️⃣'];
-
     let html = `
       <div class="leaderboard-grid">
         ${this.session.players.map((p, idx) => {
@@ -46,15 +44,17 @@ export class Scoreboard {
           const isDealer = (idx === currentDealer);
 
           return `
-            <div class="player-score-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}">
-              ${isDealer ? `<span class="dealer-tag">${this.i18n.dealer}</span>` : ''}
-              <div class="player-avatar">${p.avatar}</div>
-              <div class="player-name">${p.name}</div>
-              <div class="player-points" style="color: ${score >= 0 ? '#10b981' : '#ef4444'};">
+            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}">
+              ${isDealer ? `<span class="tag-dealer">DEALER</span>` : ''}
+              <div class="player-title">
+                <span class="player-dot" style="background: ${p.color};"></span>
+                ${p.name}
+              </div>
+              <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
                 ${score >= 0 ? `+${score}` : score}
               </div>
-              <div class="player-hit-rate">
-                <span>${rankIcons[rankIndex]} #${rankIndex + 1}</span>
+              <div class="player-meta">
+                Rank #${rankIndex + 1}
               </div>
             </div>
           `;
@@ -71,32 +71,32 @@ export class Scoreboard {
 
     if (rounds.length === 0) {
       this.historyContainer.innerHTML = `
-        <div class="glass-card" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-          <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🃏</div>
-          <div>${this.i18n.noRoundsYet}</div>
+        <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+          <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">No Rounds Played</div>
+          <div style="font-size: 0.85rem;">Start Round 1 above to record score history.</div>
         </div>
       `;
       return;
     }
 
     let html = `
-      <div class="glass-card">
+      <div class="card">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <h3 style="font-size: 1.1rem; font-weight: 700;">📜 ${this.i18n.history} (${rounds.length} ${this.i18n.round}s)</h3>
-          <button class="btn-secondary" id="btn-undo-round" style="padding: 4px 10px; font-size: 0.8rem; width: auto; color: #ef4444; border-color: rgba(239, 68, 68, 0.4);">
-            ↩️ ${this.i18n.undoRound}
+          <h3 style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Round History (${rounds.length} Rounds)</h3>
+          <button class="btn-nav" id="btn-undo-round" style="font-size: 0.75rem; color: var(--danger);">
+            Undo Last Round
           </button>
         </div>
 
-        <div class="table-container">
-          <table class="whist-table">
+        <div class="table-wrap">
+          <table class="table-custom">
             <thead>
               <tr>
-                <th>#</th>
-                <th>${this.i18n.dealer}</th>
-                <th>${this.i18n.trumpMaker}</th>
+                <th>R#</th>
+                <th>Dealer</th>
+                <th>Trump</th>
                 ${this.session.players.map(p => `
-                  <th>${p.avatar} ${p.name}</th>
+                  <th>${p.name}</th>
                 `).join('')}
               </tr>
             </thead>
@@ -108,28 +108,28 @@ export class Scoreboard {
                 return `
                   <tr>
                     <td style="font-weight: 700;">${r.roundNumber}</td>
-                    <td>${this.session.players[r.dealerIndex].avatar}</td>
+                    <td>${this.session.players[r.dealerIndex].name.slice(0, 3)}</td>
                     <td>
-                      ${r.trump.isPasRound ? '🚫 Pas' : `
+                      ${r.trump.isPasRound ? 'Pas' : `
                         <span style="color:${trumpSuit.color}; font-weight:700;">${r.trump.bidAmount}${trumpSuit.symbol}</span>
                       `}
                     </td>
                     ${this.session.players.map((p, pIdx) => {
                       const res = r.results.find(res => res.playerIndex === pIdx);
-                      if (!res) return `<td>-</td>`;
+                      if (!res) return `<td>—</td>`;
                       const scoreDelta = res.score >= 0 ? `+${res.score}` : res.score;
                       const isExact = res.made;
-                      const cum = r.cumulativeScores ? r.cumulativeScores[pIdx] : '-';
+                      const cum = r.cumulativeScores ? r.cumulativeScores[pIdx] : '—';
 
                       return `
                         <td>
-                          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                          <div style="font-size: 0.75rem; color: var(--text-muted);">
                             ${r.trump.isPasRound ? `T:${res.tricks}` : `B:${res.bid} / T:${res.tricks}`}
                           </div>
-                          <div style="font-weight: 800; color: ${isExact ? '#10b981' : '#ef4444'};">
+                          <div style="font-weight: 800; color: ${isExact ? 'var(--success)' : 'var(--danger)'};">
                             ${scoreDelta}
                           </div>
-                          <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">
+                          <div style="font-size: 0.7rem; color: var(--text-secondary);">
                             (${cum})
                           </div>
                         </td>

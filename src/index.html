@@ -1,70 +1,46 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl" data-theme="dark">
+<html lang="en" dir="ltr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Israeli Whist Scorekeeper | וויסט ישראלי</title>
+  <title>Israeli Whist Scorekeeper</title>
   
-  <!-- PWA & Mobile Web App Meta -->
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#090d16">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Whist Score">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🃏</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♠</text></svg>">
 </head>
 <body>
 
-  <!-- Liquid Frosted Navigation Bar -->
-  <header class="liquid-navbar">
-    <div class="brand-container">
-      <span class="brand-icon">🃏</span>
-      <div>
-        <h1 class="brand-title" id="nav-app-title">וויסט ישראלי</h1>
-        <div style="font-size: 0.65rem; color: var(--text-secondary);" id="nav-app-subtitle">מחשבון ניקוד וחוזים</div>
-      </div>
+  <!-- Sleek Top Navbar -->
+  <header class="navbar">
+    <div class="brand">
+      <div class="brand-dot"></div>
+      <span class="brand-title">Whist Scorekeeper</span>
     </div>
 
     <div class="nav-actions">
-      <button class="btn-icon" id="btn-toggle-lang" title="Toggle Language (עברית / English)">
-        🌐 <span id="lang-indicator" style="font-size: 0.75rem; font-weight: 700; margin-inline-start: 2px;">EN</span>
-      </button>
-      <button class="btn-icon" id="btn-open-rules" title="Rules & Settings">
-        ⚙️
-      </button>
-      <button class="btn-icon" id="btn-open-stats" title="Statistics">
-        📊
-      </button>
-      <button class="btn-icon" id="btn-open-export" title="Export / Share">
-        📤
-      </button>
-      <button class="btn-icon" id="btn-open-new-game" title="New Game" style="background: var(--accent-primary); color: white; border: none;">
-        🎲
-      </button>
+      <button class="btn-nav" id="btn-open-rules">Rules</button>
+      <button class="btn-nav" id="btn-open-stats">Stats</button>
+      <button class="btn-nav" id="btn-open-export">Export</button>
+      <button class="btn-nav btn-nav-primary" id="btn-open-new-game">New Game</button>
     </div>
   </header>
 
-  <!-- Main Content Container -->
-  <main class="app-container">
+  <!-- Main Container -->
+  <main class="container">
     
-    <!-- Real-time Leaderboard & Rank Cards -->
+    <!-- Top Leaderboard -->
     <section id="leaderboard-section"></section>
 
-    <!-- Tab View Switcher -->
-    <nav class="tab-bar">
-      <button class="tab-btn active" data-tab="tab-round" id="tab-btn-round">
-        <span>🎯</span>
-        <span id="tab-label-round">סיבוב נוכחי</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-history" id="tab-btn-history">
-        <span>📜</span>
-        <span id="tab-label-history">היסטוריה</span>
-      </button>
-      <button class="tab-btn" data-tab="tab-chart" id="tab-label-chart-btn">
-        <span>📈</span>
-        <span id="tab-label-chart">גרף</span>
-      </button>
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab-item active" data-tab="tab-round" id="tab-btn-round">Active Round</button>
+      <button class="tab-item" data-tab="tab-history" id="tab-btn-history">History</button>
+      <button class="tab-item" data-tab="tab-chart" id="tab-btn-chart">Progression</button>
     </nav>
 
     <!-- Tab Panels -->
@@ -82,7 +58,6 @@
 
   </main>
 
-  <!-- App Script Entrypoint -->
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

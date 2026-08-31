@@ -3,32 +3,30 @@
  */
 import { RULE_PRESETS, calculatePlayerScore, validateBetsHook, validateTricksSum, getDealerForbiddenBet } from './whist-rules.js';
 
-const STORAGE_KEY = 'israeli_whist_current_game_v1';
-const HISTORY_KEY = 'israeli_whist_game_history_v1';
+const STORAGE_KEY = 'israeli_whist_current_game_v2';
 
 export class GameSession {
   constructor(options = {}) {
     this.id = options.id || 'game_' + Date.now();
     this.createdAt = options.createdAt || new Date().toISOString();
     this.rules = options.rules || { ...RULE_PRESETS.STANDARD };
-    this.targetPoints = options.targetPoints || null; // e.g. 500 or null (unlimited)
-    this.maxRounds = options.maxRounds || null;       // e.g. 13 or null (unlimited)
+    this.targetPoints = options.targetPoints || null;
+    this.maxRounds = options.maxRounds || null;
     
-    // Players (Default 4 players)
+    // Default 4 players with clean color accents
     this.players = options.players || [
-      { id: 'p0', name: 'Player 1 (שחקן 1)', color: '#3b82f6', avatar: '🦁' },
-      { id: 'p1', name: 'Player 2 (שחקן 2)', color: '#10b981', avatar: '🦅' },
-      { id: 'p2', name: 'Player 3 (שחקן 3)', color: '#f59e0b', avatar: '🦊' },
-      { id: 'p3', name: 'Player 4 (שחקן 4)', color: '#ec4899', avatar: '🐺' }
+      { id: 'p0', name: 'Player 1', color: '#6366f1', initial: '1' },
+      { id: 'p1', name: 'Player 2', color: '#10b981', initial: '2' },
+      { id: 'p2', name: 'Player 3', color: '#f59e0b', initial: '3' },
+      { id: 'p3', name: 'Player 4', color: '#ec4899', initial: '4' }
     ];
 
-    this.currentDealerIndex = options.currentDealerIndex ?? 0; // 0..3
+    this.currentDealerIndex = options.currentDealerIndex ?? 0;
     this.roundNumber = options.roundNumber || 1;
-    this.completedRounds = options.completedRounds || []; // Array of finished round objects
+    this.completedRounds = options.completedRounds || [];
     
-    // Active Round draft state
     this.activeRound = options.activeRound || this.initDraftRound();
-    this.status = options.status || 'IN_PROGRESS'; // 'IN_PROGRESS', 'FINISHED'
+    this.status = options.status || 'IN_PROGRESS';
     this.listeners = [];
   }
 
@@ -53,25 +51,22 @@ export class GameSession {
       roundNumber: this.roundNumber,
       dealerIndex: dealerIdx,
       leadBidderIndex: leadBidderIdx,
-      stage: 'TRUMP', // 'TRUMP', 'BETS', 'TRICKS', 'REVIEW'
+      stage: 'TRUMP',
       trump: {
-        winnerIndex: null, // index 0..3 or null
-        suitId: 'NT',      // 'NT', 'SPADES', 'HEARTS', 'DIAMONDS', 'CLUBS'
-        bidAmount: 5,      // 5..13
-        isPasRound: false  // true if everyone passed
+        winnerIndex: null,
+        suitId: 'NT',
+        bidAmount: 5,
+        isPasRound: false
       },
       bets: [null, null, null, null],
       tricks: [null, null, null, null],
       scores: [0, 0, 0, 0],
       roundTotalBets: 0,
-      bettingMode: null, // 'OVER', 'UNDER', 'HOOK_VIOLATION'
+      bettingMode: null,
       timestamp: new Date().toISOString()
     };
   }
 
-  /**
-   * Set Trump Auction details
-   */
   setTrump(winnerIndex, suitId, bidAmount, isPasRound = false) {
     this.activeRound.trump = {
       winnerIndex: isPasRound ? null : winnerIndex,
@@ -80,9 +75,7 @@ export class GameSession {
       isPasRound
     };
 
-    // If trump maker was set, auto-prefill trump maker's minimum bet in bets
     if (!isPasRound && winnerIndex !== null && typeof winnerIndex === 'number') {
-      // Player can increase their bet later, but minimum is winning auction bid
       if (this.activeRound.bets[winnerIndex] === null || this.activeRound.bets[winnerIndex] < bidAmount) {
         this.activeRound.bets[winnerIndex] = bidAmount;
       }
@@ -92,14 +85,10 @@ export class GameSession {
     this.notify();
   }
 
-  /**
-   * Set player's exact bet
-   */
   setBet(playerIndex, amount) {
     if (playerIndex < 0 || playerIndex > 3) return;
     this.activeRound.bets[playerIndex] = amount;
     
-    // Update total bets and status
     const filledBets = this.activeRound.bets.filter(b => typeof b === 'number' && !isNaN(b));
     const sum = filledBets.reduce((a, b) => a + b, 0);
     this.activeRound.roundTotalBets = sum;
@@ -114,9 +103,6 @@ export class GameSession {
     this.notify();
   }
 
-  /**
-   * Check if dealer's chosen bet violates the Hook Rule
-   */
   getDealerForbiddenNumber() {
     const dealerIdx = this.activeRound.dealerIndex;
     const otherBets = [];
@@ -133,19 +119,16 @@ export class GameSession {
     return null;
   }
 
-  /**
-   * Advance to trick input stage
-   */
   proceedToTricks() {
     const filledBets = this.activeRound.bets.filter(b => typeof b === 'number' && !isNaN(b));
     if (filledBets.length !== 4 && !this.activeRound.trump.isPasRound) {
-      throw new Error('All 4 players must submit bets before proceeding to tricks.');
+      throw new Error('All 4 players must submit bets.');
     }
 
     if (this.rules.enforceHookRule && !this.activeRound.trump.isPasRound) {
       const hookCheck = validateBetsHook(this.activeRound.bets);
       if (!hookCheck.isValid) {
-        throw new Error('Total bets cannot equal 13 (The Hook Rule violation). Dealer must change their bet.');
+        throw new Error('Total bets cannot equal 13 (Dealer Hook Rule).');
       }
     }
 
@@ -153,18 +136,12 @@ export class GameSession {
     this.notify();
   }
 
-  /**
-   * Set player's actual tricks taken
-   */
   setTricks(playerIndex, amount) {
     if (playerIndex < 0 || playerIndex > 3) return;
     this.activeRound.tricks[playerIndex] = amount;
     this.notify();
   }
 
-  /**
-   * Auto-calculate 4th player's tricks if 3 are filled
-   */
   autoFillLastPlayerTricks() {
     const filled = [];
     let missingIdx = -1;
@@ -187,13 +164,10 @@ export class GameSession {
     return false;
   }
 
-  /**
-   * Commit and complete the current active round
-   */
   commitRound() {
     const tricks = this.activeRound.tricks;
     if (!validateTricksSum(tricks)) {
-      throw new Error('Total tricks taken across all players must equal 13.');
+      throw new Error('Total tricks must equal 13.');
     }
 
     const roundResults = [];
@@ -221,8 +195,7 @@ export class GameSession {
         score: calc.score,
         made: calc.made,
         delta: calc.delta,
-        explanation: calc.explanation,
-        explanationHe: calc.explanationHe
+        explanation: calc.explanation
       });
     }
 
@@ -235,12 +208,9 @@ export class GameSession {
     };
 
     this.completedRounds.push(finishedRound);
-
-    // Check game termination conditions
     this.checkGameEnd();
 
     if (this.status !== 'FINISHED') {
-      // Advance dealer and round
       this.currentDealerIndex = (this.currentDealerIndex + 1) % 4;
       this.roundNumber += 1;
       this.activeRound = this.initDraftRound();
@@ -288,9 +258,6 @@ export class GameSession {
     }
   }
 
-  /**
-   * Undo the most recent completed round
-   */
   undoLastRound() {
     if (this.completedRounds.length === 0) return false;
     const lastRound = this.completedRounds.pop();
@@ -314,24 +281,17 @@ export class GameSession {
     return true;
   }
 
-  /**
-   * Update Player Details
-   */
-  updatePlayer(index, name, color, avatar) {
+  updatePlayer(index, name, color) {
     if (index >= 0 && index < 4) {
       this.players[index] = {
         ...this.players[index],
         name: name || this.players[index].name,
-        color: color || this.players[index].color,
-        avatar: avatar || this.players[index].avatar
+        color: color || this.players[index].color
       };
       this.notify();
     }
   }
 
-  /**
-   * LocalStorage persistence
-   */
   saveToStorage() {
     if (typeof localStorage === 'undefined') return;
     try {
