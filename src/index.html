@@ -10,27 +10,24 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Whist Score">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=3">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♠</text></svg>">
 </head>
 <body>
 
-  <!-- Sleek Top Navbar (Zero Overlap) -->
+  <!-- Top Mobile Bar (Zero Overlap Guaranteed) -->
   <header class="navbar">
-    <div class="brand">
-      <div class="brand-dot" id="sync-indicator" title="Live Sync Active"></div>
-      <span class="brand-title">Whist</span>
-      <button class="room-badge" id="btn-room-badge" title="Tap to Share Game Link">
-        <span id="room-code-display">...</span>
-        <span id="user-count-display" style="opacity: 0.85;">(1)</span>
+    <div class="nav-left">
+      <div class="brand-indicator" id="sync-indicator" title="Connected"></div>
+      <span class="brand-name">Whist</span>
+      <button class="room-pill" id="btn-room-badge" title="Tap to Share">
+        <span id="room-code-display">W-...</span>
       </button>
     </div>
 
-    <div class="nav-actions">
-      <button class="btn-nav btn-nav-primary" id="btn-open-share">Share</button>
-      <button class="btn-nav" id="btn-open-new-game">New</button>
-      <button class="btn-nav btn-nav-icon" id="btn-open-rules" title="Rules">Rules</button>
-      <button class="btn-nav btn-nav-icon" id="btn-open-stats" title="Stats">Stats</button>
+    <div class="nav-right">
+      <button class="btn-pill btn-share" id="btn-open-share">Share</button>
+      <button class="btn-pill btn-menu" id="btn-open-menu">Menu ☰</button>
     </div>
   </header>
 
@@ -42,9 +39,9 @@
 
     <!-- Tabs -->
     <nav class="tabs">
-      <button class="tab-item active" data-tab="tab-round" id="tab-btn-round">Active Round</button>
+      <button class="tab-item active" data-tab="tab-round" id="tab-btn-round">Active Deal</button>
       <button class="tab-item" data-tab="tab-history" id="tab-btn-history">History</button>
-      <button class="tab-item" data-tab="tab-chart" id="tab-btn-chart">Progression</button>
+      <button class="tab-item" data-tab="tab-chart" id="tab-btn-chart">Chart</button>
     </nav>
 
     <!-- Tab Panels -->
@@ -62,6 +59,6 @@
 
   </main>
 
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=3"></script>
 </body>
 </html>

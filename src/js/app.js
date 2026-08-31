@@ -19,7 +19,6 @@ class IsraeliWhistApp {
     this.initSyncManager();
     this.bindGlobalEvents();
 
-    // Broadcast local state changes
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
       this.scoreboard.updateSession(this.session);
@@ -37,7 +36,6 @@ class IsraeliWhistApp {
     this.historyContainer = document.getElementById('history-view-container');
     this.chartContainer = document.getElementById('chart-view-container');
     this.roomCodeDisplay = document.getElementById('room-code-display');
-    this.userCountDisplay = document.getElementById('user-count-display');
     this.syncIndicator = document.getElementById('sync-indicator');
   }
 
@@ -76,21 +74,17 @@ class IsraeliWhistApp {
 
   initSyncManager() {
     this.syncManager = new SyncManager(this, (remoteState) => {
-      // Apply remote state update from another connected user
       this.applyRemoteState(remoteState);
     });
 
     this.syncManager.subscribe((info) => {
       if (this.roomCodeDisplay) {
-        this.roomCodeDisplay.textContent = `Room: ${info.roomId}`;
-      }
-      if (this.userCountDisplay) {
-        this.userCountDisplay.textContent = `(${info.userCount} online)`;
+        this.roomCodeDisplay.textContent = info.roomId || 'W-...';
       }
       if (this.syncIndicator) {
         this.syncIndicator.style.background = info.connected ? '#10b981' : '#ef4444';
-        this.syncIndicator.style.boxShadow = info.connected ? '0 0 10px #10b981' : 'none';
-        this.syncIndicator.title = info.connected ? 'Real-time sync active' : 'Connecting to server...';
+        this.syncIndicator.style.boxShadow = info.connected ? '0 0 8px #10b981' : 'none';
+        this.syncIndicator.title = info.connected ? `Connected (${info.userCount} online)` : 'Connecting...';
       }
     });
 
@@ -140,11 +134,13 @@ class IsraeliWhistApp {
   }
 
   bindGlobalEvents() {
-    document.getElementById('btn-open-share').addEventListener('click', () => this.dialogs.showShareModal());
-    document.getElementById('btn-room-badge').addEventListener('click', () => this.dialogs.showShareModal());
-    document.getElementById('btn-open-new-game').addEventListener('click', () => this.dialogs.showNewGameModal());
-    document.getElementById('btn-open-rules').addEventListener('click', () => this.dialogs.showRulesModal());
-    document.getElementById('btn-open-stats').addEventListener('click', () => this.dialogs.showStatsModal());
+    const btnShare = document.getElementById('btn-open-share');
+    const btnRoom = document.getElementById('btn-room-badge');
+    const btnMenu = document.getElementById('btn-open-menu');
+
+    if (btnShare) btnShare.addEventListener('click', () => this.dialogs.showShareModal());
+    if (btnRoom) btnRoom.addEventListener('click', () => this.dialogs.showShareModal());
+    if (btnMenu) btnMenu.addEventListener('click', () => this.dialogs.showMenuModal());
 
     const tabs = document.querySelectorAll('.tab-item');
     const panels = document.querySelectorAll('.tab-panel');
