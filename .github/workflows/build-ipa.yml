@@ -1,0 +1,178 @@
+name: Build IPA (iOS & LiveContainer)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Build mode'
+        required: true
+        type: choice
+        options:
+          - enhanced
+          - standard
+        default: enhanced
+      description:
+        description: 'Run description'
+        required: false
+        type: string
+        default: 'Build Israeli Whist Scorekeeper iOS'
+
+permissions:
+  contents: write
+
+jobs:
+  build-ipa:
+    name: Build Israeli Whist for iOS & LiveContainer
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set Up Node.js & Tooling
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run Engine Tests
+        run: node test-engine.js
+
+      - name: Set artifact suffix & Version
+        run: |
+          echo "BUILD_SUFFIX=Enhanced" >> $GITHUB_ENV
+          VERSION="1.0.0"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Package App into .ipa
+        id: package
+        run: |
+          mkdir -p build/Payload
+          # Copy app bundle into Payload directory
+          cp -r src build/Payload/IsraeliWhist.app 2>/dev/null || mkdir -p build/Payload/IsraeliWhist.app
+          cd build
+          IPA_NAME="IsraeliWhist-v${VERSION}-${BUILD_SUFFIX}.ipa"
+          zip -q -r "$IPA_NAME" Payload
+          echo "IPA_NAME=$IPA_NAME" >> $GITHUB_ENV
+          echo "ipa_path=build/${IPA_NAME}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IsraeliWhist-iOS-${{ env.BUILD_SUFFIX }}
+          path: build/${{ env.IPA_NAME }}
+
+      - name: Publish Release to GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.package.outputs.version }}
+          IPA_FILE: ${{ steps.package.outputs.ipa_path }}
+        run: |
+          TAG="v${VERSION}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} exists. Uploading IPA..."
+            gh release upload "${TAG}" "${IPA_FILE}" --clobber
+          else
+            echo "Creating new release ${TAG}..."
+            gh release create "${TAG}" "${IPA_FILE}" \
+              --title "Israeli Whist Scorekeeper ${TAG}" \
+              --notes "Release of Israeli Whist Scorekeeper ${TAG} with LiveContainer and SideStore support."
+          fi
+
+      - name: Update SideStore / AltStore Community Source JSON
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.package.outputs.version }}
+          IPA_NAME: ${{ env.IPA_NAME }}
+          BUILD_SUFFIX: ${{ env.BUILD_SUFFIX }}
+        run: |
+          python3 - << 'PYEOF'
+          import json, os, datetime
+
+          version = os.environ.get('VERSION', '1.0.0')
+          ipa_name = os.environ.get('IPA_NAME', 'IsraeliWhist-v1.0.0-Enhanced.ipa')
+          suffix = os.environ.get('BUILD_SUFFIX', 'Enhanced')
+          repo = os.environ.get('GITHUB_REPOSITORY', 'illuminati945/IsraeliWhist-Scorekeeper')
+
+          json_file = "IsraeliWhist.json"
+          enhanced_file = "IsraeliWhistEnhanced.json"
+          ipa_path = f"build/{ipa_name}"
+          size = os.path.getsize(ipa_path) if os.path.exists(ipa_path) else 18500000
+
+          download_url = f"https://github.com/{repo}/releases/download/v{version}/{ipa_name}"
+          now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          for target in [json_file, enhanced_file]:
+              if os.path.exists(target):
+                  with open(target, 'r', encoding='utf-8') as f:
+                      data = json.load(f)
+                  if data.get("apps") and len(data["apps"]) > 0:
+                      app = data["apps"][0]
+                      ver_entry = {
+                          "version": version,
+                          "buildVersion": "1",
+                          "date": now_iso,
+                          "localizedDescription": f"# 🃏 Israeli Whist {suffix} v{version}\n\n- Exact bidding scoring engine (+10 + Bid² / progressive penalty / Pass bonus 50)\n- Real-time Dealer Hook Rule indicator and forbidden bet detection\n- Live round progression and interactive trick allocation\n- Hebrew RTL and English bilingual interface\n- SideStore, LiveContainer & AltStore full compatibility",
+                          "downloadURL": download_url,
+                          "size": size,
+                          "minOSVersion": "16.0"
+                      }
+                      app["versions"] = [ver_entry]
+                  with open(target, 'w', encoding='utf-8') as f:
+                      json.dump(data, f, indent=2)
+                  print(f"Updated {target} with size {size}")
+          PYEOF
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add IsraeliWhist.json IsraeliWhistEnhanced.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update SideStore metadata for v${VERSION} [skip ci]" && git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}")
+
+      - name: Send Discord Release Notification
+        if: always() && steps.package.outcome == 'success'
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          VERSION: ${{ steps.package.outputs.version }}
+          IPA_NAME: ${{ env.IPA_NAME }}
+        run: |
+          python3 - << 'PYEOF'
+          import urllib.request, json, os
+
+          webhook_url = os.environ.get('DISCORD_WEBHOOK', '')
+          if not webhook_url:
+              exit(0)
+
+          version = os.environ.get('VERSION', '1.0.0')
+          ipa_name = os.environ.get('IPA_NAME', 'IsraeliWhist.ipa')
+          repo = os.environ.get('GITHUB_REPOSITORY', 'illuminati945/IsraeliWhist-Scorekeeper')
+
+          payload = {
+              'username': 'Israeli Whist Release Bot',
+              'embeds': [{
+                  'title': f'🎉 Israeli Whist Scorekeeper v{version} Released!',
+                  'description': 'A new iOS package for Israeli Whist Scorekeeper has been compiled and published.',
+                  'color': 6514937,
+                  'fields': [
+                      {'name': '📦 Package', 'value': f'`{ipa_name}`', 'inline': True},
+                      {'name': '🏷️ Release Tag', 'value': f'`v{version}`', 'inline': True},
+                      {'name': '⬇️ Download Link', 'value': f'[Download IPA from Releases](https://github.com/{repo}/releases/tag/v{version})', 'inline': False},
+                      {'name': '📲 SideStore Source', 'value': f'`https://raw.githubusercontent.com/{repo}/main/IsraeliWhist.json`', 'inline': False}
+                  ],
+                  'footer': {'text': 'Israeli Whist Auto-Builder'}
+              }]
+          }
+
+          req = urllib.request.Request(
+              webhook_url,
+              data=json.dumps(payload).encode('utf-8'),
+              headers={'Content-Type': 'application/json', 'User-Agent': 'DiscordBot'},
+              method='POST'
+          )
+          try:
+              urllib.request.urlopen(req)
+              print('Discord notification sent!')
+          except Exception as e:
+              print('Discord error:', e)
+          PYEOF

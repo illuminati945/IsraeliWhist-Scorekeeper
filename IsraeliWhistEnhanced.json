@@ -1,0 +1,34 @@
+{
+  "name": "Israeli Whist Scorekeeper Source",
+  "subtitle": "Exact Bidding Score Engine for Israeli Whist",
+  "iconURL": "https://raw.githubusercontent.com/illuminati945/IsraeliWhist-Scorekeeper/main/src/icons/icon-192.png",
+  "website": "https://github.com/illuminati945/IsraeliWhist-Scorekeeper",
+  "apps": [
+    {
+      "name": "Israeli Whist Scorekeeper",
+      "bundleIdentifier": "com.whist.israeli.scorekeeper",
+      "developerName": "Israeli Whist Community",
+      "subtitle": "Score calculator and game tracker for Israeli Whist",
+      "version": "1.0.0",
+      "versionDate": "2026-08-31T19:35:00Z",
+      "versionDescription": "Initial release of Israeli Whist Scorekeeper with live bidding, Hook rule validation, and statistics.",
+      "downloadURL": "https://github.com/illuminati945/IsraeliWhist-Scorekeeper/releases/download/v1.0.0/IsraeliWhist-v1.0.0-Enhanced.ipa",
+      "localizedDescription": "# 🃏 Israeli Whist Scorekeeper (וויסט ישראלי)\n\n- Exact bidding scoring engine (+10 + Bid² / progressive penalty / Pass bonus 50)\n- Real-time Dealer Hook Rule indicator and forbidden bet detection\n- Live round progression and interactive trick allocation\n- Hebrew RTL and English bilingual interface\n- Liquid Glass theme with light & dark modes\n- SideStore, LiveContainer & AltStore full compatibility",
+      "iconURL": "https://raw.githubusercontent.com/illuminati945/IsraeliWhist-Scorekeeper/main/src/icons/icon-192.png",
+      "tintColor": "6366f1",
+      "size": 18500000,
+      "minOSVersion": "16.0",
+      "versions": [
+        {
+          "version": "1.0.0",
+          "buildVersion": "1",
+          "date": "2026-08-31T19:35:00Z",
+          "localizedDescription": "Initial launch with Israeli Whist exact scoring, dealer hook enforcement, and statistics visualizer.",
+          "downloadURL": "https://github.com/illuminati945/IsraeliWhist-Scorekeeper/releases/download/v1.0.0/IsraeliWhist-v1.0.0-Enhanced.ipa",
+          "size": 18500000,
+          "minOSVersion": "16.0"
+        }
+      ]
+    }
+  ]
+}

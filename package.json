@@ -1,0 +1,13 @@
+{
+  "name": "israeli-whist-scorekeeper",
+  "version": "1.0.0",
+  "description": "Exact Bidding Score Engine & Companion for Israeli Whist (וויסט ישראלי)",
+  "type": "module",
+  "scripts": {
+    "test": "node test-engine.js && node test-full-game.js",
+    "serve": "npx serve src -p 3000"
+  },
+  "keywords": ["israeli-whist", "whist", "card-game", "scorekeeper", "bidding"],
+  "author": "Israeli Whist Community",
+  "license": "MIT"
+}

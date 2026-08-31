@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Israeli Whist Scorekeeper | וויסט ישראלי</title>
+  
+  <!-- PWA & Mobile Web App Meta -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Whist Score">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🃏</text></svg>">
+</head>
+<body>
+
+  <!-- Liquid Frosted Navigation Bar -->
+  <header class="liquid-navbar">
+    <div class="brand-container">
+      <span class="brand-icon">🃏</span>
+      <div>
+        <h1 class="brand-title" id="nav-app-title">וויסט ישראלי</h1>
+        <div style="font-size: 0.65rem; color: var(--text-secondary);" id="nav-app-subtitle">מחשבון ניקוד וחוזים</div>
+      </div>
+    </div>
+
+    <div class="nav-actions">
+      <button class="btn-icon" id="btn-toggle-lang" title="Toggle Language (עברית / English)">
+        🌐 <span id="lang-indicator" style="font-size: 0.75rem; font-weight: 700; margin-inline-start: 2px;">EN</span>
+      </button>
+      <button class="btn-icon" id="btn-open-rules" title="Rules & Settings">
+        ⚙️
+      </button>
+      <button class="btn-icon" id="btn-open-stats" title="Statistics">
+        📊
+      </button>
+      <button class="btn-icon" id="btn-open-export" title="Export / Share">
+        📤
+      </button>
+      <button class="btn-icon" id="btn-open-new-game" title="New Game" style="background: var(--accent-primary); color: white; border: none;">
+        🎲
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="app-container">
+    
+    <!-- Real-time Leaderboard & Rank Cards -->
+    <section id="leaderboard-section"></section>
+
+    <!-- Tab View Switcher -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-round" id="tab-btn-round">
+        <span>🎯</span>
+        <span id="tab-label-round">סיבוב נוכחי</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-history" id="tab-btn-history">
+        <span>📜</span>
+        <span id="tab-label-history">היסטוריה</span>
+      </button>
+      <button class="tab-btn" data-tab="tab-chart" id="tab-label-chart-btn">
+        <span>📈</span>
+        <span id="tab-label-chart">גרף</span>
+      </button>
+    </nav>
+
+    <!-- Tab Panels -->
+    <div id="tab-round" class="tab-panel active">
+      <div id="round-view-container"></div>
+    </div>
+
+    <div id="tab-history" class="tab-panel" style="display: none;">
+      <div id="history-view-container"></div>
+    </div>
+
+    <div id="tab-chart" class="tab-panel" style="display: none;">
+      <div id="chart-view-container"></div>
+    </div>
+
+  </main>
+
+  <!-- App Script Entrypoint -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
