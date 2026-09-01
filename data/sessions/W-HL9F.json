@@ -23,10 +23,10 @@
   "simplifiedMode": true,
   "players": [
     {
-      "id": "p1",
-      "name": "אביגיל",
-      "color": "#10b981",
-      "initial": "2"
+      "id": "p0",
+      "name": "איתי",
+      "color": "#6366f1",
+      "initial": "1"
     },
     {
       "id": "p3",
@@ -41,19 +41,19 @@
       "initial": "3"
     },
     {
-      "id": "p0",
-      "name": "איתי",
-      "color": "#6366f1",
-      "initial": "1"
+      "id": "p1",
+      "name": "אביגיל",
+      "color": "#10b981",
+      "initial": "2"
     }
   ],
-  "currentDealerIndex": 1,
+  "currentDealerIndex": 2,
   "roundNumber": 3,
   "completedRounds": [
     {
       "roundNumber": 1,
-      "dealerIndex": 3,
-      "leadBidderIndex": 0,
+      "dealerIndex": 0,
+      "leadBidderIndex": 3,
       "stage": "TRICKS",
       "trump": {
         "winnerIndex": null,
@@ -85,7 +85,7 @@
       "simplified": true,
       "results": [
         {
-          "playerIndex": 3,
+          "playerIndex": 0,
           "bid": 4,
           "tricks": 4,
           "score": 26,
@@ -94,7 +94,7 @@
           "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
-          "playerIndex": 0,
+          "playerIndex": 3,
           "bid": 4,
           "tricks": 4,
           "score": 26,
@@ -131,8 +131,8 @@
     },
     {
       "roundNumber": 2,
-      "dealerIndex": 0,
-      "leadBidderIndex": 1,
+      "dealerIndex": 3,
+      "leadBidderIndex": 2,
       "stage": "TRICKS",
       "trump": {
         "winnerIndex": null,
@@ -142,19 +142,19 @@
       },
       "bets": [
         3,
-        4,
         3,
-        2
+        2,
+        4
       ],
       "tricks": [
-        4,
-        4,
         3,
-        2
+        3,
+        2,
+        5
       ],
       "scores": [
+        19,
         -10,
-        26,
         14,
         19
       ],
@@ -166,20 +166,11 @@
         {
           "playerIndex": 0,
           "bid": 3,
-          "tricks": 4,
-          "score": -10,
-          "made": false,
-          "delta": 1,
-          "explanation": "Bid 3, took 4 (1 diff × -10): -10 pts"
-        },
-        {
-          "playerIndex": 1,
-          "bid": 4,
-          "tricks": 4,
-          "score": 26,
+          "tricks": 3,
+          "score": 19,
           "made": true,
           "delta": 0,
-          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
         },
         {
           "playerIndex": 3,
@@ -198,22 +189,31 @@
           "made": true,
           "delta": 0,
           "explanation": "Bid 2 made: 10 + (2²) = +14 pts"
+        },
+        {
+          "playerIndex": 1,
+          "bid": 4,
+          "tricks": 5,
+          "score": -10,
+          "made": false,
+          "delta": 1,
+          "explanation": "Bid 4, took 5 (1 diff × -10): -10 pts"
         }
       ],
       "cumulativeScores": [
-        16,
-        16,
+        45,
+        -20,
         33,
         45
       ],
-      "completedAt": "2026-09-01T08:34:24.960Z"
+      "completedAt": "2026-09-01T06:43:11.677Z"
     }
   ],
   "activeRound": {
     "roundNumber": 3,
-    "dealerIndex": 1,
-    "leadBidderIndex": 2,
-    "stage": "BETS",
+    "dealerIndex": 2,
+    "leadBidderIndex": 3,
+    "stage": "TRICKS",
     "trump": {
       "winnerIndex": null,
       "suitId": "NT",
@@ -222,15 +222,15 @@
     },
     "bets": [
       0,
-      6,
-      4,
-      2
+      1,
+      7,
+      4
     ],
     "tricks": [
-      null,
-      null,
-      null,
-      null
+      4,
+      1,
+      5,
+      3
     ],
     "scores": [
       0,
@@ -240,8 +240,8 @@
     ],
     "roundTotalBets": 12,
     "bettingMode": "UNDER",
-    "timestamp": "2026-09-01T08:34:24.960Z"
+    "timestamp": "2026-09-01T06:43:11.677Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-01T08:40:09.705Z"
+  "updatedAt": "2026-09-01T08:47:20.006Z"
 }

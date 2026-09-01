@@ -79,8 +79,8 @@ export class Scoreboard {
             <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" 
                  data-player-idx="${idx}" 
                  title="Long-press to lift and reorder seating">
+              ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
               <div class="player-card-inner">
-                ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
                 <div class="player-title">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
