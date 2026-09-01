@@ -20,7 +20,6 @@ class IsraeliWhistApp {
     this.initSyncManager();
     this.bindGlobalEvents();
 
-    // Auto-save to recent games archive
     this.archiveCurrentGame();
 
     this.session.subscribe(() => {
@@ -102,6 +101,28 @@ class IsraeliWhistApp {
       const roomId = this.syncManager ? this.syncManager.roomId : this.session.id;
       ArchiveManager.saveGameToArchive(this.session, roomId);
     }
+  }
+
+  startNewGame(options = {}) {
+    // 1. Ensure current active game is archived before starting fresh
+    if (this.session) {
+      this.archiveCurrentGame();
+    }
+
+    // 2. Generate a new room ID, update URL, and join new room
+    let newRoomId = 'game_' + Date.now();
+    if (this.syncManager) {
+      newRoomId = this.syncManager.createNewRoom();
+    }
+
+    // 3. Create fresh GameSession with the new room ID
+    const newSession = new GameSession({
+      id: newRoomId,
+      ...options
+    });
+
+    // 4. Set as active session
+    this.setSession(newSession);
   }
 
   applyRemoteState(remoteState) {

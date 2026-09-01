@@ -41,7 +41,7 @@ export class SyncManager {
   updateUrl(roomId) {
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('game', roomId);
-    window.history.replaceState({ roomId }, '', newUrl.toString());
+    window.history.pushState({ roomId }, '', newUrl.toString());
   }
 
   getShareUrl() {
@@ -126,6 +126,21 @@ export class SyncManager {
         roomId
       }));
     }
+    this.notify();
+  }
+
+  createNewRoom() {
+    const newRoomId = this.generateFallbackCode();
+    this.roomId = newRoomId;
+    this.updateUrl(newRoomId);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({
+        type: 'JOIN',
+        roomId: newRoomId
+      }));
+    }
+    this.notify();
+    return newRoomId;
   }
 
   handleMessage(msg) {
@@ -166,6 +181,7 @@ export class SyncManager {
       rules: this.app.session.rules,
       targetPoints: this.app.session.targetPoints,
       maxRounds: this.app.session.maxRounds,
+      simplifiedMode: this.app.session.simplifiedMode,
       players: this.app.session.players,
       currentDealerIndex: this.app.session.currentDealerIndex,
       roundNumber: this.app.session.roundNumber,

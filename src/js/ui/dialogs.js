@@ -412,7 +412,7 @@ export class Dialogs {
         </div>
 
         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          Starting a new game will start a fresh deal.
+          Starting a new game will create a fresh shareable link.
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
@@ -504,7 +504,7 @@ export class Dialogs {
       else if (targetVal === 'TARGET_500') targetPoints = 500;
       else if (targetVal === 'TARGET_1000') targetPoints = 1000;
 
-      const newSession = new GameSession({
+      this.app.startNewGame({
         players: newPlayers,
         rules: { ...RULE_PRESETS[ruleKey] },
         maxRounds,
@@ -512,7 +512,6 @@ export class Dialogs {
         simplifiedMode: isSimplified
       });
 
-      this.app.setSession(newSession);
       closeModal();
     });
   }
