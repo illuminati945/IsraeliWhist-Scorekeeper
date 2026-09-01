@@ -1,6 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with Hardware-Accelerated iOS Springboard Reordering
- * (Robust single-pointer lock, no premature drops, and tap-outside dismissal)
+ * (Zero-race condition rapid drag-and-drop chaining)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -14,6 +14,8 @@ export class Scoreboard {
     this.onReorganizeSeating = onReorganizeSeating;
     this.isJiggleMode = false;
     this.isDragging = false;
+    this.pendingDropTimer = null;
+    this.pendingDropCommit = null;
 
     // Global listener to dismiss jiggle mode on tapping outside (on pointerup to prevent drag conflicts)
     document.addEventListener('pointerup', (e) => {
@@ -29,21 +31,41 @@ export class Scoreboard {
 
   updateSession(session) {
     this.session = session;
-    this.render();
+    if (!this.isDragging) {
+      this.render();
+    }
   }
 
   updateI18n(i18n) {
     this.i18n = i18n;
-    this.render();
+    if (!this.isDragging) {
+      this.render();
+    }
+  }
+
+  flushPendingDrop() {
+    if (this.pendingDropTimer) {
+      clearTimeout(this.pendingDropTimer);
+      this.pendingDropTimer = null;
+    }
+    if (this.pendingDropCommit) {
+      const commit = this.pendingDropCommit;
+      this.pendingDropCommit = null;
+      commit();
+    }
   }
 
   setJiggleMode(active) {
+    this.flushPendingDrop();
     this.isJiggleMode = active;
     if (this.leaderboardContainer) {
       const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
       if (grid) {
         grid.classList.toggle('is-jiggling', active);
       }
+    }
+    if (!active) {
+      this.renderLeaderboard();
     }
   }
 
@@ -205,6 +227,8 @@ export class Scoreboard {
       };
 
       const liftAndStartDrag = (clientX, clientY) => {
+        this.flushPendingDrop();
+
         if (this.isDragging) return;
         this.isDragging = true;
         isCardDragging = true;
@@ -288,7 +312,8 @@ export class Scoreboard {
             card.classList.add('is-dropping');
             card.style.transform = `translate3d(${finalDx}px, ${finalDy}px, 0) scale(1.0) rotate(0deg)`;
 
-            setTimeout(() => {
+            // Define the commit callback
+            this.pendingDropCommit = () => {
               card.classList.remove('is-lifted', 'is-dropping');
               card.style.transform = '';
               resetCardShifts();
@@ -300,11 +325,13 @@ export class Scoreboard {
                 order.splice(targetSlot, 0, moved);
 
                 this.session.reorderPlayers(order);
-                this.renderLeaderboard();
-              } else {
-                this.renderLeaderboard();
               }
-            }, 340);
+              this.renderLeaderboard();
+            };
+
+            this.pendingDropTimer = setTimeout(() => {
+              this.flushPendingDrop();
+            }, 320);
           } else {
             card.classList.remove('is-lifted');
             resetCardShifts();
@@ -318,6 +345,9 @@ export class Scoreboard {
       };
 
       const onPointerDown = (e) => {
+        // If a drop from a previous card was still animating, flush it immediately before starting
+        this.flushPendingDrop();
+
         if (this.isDragging) return;
 
         activePointerId = e.pointerId;
