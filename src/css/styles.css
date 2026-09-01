@@ -606,34 +606,53 @@ body {
   color: var(--danger);
 }
 
-/* Tables */
+/* Scrollable Responsive Tables */
 .table-wrap {
+  width: 100%;
   overflow-x: auto;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   -webkit-overflow-scrolling: touch;
+  margin-top: 0.35rem;
 }
 
 .table-custom {
   width: 100%;
+  min-width: 520px;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   text-align: center;
-  min-width: 300px;
+  table-layout: auto;
 }
 
 .table-custom th,
 .table-custom td {
-  padding: 0.45rem 0.3rem;
+  padding: 0.6rem 0.5rem;
   border-bottom: 1px solid var(--border-subtle);
   border-right: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.table-custom th:last-child,
+.table-custom td:last-child {
+  border-right: none;
 }
 
 .table-custom th {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   color: var(--text-secondary);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.table-custom tr:last-child td {
+  border-bottom: none;
+}
+
+.table-custom tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 /* Modals & Bottom Drawers */

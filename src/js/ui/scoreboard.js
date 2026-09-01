@@ -92,19 +92,30 @@ export class Scoreboard {
           <table class="table-custom">
             <thead>
               <tr>
-                <th>Deal</th>
-                <th>Dealer</th>
+                <th style="min-width: 60px;">Deal</th>
+                <th style="min-width: 95px;">Dealer</th>
                 ${this.session.players.map(p => `
-                  <th>${p.name}</th>
+                  <th style="min-width: 85px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
+                      <span class="player-dot" style="background: ${p.color};"></span>
+                      <span>${p.name}</span>
+                    </div>
+                  </th>
                 `).join('')}
               </tr>
             </thead>
             <tbody>
               ${rounds.map((r, rIdx) => {
+                const dealer = this.session.players[r.dealerIndex];
                 return `
                   <tr>
                     <td style="font-weight: 700;">#${r.roundNumber}</td>
-                    <td>${this.session.players[r.dealerIndex].name.slice(0, 3)}</td>
+                    <td>
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;">
+                        <span class="player-dot" style="background: ${dealer.color};"></span>
+                        <span style="font-weight: 600;">${dealer.name}</span>
+                      </div>
+                    </td>
                     ${this.session.players.map((p, pIdx) => {
                       const res = r.results.find(res => res.playerIndex === pIdx);
                       if (!res) return `<td>—</td>`;
