@@ -1,5 +1,5 @@
 /**
- * Modals & Dialogs (Menu, Share, New Game, Rules, Stats, Export)
+ * Modals & Dialogs (Menu, Edit Settings/Names, Share, New Game, Rules, Stats, Export)
  */
 import { RULE_PRESETS } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
@@ -23,7 +23,17 @@ export class Dialogs {
         </div>
 
         <div class="menu-list">
-          <button class="menu-item-btn" id="menu-opt-toggle-mode" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);">
+          <button class="menu-item-btn" id="menu-opt-edit-players" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);">
+            <div>
+              <div style="font-weight: 700;">✏️ Edit Players & Settings</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                Rename players, change dealer, or adjust rules
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary);">Edit →</span>
+          </button>
+
+          <button class="menu-item-btn" id="menu-opt-toggle-mode">
             <div>
               <div style="font-weight: 700;">Mode: ${isSimplified ? '⚡ Simplified (Quick)' : '🎴 Full Trump Auction'}</div>
               <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
@@ -33,16 +43,8 @@ export class Dialogs {
             <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary);">Switch ⇄</span>
           </button>
 
-          <button class="menu-item-btn" id="menu-opt-new-game">
-            <span>🎲 New Game Session</span>
-            <span>→</span>
-          </button>
           <button class="menu-item-btn" id="menu-opt-share">
             <span>📲 Share Link & QR Code</span>
-            <span>→</span>
-          </button>
-          <button class="menu-item-btn" id="menu-opt-rules">
-            <span>⚙️ Scoring Rules Preset</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-stats">
@@ -51,6 +53,10 @@ export class Dialogs {
           </button>
           <button class="menu-item-btn" id="menu-opt-export">
             <span>📤 Export / Share Text</span>
+            <span>→</span>
+          </button>
+          <button class="menu-item-btn" id="menu-opt-new-game" style="border-color: rgba(239, 68, 68, 0.3); color: #fca5a5;">
+            <span>🎲 Start New Game</span>
             <span>→</span>
           </button>
         </div>
@@ -64,6 +70,11 @@ export class Dialogs {
     document.body.appendChild(modal);
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelector('#menu-opt-edit-players').addEventListener('click', () => {
+      closeModal();
+      this.showEditSettingsModal();
+    });
 
     modal.querySelector('#menu-opt-toggle-mode').addEventListener('click', () => {
       this.app.session.setSimplifiedMode(!this.app.session.simplifiedMode);
@@ -80,11 +91,6 @@ export class Dialogs {
       this.showShareModal();
     });
 
-    modal.querySelector('#menu-opt-rules').addEventListener('click', () => {
-      closeModal();
-      this.showRulesModal();
-    });
-
     modal.querySelector('#menu-opt-stats').addEventListener('click', () => {
       closeModal();
       this.showStatsModal();
@@ -93,6 +99,117 @@ export class Dialogs {
     modal.querySelector('#menu-opt-export').addEventListener('click', () => {
       closeModal();
       this.showExportModal();
+    });
+  }
+
+  showEditSettingsModal(focusPlayerIndex = null) {
+    const session = this.app.session;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3 style="font-size: 1.1rem; font-weight: 700;">Edit Players & Settings</h3>
+          <button class="btn-pill modal-close">✕</button>
+        </div>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
+          Player Names
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
+          ${session.players.map((p, idx) => `
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="player-dot" style="background: ${p.color};"></span>
+              <input type="text" class="input-field edit-player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="Player ${idx + 1}" style="margin-bottom:0;" />
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+          Current Dealer
+        </div>
+        <select class="select-field" id="edit-dealer-select" style="margin-bottom: 0.85rem;">
+          ${session.players.map((p, idx) => `
+            <option value="${idx}" ${session.currentDealerIndex === idx ? 'selected' : ''}>
+              ${p.name} (Player ${idx + 1})
+            </option>
+          `).join('')}
+        </select>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+          Game Mode
+        </div>
+        <select class="select-field" id="edit-mode-select" style="margin-bottom: 0.85rem;">
+          <option value="SIMPLIFIED" ${session.simplifiedMode ? 'selected' : ''}>⚡ Simplified (Direct Bids & Tricks)</option>
+          <option value="FULL" ${!session.simplifiedMode ? 'selected' : ''}>🎴 Full (With Trump Auction & Suits)</option>
+        </select>
+
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+          Scoring Rules Preset
+        </div>
+        <select class="select-field" id="edit-rule-select" style="margin-bottom: 0.85rem;">
+          ${Object.values(RULE_PRESETS).map(r => `
+            <option value="${r.id}" ${session.rules.id === r.id ? 'selected' : ''}>
+              ${r.nameEn}
+            </option>
+          `).join('')}
+        </select>
+
+        <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+            <input type="checkbox" id="chk-edit-hook" ${session.rules.enforceHookRule ? 'checked' : ''} style="width: 16px; height: 16px;">
+            <span style="font-size: 0.82rem; font-weight: 600;">Enforce Hook Rule (Total Bets ≠ 13)</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
+          <button class="btn-outline modal-close" style="flex: 1;">Cancel</button>
+          <button class="btn-block" id="btn-save-settings" style="flex: 2;">Save Changes ✓</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const closeModal = () => modal.remove();
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    if (focusPlayerIndex !== null) {
+      const targetInput = modal.querySelector(`.edit-player-name-input[data-p-idx="${focusPlayerIndex}"]`);
+      if (targetInput) {
+        setTimeout(() => {
+          targetInput.focus();
+          targetInput.select();
+        }, 100);
+      }
+    }
+
+    modal.querySelector('#btn-save-settings').addEventListener('click', () => {
+      const nameInputs = modal.querySelectorAll('.edit-player-name-input');
+      const dealerIdx = parseInt(modal.querySelector('#edit-dealer-select').value, 10);
+      const isSimplified = (modal.querySelector('#edit-mode-select').value === 'SIMPLIFIED');
+      const ruleKey = modal.querySelector('#edit-rule-select').value;
+      const enforceHook = modal.querySelector('#chk-edit-hook').checked;
+
+      session.players.forEach((p, idx) => {
+        const val = nameInputs[idx].value.trim();
+        if (val) p.name = val;
+      });
+
+      session.currentDealerIndex = dealerIdx;
+      if (session.activeRound) {
+        session.activeRound.dealerIndex = dealerIdx;
+        session.activeRound.leadBidderIndex = (dealerIdx + 1) % 4;
+      }
+
+      session.rules = {
+        ...RULE_PRESETS[ruleKey],
+        enforceHookRule: enforceHook
+      };
+
+      session.setSimplifiedMode(isSimplified);
+      session.notify();
+      closeModal();
     });
   }
 
@@ -267,69 +384,6 @@ export class Dialogs {
       this.app.setSession(newSession);
       closeModal();
     });
-  }
-
-  showRulesModal() {
-    const session = this.app.session;
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-head">
-          <h3 style="font-size: 1.05rem; font-weight: 700;">Rules & Configuration</h3>
-          <button class="btn-pill modal-close">✕</button>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem;">
-          ${Object.values(RULE_PRESETS).map(preset => `
-            <div style="background: rgba(0,0,0,0.25); padding: 0.65rem; border-radius: var(--radius-md); border: 1px solid ${session.rules.id === preset.id ? 'var(--accent-primary)' : 'var(--border-subtle)'};">
-              <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 0.2rem;">
-                ${preset.nameEn}
-              </div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 0.4rem;">
-                ${preset.descriptionEn}
-              </div>
-              <button class="btn-pill btn-apply-rule" data-rule-id="${preset.id}" style="${session.rules.id === preset.id ? 'background: var(--accent-primary); color: white;' : ''}">
-                ${session.rules.id === preset.id ? '✓ Active' : 'Select Preset'}
-              </button>
-            </div>
-          `).join('')}
-        </div>
-
-        <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
-            <input type="checkbox" id="chk-enforce-hook" ${session.rules.enforceHookRule ? 'checked' : ''} style="width: 16px; height: 16px;">
-            <span style="font-size: 0.82rem; font-weight: 600;">Enforce Dealer Hook Rule (Total Bets ≠ 13)</span>
-          </label>
-        </div>
-
-        <button class="btn-block modal-close">
-          Done
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-    const closeModal = () => modal.remove();
-    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
-
-    modal.querySelectorAll('.btn-apply-rule').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.ruleId;
-        session.rules = { ...RULE_PRESETS[id], enforceHookRule: session.rules.enforceHookRule };
-        session.notify();
-        closeModal();
-      });
-    });
-
-    const chkHook = modal.querySelector('#chk-enforce-hook');
-    if (chkHook) {
-      chkHook.addEventListener('change', (e) => {
-        session.rules.enforceHookRule = e.target.checked;
-        session.notify();
-      });
-    }
   }
 
   showStatsModal() {

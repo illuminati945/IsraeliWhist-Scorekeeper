@@ -190,9 +190,10 @@ export class RoundView {
           return `
             <div class="input-row ${isDealer ? 'dealer-row' : ''}">
               <div class="input-row-header">
-                <div class="input-row-name">
+                <div class="input-row-name" data-player-idx="${idx}" style="cursor: pointer;" title="Tap to rename ${p.name}">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
+                  <span style="font-size: 0.65rem; opacity: 0.5;">✏️</span>
                   ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">TRUMP MAKER</span>` : ''}
                   ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">LAST BIDDER</span>` : ''}
                   ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">DEALER</span>` : ''}
@@ -249,9 +250,10 @@ export class RoundView {
           return `
             <div class="input-row" style="${isMatch ? 'border-color: rgba(16, 185, 129, 0.4);' : ''}">
               <div class="input-row-header">
-                <div class="input-row-name">
+                <div class="input-row-name" data-player-idx="${idx}" style="cursor: pointer;" title="Tap to rename ${p.name}">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
+                  <span style="font-size: 0.65rem; opacity: 0.5;">✏️</span>
                   <span class="input-row-sub">
                     (Bid: <strong>${bet !== null ? bet : '—'}</strong>)
                   </span>
@@ -335,6 +337,16 @@ export class RoundView {
         this.render();
       });
     }
+
+    // Quick rename on tapping player name in round pad
+    this.container.querySelectorAll('.input-row-name[data-player-idx]').forEach(el => {
+      el.addEventListener('click', () => {
+        const pIdx = parseInt(el.dataset.playerIdx, 10);
+        if (window.app && window.app.dialogs) {
+          window.app.dialogs.showEditSettingsModal(pIdx);
+        }
+      });
+    });
 
     if (stage === 'TRUMP' && !isSimplified) {
       this.container.querySelectorAll('.trump-player-btn').forEach(btn => {
