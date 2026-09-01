@@ -1,5 +1,5 @@
 /**
- * Sleek Leaderboard & Score History Table with Real-Time iOS Lift-Off & Springboard Dynamic Reordering
+ * Sleek Leaderboard & Score History Table with In-Place iOS Springboard Reordering
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -12,7 +12,7 @@ export class Scoreboard {
     this.onUndo = onUndo;
     this.onReorganizeSeating = onReorganizeSeating;
     this.isJiggleMode = false;
-    this.dragState = null;
+    this.isDragging = false;
     this.render();
   }
 
@@ -114,8 +114,7 @@ export class Scoreboard {
       let startX = 0;
       let startY = 0;
       let lastX = 0;
-      let isDragging = false;
-      let dragClone = null;
+      let isCardDragging = false;
       let fromSlotIndex = null;
       let currentTargetSlotIndex = null;
       let initialSlotRects = [];
@@ -149,29 +148,33 @@ export class Scoreboard {
         order.splice(hoveredSlot, 0, moved);
 
         cards.forEach((c, originalSlot) => {
+          if (originalSlot === fromSlotIndex) return; // Dragged card handled separately
+
+          c.classList.add('is-shifting');
           const targetSlot = order.indexOf(originalSlot);
-          if (originalSlot === fromSlotIndex) {
-            c.style.transform = 'scale(0.92)';
-          } else {
-            const originRect = initialSlotRects[originalSlot];
-            const targetRect = initialSlotRects[targetSlot];
-            if (originRect && targetRect) {
-              const dx = targetRect.left - originRect.left;
-              const dy = targetRect.top - originRect.top;
-              c.style.transform = `translate(${dx}px, ${dy}px)`;
-            }
+          const originRect = initialSlotRects[originalSlot];
+          const targetRect = initialSlotRects[targetSlot];
+
+          if (originRect && targetRect) {
+            const dx = targetRect.left - originRect.left;
+            const dy = targetRect.top - originRect.top;
+            c.style.transform = `translate(${dx}px, ${dy}px)`;
           }
         });
       };
 
       const resetCardShifts = () => {
         cards.forEach(c => {
+          c.classList.remove('is-shifting');
           c.style.transform = '';
+          c.style.zIndex = '';
         });
       };
 
       const liftAndStartDrag = (clientX, clientY) => {
-        isDragging = true;
+        if (this.isDragging) return;
+        this.isDragging = true;
+        isCardDragging = true;
         fromSlotIndex = parseInt(card.dataset.playerIdx, 10);
         currentTargetSlotIndex = fromSlotIndex;
         initialSlotRects = computeSlotPositions();
@@ -203,38 +206,22 @@ export class Scoreboard {
         }
 
         card.classList.remove('card-pressing');
-        card.classList.add('is-dragging');
+        card.classList.add('is-lifted');
+        card.style.zIndex = '500';
         triggerHaptic([40, 60, 40]);
 
-        const rect = initialSlotRects[fromSlotIndex] || card.getBoundingClientRect();
-        const offsetX = clientX - rect.left;
-        const offsetY = clientY - rect.top;
-
-        // Create floating elevated clone that lifts up
-        dragClone = card.cloneNode(true);
-        dragClone.className = 'player-card drag-floating-clone';
-        dragClone.style.width = `${rect.width}px`;
-        dragClone.style.height = `${rect.height}px`;
-        dragClone.style.left = `${rect.left}px`;
-        dragClone.style.top = `${rect.top}px`;
-        document.body.appendChild(dragClone);
-
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        card.style.transform = `translate(${dx}px, ${dy - 6}px) scale(1.12)`;
         lastX = clientX;
-
-        this.dragState = {
-          offsetX,
-          offsetY,
-          dragClone,
-          fromSlotIndex
-        };
       };
 
       const onPointerMove = (e) => {
-        const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-        const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
-        if (!isDragging) {
-          if (Math.abs(clientX - startX) > 14 || Math.abs(clientY - startY) > 14) {
+        if (!isCardDragging) {
+          if (Math.abs(clientX - startX) > 12 || Math.abs(clientY - startY) > 12) {
             if (pressTimer) {
               clearTimeout(pressTimer);
               pressTimer = null;
@@ -247,23 +234,23 @@ export class Scoreboard {
         e.preventDefault();
         e.stopPropagation();
 
+        const dx = clientX - startX;
+        const dy = clientY - startY;
         const vx = clientX - lastX;
         lastX = clientX;
-        const tilt = Math.max(-7, Math.min(7, vx * 0.35));
+        const tilt = Math.max(-6, Math.min(6, vx * 0.3));
 
-        // Update floating clone position with inertial tilt
-        if (dragClone && this.dragState) {
-          dragClone.style.left = `${clientX - this.dragState.offsetX}px`;
-          dragClone.style.top = `${clientY - this.dragState.offsetY}px`;
-          dragClone.style.transform = `scale(1.12) translateY(-6px) rotate(${tilt}deg)`;
-        }
+        card.style.transform = `translate(${dx}px, ${dy - 6}px) scale(1.12) rotate(${tilt}deg)`;
 
         // Find closest slot
+        const cardCenterX = initialSlotRects[fromSlotIndex].centerX + dx;
+        const cardCenterY = initialSlotRects[fromSlotIndex].centerY + dy;
+
         let closestSlot = fromSlotIndex;
         let minDistance = Infinity;
 
         initialSlotRects.forEach((rect, idx) => {
-          const dist = Math.hypot(clientX - rect.centerX, clientY - rect.centerY);
+          const dist = Math.hypot(cardCenterX - rect.centerX, cardCenterY - rect.centerY);
           if (dist < minDistance) {
             minDistance = dist;
             closestSlot = idx;
@@ -289,26 +276,26 @@ export class Scoreboard {
           capturedPointerId = null;
         }
 
-        if (isDragging) {
-          isDragging = false;
+        if (isCardDragging) {
+          isCardDragging = false;
+          this.isDragging = false;
           if (grid) grid.classList.remove('is-actively-dragging');
-          card.classList.remove('is-dragging');
 
           const targetSlot = currentTargetSlotIndex;
+          const originRect = initialSlotRects[fromSlotIndex];
           const targetRect = initialSlotRects[targetSlot];
 
-          if (dragClone && targetRect) {
-            dragClone.classList.add('is-dropping');
-            dragClone.style.left = `${targetRect.left}px`;
-            dragClone.style.top = `${targetRect.top}px`;
-            dragClone.style.transform = `scale(1.0) translateY(0) rotate(0deg)`;
+          if (originRect && targetRect) {
+            // Smooth spring snap directly into target slot position
+            const finalDx = targetRect.left - originRect.left;
+            const finalDy = targetRect.top - originRect.top;
+
+            card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            card.style.transform = `translate(${finalDx}px, ${finalDy}px) scale(1.0)`;
 
             setTimeout(() => {
-              if (dragClone) {
-                dragClone.remove();
-                dragClone = null;
-              }
-              this.dragState = null;
+              card.classList.remove('is-lifted');
+              card.style.transition = '';
               resetCardShifts();
 
               if (fromSlotIndex !== null && targetSlot !== null && fromSlotIndex !== targetSlot) {
@@ -324,11 +311,7 @@ export class Scoreboard {
               }
             }, 200);
           } else {
-            if (dragClone) {
-              dragClone.remove();
-              dragClone = null;
-            }
-            this.dragState = null;
+            card.classList.remove('is-lifted');
             resetCardShifts();
             this.renderLeaderboard();
           }
@@ -337,19 +320,16 @@ export class Scoreboard {
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
         window.removeEventListener('pointercancel', onPointerUp);
-        window.removeEventListener('touchmove', onPointerMove);
-        window.removeEventListener('touchend', onPointerUp);
       };
 
       const onPointerDown = (e) => {
-        if (this.dragState) return;
+        if (this.isDragging) return;
 
-        // Prevent browser scroll or callout
         if (e.cancelable) e.preventDefault();
 
-        startX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-        startY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-        lastX = startX;
+        startX = e.clientX;
+        startY = e.clientY;
+        lastX = e.clientX;
         card.classList.add('card-pressing');
 
         if (e.pointerId && card.setPointerCapture) {
@@ -362,8 +342,6 @@ export class Scoreboard {
         window.addEventListener('pointermove', onPointerMove, { passive: false });
         window.addEventListener('pointerup', onPointerUp);
         window.addEventListener('pointercancel', onPointerUp);
-        window.addEventListener('touchmove', onPointerMove, { passive: false });
-        window.addEventListener('touchend', onPointerUp);
 
         if (this.isJiggleMode) {
           liftAndStartDrag(startX, startY);
@@ -376,7 +354,6 @@ export class Scoreboard {
       };
 
       card.addEventListener('pointerdown', onPointerDown);
-      card.addEventListener('touchstart', onPointerDown, { passive: false });
       card.addEventListener('contextmenu', (e) => e.preventDefault());
     });
   }

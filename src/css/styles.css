@@ -366,58 +366,24 @@ body {
 }
 
 .player-card.card-pressing {
-  transform: scale(0.94);
+  transform: scale(0.95);
   border-color: #fbbf24;
-  box-shadow: 0 0 16px rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
   touch-action: none !important;
 }
 
-.player-card.is-dragging {
-  opacity: 0.2 !important;
+.player-card.is-lifted {
+  z-index: 500 !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(99, 102, 241, 0.6) !important;
+  border-color: var(--accent-primary) !important;
   animation: none !important;
-  transform: scale(0.92) !important;
-  border: 2px dashed rgba(251, 191, 36, 0.8) !important;
-  touch-action: none !important;
+  cursor: grabbing !important;
+  will-change: transform;
 }
 
-/* Card Lift-Off Animation */
-@keyframes card-lift-off {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  }
-  60% {
-    transform: scale(1.15) translateY(-8px) rotate(2.5deg);
-    box-shadow: 0 24px 44px rgba(0, 0, 0, 0.8), 0 0 28px rgba(99, 102, 241, 0.7);
-  }
-  100% {
-    transform: scale(1.12) translateY(-6px) rotate(1.8deg);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(99, 102, 241, 0.6);
-  }
-}
-
-/* Floating Drag Clone */
-.drag-floating-clone {
-  position: fixed;
-  pointer-events: none;
-  z-index: 10000;
-  border-radius: var(--radius-md);
-  border: 2px solid var(--accent-primary) !important;
-  background: var(--bg-secondary) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 24px rgba(99, 102, 241, 0.6);
-  opacity: 0.98;
-  user-select: none;
-  -webkit-user-select: none;
-  animation: card-lift-off 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  will-change: transform, left, top;
-}
-
-.drag-floating-clone.is-dropping {
+.player-card.is-shifting {
+  transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1) !important;
   animation: none !important;
-  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), left 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.22s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.22s ease !important;
-  transform: scale(1.0) translateY(0) rotate(0deg) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
-  opacity: 1 !important;
 }
 
 /* Jiggle Done Bar */
