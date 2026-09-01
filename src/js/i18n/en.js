@@ -63,6 +63,8 @@ export const EN = {
   
   // Menu & Modals
   menuTitle: 'Menu & Settings',
+  reorganizeSeating: '🪑 Reorganize Seating',
+  reorganizeDesc: 'Long press player card or swap seating positions',
   editPlayersSettings: '✏️ Edit Players & Settings',
   editPlayersDesc: 'Rename players, change dealer, or adjust rules',
   modeToggleTitle: 'Mode',
@@ -76,6 +78,16 @@ export const EN = {
   done: 'Done',
   cancel: 'Cancel',
   saveChanges: 'Save Changes ✓',
+  
+  // Reorganize Seating Dialog
+  reorganizeTitle: 'Reorganize Player Seating',
+  reorganizeSub: 'Tap any two players to swap seats, or rotate the table clockwise.',
+  rotateClockwise: '↻ Rotate Clockwise',
+  rotateCounterClockwise: '↺ Counter-Clockwise',
+  swapSeatsHint: 'Tap two players to swap their seats',
+  seatNumber: 'Seat',
+  doneSeating: 'Save Seating ✓',
+  tapToSwap: 'Tap to swap with',
   
   // Settings Dialog
   editTitle: 'Edit Players & Settings',

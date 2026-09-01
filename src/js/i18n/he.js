@@ -63,6 +63,8 @@ export const HE = {
   
   // Menu & Modals
   menuTitle: 'תפריט והגדרות',
+  reorganizeSeating: '🪑 סידור מקומות ישיבה',
+  reorganizeDesc: 'לחיצה ארוכה על שחקן או החלפת סדר הישיבה',
   editPlayersSettings: '✏️ עריכת שחקנים והגדרות',
   editPlayersDesc: 'שינוי שמות שחקנים, החלפת מחלק או התאמת חוקים',
   modeToggleTitle: 'מצב משחק',
@@ -76,6 +78,16 @@ export const HE = {
   done: 'סיום',
   cancel: 'ביטול',
   saveChanges: 'שמור שינויים ✓',
+  
+  // Reorganize Seating Dialog
+  reorganizeTitle: 'סידור מקומות ישיבה',
+  reorganizeSub: 'הקש על שני שחקנים להחלפת מקומות, או סובב את השולחן עם כיוון השעון.',
+  rotateClockwise: '↻ סיבוב עם השעון',
+  rotateCounterClockwise: '↺ נגד השעון',
+  swapSeatsHint: 'הקש על שני שחקנים להחלפת המקומות ביניהם',
+  seatNumber: 'מקום',
+  doneSeating: 'שמור סידור מקומות ✓',
+  tapToSwap: 'הקש להחלפה עם',
   
   // Settings Dialog
   editTitle: 'עריכת שחקנים והגדרות',

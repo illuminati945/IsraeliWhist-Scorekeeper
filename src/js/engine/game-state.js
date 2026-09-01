@@ -343,6 +343,148 @@ export class GameSession {
     }
   }
 
+  swapPlayers(idxA, idxB) {
+    if (idxA === idxB || idxA < 0 || idxA > 3 || idxB < 0 || idxB > 3) return;
+
+    // 1. Swap players array
+    const tempPlayer = this.players[idxA];
+    this.players[idxA] = this.players[idxB];
+    this.players[idxB] = tempPlayer;
+
+    // 2. Remap function
+    const remapIdx = (idx) => {
+      if (idx === idxA) return idxB;
+      if (idx === idxB) return idxA;
+      return idx;
+    };
+
+    // 3. Remap current dealer
+    this.currentDealerIndex = remapIdx(this.currentDealerIndex);
+
+    // 4. Remap active round
+    if (this.activeRound) {
+      this.activeRound.dealerIndex = remapIdx(this.activeRound.dealerIndex);
+      this.activeRound.leadBidderIndex = (this.activeRound.dealerIndex + 1) % 4;
+
+      if (this.activeRound.trump && this.activeRound.trump.winnerIndex !== null) {
+        this.activeRound.trump.winnerIndex = remapIdx(this.activeRound.trump.winnerIndex);
+      }
+
+      const swapArr = (arr) => {
+        if (Array.isArray(arr) && arr.length === 4) {
+          const t = arr[idxA];
+          arr[idxA] = arr[idxB];
+          arr[idxB] = t;
+        }
+      };
+
+      swapArr(this.activeRound.bets);
+      swapArr(this.activeRound.tricks);
+      swapArr(this.activeRound.scores);
+    }
+
+    // 5. Remap completed rounds history
+    for (const round of this.completedRounds) {
+      round.dealerIndex = remapIdx(round.dealerIndex);
+      if (round.leadBidderIndex !== undefined) {
+        round.leadBidderIndex = remapIdx(round.leadBidderIndex);
+      }
+      if (round.trump && round.trump.winnerIndex !== null) {
+        round.trump.winnerIndex = remapIdx(round.trump.winnerIndex);
+      }
+
+      if (Array.isArray(round.scores) && round.scores.length === 4) {
+        const s = round.scores[idxA];
+        round.scores[idxA] = round.scores[idxB];
+        round.scores[idxB] = s;
+      }
+
+      if (Array.isArray(round.cumulativeScores) && round.cumulativeScores.length === 4) {
+        const c = round.cumulativeScores[idxA];
+        round.cumulativeScores[idxA] = round.cumulativeScores[idxB];
+        round.cumulativeScores[idxB] = c;
+      }
+
+      if (Array.isArray(round.results)) {
+        for (const res of round.results) {
+          res.playerIndex = remapIdx(res.playerIndex);
+        }
+      }
+    }
+
+    this.notify();
+  }
+
+  rotateSeatingClockwise() {
+    // 0 -> 1 -> 2 -> 3 -> 0
+    const p3 = this.players[3];
+    this.players = [p3, this.players[0], this.players[1], this.players[2]];
+    
+    const remap = (idx) => (idx !== null && idx !== undefined) ? (idx + 1) % 4 : idx;
+    this.currentDealerIndex = remap(this.currentDealerIndex);
+
+    if (this.activeRound) {
+      this.activeRound.dealerIndex = remap(this.activeRound.dealerIndex);
+      this.activeRound.leadBidderIndex = (this.activeRound.dealerIndex + 1) % 4;
+      if (this.activeRound.trump && this.activeRound.trump.winnerIndex !== null) {
+        this.activeRound.trump.winnerIndex = remap(this.activeRound.trump.winnerIndex);
+      }
+      const rot = (arr) => [arr[3], arr[0], arr[1], arr[2]];
+      this.activeRound.bets = rot(this.activeRound.bets);
+      this.activeRound.tricks = rot(this.activeRound.tricks);
+      this.activeRound.scores = rot(this.activeRound.scores);
+    }
+
+    for (const round of this.completedRounds) {
+      round.dealerIndex = remap(round.dealerIndex);
+      if (round.leadBidderIndex !== undefined) round.leadBidderIndex = remap(round.leadBidderIndex);
+      if (round.trump && round.trump.winnerIndex !== null) round.trump.winnerIndex = remap(round.trump.winnerIndex);
+      if (Array.isArray(round.scores)) round.scores = [round.scores[3], round.scores[0], round.scores[1], round.scores[2]];
+      if (Array.isArray(round.cumulativeScores)) round.cumulativeScores = [round.cumulativeScores[3], round.cumulativeScores[0], round.cumulativeScores[1], round.cumulativeScores[2]];
+      if (Array.isArray(round.results)) {
+        for (const res of round.results) {
+          res.playerIndex = remap(res.playerIndex);
+        }
+      }
+    }
+    this.notify();
+  }
+
+  rotateSeatingCounterClockwise() {
+    // 0 -> 3 -> 2 -> 1 -> 0
+    const p0 = this.players[0];
+    this.players = [this.players[1], this.players[2], this.players[3], p0];
+    
+    const remap = (idx) => (idx !== null && idx !== undefined) ? (idx + 3) % 4 : idx;
+    this.currentDealerIndex = remap(this.currentDealerIndex);
+
+    if (this.activeRound) {
+      this.activeRound.dealerIndex = remap(this.activeRound.dealerIndex);
+      this.activeRound.leadBidderIndex = (this.activeRound.dealerIndex + 1) % 4;
+      if (this.activeRound.trump && this.activeRound.trump.winnerIndex !== null) {
+        this.activeRound.trump.winnerIndex = remap(this.activeRound.trump.winnerIndex);
+      }
+      const rot = (arr) => [arr[1], arr[2], arr[3], arr[0]];
+      this.activeRound.bets = rot(this.activeRound.bets);
+      this.activeRound.tricks = rot(this.activeRound.tricks);
+      this.activeRound.scores = rot(this.activeRound.scores);
+    }
+
+    for (const round of this.completedRounds) {
+      round.dealerIndex = remap(round.dealerIndex);
+      if (round.leadBidderIndex !== undefined) round.leadBidderIndex = remap(round.leadBidderIndex);
+      if (round.trump && round.trump.winnerIndex !== null) round.trump.winnerIndex = remap(round.trump.winnerIndex);
+      if (Array.isArray(round.scores)) round.scores = [round.scores[1], round.scores[2], round.scores[3], round.scores[0]];
+      if (Array.isArray(round.cumulativeScores)) round.cumulativeScores = [round.cumulativeScores[1], round.cumulativeScores[2], round.cumulativeScores[3], round.cumulativeScores[0]];
+      if (Array.isArray(round.results)) {
+        for (const res of round.results) {
+          res.playerIndex = remap(res.playerIndex);
+        }
+      }
+    }
+    this.notify();
+  }
+
   saveToStorage() {
     if (typeof localStorage === 'undefined') return;
     try {

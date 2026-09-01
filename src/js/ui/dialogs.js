@@ -1,5 +1,5 @@
 /**
- * Modals & Dialogs (Menu, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export) with i18n
+ * Modals & Dialogs (Menu, Reorganize Seating, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export) with i18n
  */
 import { RULE_PRESETS } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
@@ -40,6 +40,16 @@ export class Dialogs {
           <button class="menu-item-btn" id="menu-opt-home-lobby">
             <span>${t.returnToLobby}</span>
             <span>→</span>
+          </button>
+
+          <button class="menu-item-btn" id="menu-opt-reorg-seating" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35);">
+            <div>
+              <div style="font-weight: 700; color: #fde68a;">${t.reorganizeSeating}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                ${t.reorganizeDesc}
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">Move →</span>
           </button>
 
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
@@ -110,6 +120,11 @@ export class Dialogs {
       this.app.showLandingView();
     });
 
+    modal.querySelector('#menu-opt-reorg-seating').addEventListener('click', () => {
+      closeModal();
+      this.showReorganizeSeatingModal();
+    });
+
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {
       closeModal();
       this.showSavedGamesModal();
@@ -144,6 +159,130 @@ export class Dialogs {
       closeModal();
       this.showExportModal();
     });
+  }
+
+  showReorganizeSeatingModal(initialSelectedPlayerIdx = null) {
+    const t = this.app.i18n;
+    const session = this.app.session;
+    let selectedIdx = initialSelectedPlayerIdx !== null ? initialSelectedPlayerIdx : null;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+
+    const renderContent = () => {
+      const isDealer = (idx) => session.currentDealerIndex === idx;
+
+      modal.innerHTML = `
+        <div class="modal-box" style="max-width: 460px;">
+          <div class="modal-head">
+            <div>
+              <h3 style="font-size: 1.1rem; font-weight: 700;">${t.reorganizeTitle}</h3>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">${t.reorganizeSub}</div>
+            </div>
+            <button class="btn-pill modal-close">✕</button>
+          </div>
+
+          <!-- Circular Seating Table 2x2 Grid -->
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1rem 0.75rem; margin: 0.75rem 0; position: relative;">
+            
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #a5b4fc; text-align: center; pointer-events: none;">
+              TABLE<br>↻
+            </div>
+
+            <div class="leaderboard-grid" style="margin-bottom: 0;">
+              ${session.players.map((p, idx) => {
+                const isSel = selectedIdx === idx;
+                const isDeal = isDealer(idx);
+
+                return `
+                  <div class="player-card seat-swap-card ${isSel ? 'seat-selected' : ''} ${isDeal ? 'is-dealer' : ''}" 
+                       data-seat-idx="${idx}" 
+                       style="cursor: pointer; transition: all 0.18s ease; ${isSel ? 'border: 2px solid #fbbf24; background: rgba(251, 191, 36, 0.15); transform: scale(1.04);' : ''}">
+                    ${isDeal ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
+                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; margin-bottom: 2px;">
+                      ${t.seatNumber} #${idx + 1}
+                    </div>
+                    <div class="player-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+                      <span class="player-dot" style="background: ${p.color}; width: 9px; height: 9px;"></span>
+                      <span>${p.name}</span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: ${isSel ? '#fde68a' : 'var(--accent-primary)'}; font-weight: 700; margin-top: 4px;">
+                      ${isSel ? '✓ Selected' : 'Tap to Swap'}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Swap Hint Banner -->
+          <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.75rem; text-align: center; color: #c7d2fe; margin-bottom: 0.85rem;">
+            ${selectedIdx !== null ? `${t.tapToSwap} <strong>${session.players[selectedIdx].name}</strong>` : t.swapSeatsHint}
+          </div>
+
+          <!-- 1-Tap Table Rotation Controls -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.85rem;">
+            <button class="btn-outline" id="btn-rot-ccw" style="font-size: 0.78rem; min-height: 38px;">
+              ${t.rotateCounterClockwise}
+            </button>
+            <button class="btn-outline" id="btn-rot-cw" style="font-size: 0.78rem; min-height: 38px;">
+              ${t.rotateClockwise}
+            </button>
+          </div>
+
+          <button class="btn-block modal-close">
+            ${t.doneSeating}
+          </button>
+        </div>
+      `;
+
+      modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', () => modal.remove()));
+
+      modal.querySelectorAll('.seat-swap-card').forEach(card => {
+        card.addEventListener('click', () => {
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch(e) {}
+          }
+          const idx = parseInt(card.dataset.seatIdx, 10);
+          if (selectedIdx === null) {
+            selectedIdx = idx;
+            renderContent();
+          } else if (selectedIdx === idx) {
+            selectedIdx = null;
+            renderContent();
+          } else {
+            session.swapPlayers(selectedIdx, idx);
+            selectedIdx = null;
+            renderContent();
+          }
+        });
+      });
+
+      const btnCw = modal.querySelector('#btn-rot-cw');
+      if (btnCw) {
+        btnCw.addEventListener('click', () => {
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch(e) {}
+          }
+          session.rotateSeatingClockwise();
+          renderContent();
+        });
+      }
+
+      const btnCcw = modal.querySelector('#btn-rot-ccw');
+      if (btnCcw) {
+        btnCcw.addEventListener('click', () => {
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch(e) {}
+          }
+          session.rotateSeatingCounterClockwise();
+          renderContent();
+        });
+      }
+    };
+
+    renderContent();
+    document.body.appendChild(modal);
   }
 
   showSavedGamesModal() {
@@ -476,8 +615,7 @@ export class Dialogs {
         </div>
         <select class="select-field" id="new-game-rule-select">
           ${Object.values(RULE_PRESETS).map(r => `
-            <option value="${r.id}" ${session.rules.id === r.id ? 'selected' : ''}>
-              ${isHe ? r.nameHe : r.nameEn}
+            <option value="${r.id}" ${isHe ? r.nameHe : r.nameEn}
             </option>
           `).join('')}
         </select>

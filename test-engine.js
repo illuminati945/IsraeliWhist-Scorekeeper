@@ -79,3 +79,36 @@ assert(validateTricksSum([4, 3, 2, 5]) === false, 'Tricks sum [4, 3, 2, 5] = 14 
 
 console.log(`\nResults: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);
+
+import { GameSession } from './src/js/engine/game-state.js';
+
+console.log('--- Testing Seating Reorganization ---');
+const sess = new GameSession({
+  players: [
+    { name: 'Alice', color: '#6366f1' },
+    { name: 'Bob', color: '#10b981' },
+    { name: 'Charlie', color: '#f59e0b' },
+    { name: 'Diana', color: '#ec4899' }
+  ],
+  currentDealerIndex: 1
+});
+
+// Swap Alice (0) and Charlie (2)
+sess.swapPlayers(0, 2);
+assert(sess.players[0].name === 'Charlie', 'Alice & Charlie swapped seat 0');
+assert(sess.players[2].name === 'Alice', 'Alice & Charlie swapped seat 2');
+assert(sess.currentDealerIndex === 1, 'Bob remains dealer at index 1');
+
+// Swap Bob (dealer at 1) and Diana (3)
+sess.swapPlayers(1, 3);
+assert(sess.players[1].name === 'Diana', 'Diana is now at seat 1');
+assert(sess.players[3].name === 'Bob', 'Bob is now at seat 3');
+assert(sess.currentDealerIndex === 3, 'Dealer index followed Bob to seat 3');
+
+// Rotate clockwise
+// Order was: [0: Charlie, 1: Diana, 2: Alice, 3: Bob]
+// After clockwise: [0: Bob, 1: Charlie, 2: Diana, 3: Alice]
+sess.rotateSeatingClockwise();
+assert(sess.players[0].name === 'Bob', 'Clockwise rotation puts Bob at 0');
+assert(sess.players[1].name === 'Charlie', 'Clockwise rotation puts Charlie at 1');
+assert(sess.currentDealerIndex === 0, 'Dealer followed Bob to seat 0');

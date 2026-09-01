@@ -144,6 +144,9 @@ class IsraeliWhistApp {
         this.roundView.render();
         this.scoreboard.render();
         this.chartView.render();
+      },
+      (playerIdx) => {
+        this.dialogs.showReorganizeSeatingModal(playerIdx);
       }
     );
 

@@ -1,15 +1,16 @@
 /**
- * Sleek Leaderboard & Score History Table with i18n
+ * Sleek Leaderboard & Score History Table with Long-Press Seating Reorganization
  */
 import { SUITS } from '../engine/whist-rules.js';
 
 export class Scoreboard {
-  constructor(session, leaderboardContainer, historyContainer, i18n, onUndo) {
+  constructor(session, leaderboardContainer, historyContainer, i18n, onUndo, onReorganizeSeating) {
     this.session = session;
     this.leaderboardContainer = leaderboardContainer;
     this.historyContainer = historyContainer;
     this.i18n = i18n;
     this.onUndo = onUndo;
+    this.onReorganizeSeating = onReorganizeSeating;
     this.render();
   }
 
@@ -45,7 +46,9 @@ export class Scoreboard {
           const isDealer = (idx === currentDealer);
 
           return `
-            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" data-player-idx="${idx}">
+            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" 
+                 data-player-idx="${idx}" 
+                 title="Long press to reorganize seating">
               ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
               <div class="player-title">
                 <span class="player-dot" style="background: ${p.color};"></span>
@@ -64,6 +67,53 @@ export class Scoreboard {
     `;
 
     this.leaderboardContainer.innerHTML = html;
+    this.bindLeaderboardEvents();
+  }
+
+  bindLeaderboardEvents() {
+    if (!this.leaderboardContainer) return;
+
+    this.leaderboardContainer.querySelectorAll('.player-card').forEach(card => {
+      let pressTimer = null;
+      let startX = 0;
+      let startY = 0;
+
+      const cancelPress = () => {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+        card.classList.remove('card-pressing');
+      };
+
+      const startPress = (e) => {
+        cancelPress();
+        startX = e.clientX || 0;
+        startY = e.clientY || 0;
+        card.classList.add('card-pressing');
+
+        pressTimer = setTimeout(() => {
+          card.classList.remove('card-pressing');
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate([30, 50, 30]); } catch (err) {}
+          }
+          const playerIdx = parseInt(card.dataset.playerIdx, 10);
+          if (this.onReorganizeSeating) {
+            this.onReorganizeSeating(playerIdx);
+          }
+        }, 450);
+      };
+
+      card.addEventListener('pointerdown', startPress);
+      card.addEventListener('pointerup', cancelPress);
+      card.addEventListener('pointercancel', cancelPress);
+      card.addEventListener('pointerleave', cancelPress);
+      card.addEventListener('pointermove', (e) => {
+        if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
+          cancelPress();
+        }
+      });
+    });
   }
 
   renderHistoryTable() {
