@@ -258,7 +258,7 @@ export class RoundView {
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
                   <span class="input-row-sub">
-                    (${t.bid}: <strong>${bet !== null ? bet : '—'}</strong>)
+                    (${t.bid || 'Bid'}: <strong>${bet !== null ? bet : '—'}</strong>)
                   </span>
                   ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">${t.exact}</span>` : ''}
                 </div>

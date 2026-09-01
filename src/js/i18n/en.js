@@ -27,6 +27,8 @@ export const EN = {
   lead: 'Lead',
   trumpMaker: 'Trump Maker',
   lastBidder: 'Last Bidder',
+  bid: 'Bid',
+  tricks: 'Tricks',
   stageTrump: '1. Trump Auction',
   stageBets: '1. Player Bids',
   stageBetsFull: '2. Player Bids',
