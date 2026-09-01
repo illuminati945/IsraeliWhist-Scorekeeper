@@ -140,7 +140,6 @@ export class Scoreboard {
         cards.forEach((c, originalSlot) => {
           if (originalSlot === fromSlotIndex) return;
 
-          c.classList.add('is-shifting');
           const targetSlot = order.indexOf(originalSlot);
           const originRect = initialSlotRects[originalSlot];
           const targetRect = initialSlotRects[targetSlot];
@@ -148,14 +147,16 @@ export class Scoreboard {
           if (originRect && targetRect) {
             const dx = targetRect.left - originRect.left;
             const dy = targetRect.top - originRect.top;
-            c.style.transform = `translate(${dx}px, ${dy}px)`;
+            c.style.setProperty('--tx', `${dx}px`);
+            c.style.setProperty('--ty', `${dy}px`);
           }
         });
       };
 
       const resetCardShifts = () => {
         cards.forEach(c => {
-          c.classList.remove('is-shifting');
+          c.style.removeProperty('--tx');
+          c.style.removeProperty('--ty');
           c.style.transform = '';
           c.style.zIndex = '';
         });

@@ -23,6 +23,12 @@
   "simplifiedMode": false,
   "players": [
     {
+      "id": "p1",
+      "name": "אביגיל",
+      "color": "#10b981",
+      "initial": "2"
+    },
+    {
       "id": "p0",
       "name": "איתי",
       "color": "#6366f1",
@@ -39,21 +45,15 @@
       "name": "יותם",
       "color": "#ec4899",
       "initial": "4"
-    },
-    {
-      "id": "p1",
-      "name": "אביגיל",
-      "color": "#10b981",
-      "initial": "2"
     }
   ],
-  "currentDealerIndex": 3,
+  "currentDealerIndex": 0,
   "roundNumber": 2,
   "completedRounds": [
     {
       "roundNumber": 1,
-      "dealerIndex": 0,
-      "leadBidderIndex": 3,
+      "dealerIndex": 1,
+      "leadBidderIndex": 0,
       "stage": "TRICKS",
       "trump": {
         "winnerIndex": null,
@@ -75,15 +75,24 @@
       ],
       "scores": [
         26,
+        26,
         19,
-        -10,
-        26
+        -10
       ],
       "roundTotalBets": 12,
       "bettingMode": "UNDER",
       "timestamp": "2026-09-01T05:51:05.143Z",
       "simplified": true,
       "results": [
+        {
+          "playerIndex": 1,
+          "bid": 4,
+          "tricks": 4,
+          "score": 26,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
+        },
         {
           "playerIndex": 0,
           "bid": 4,
@@ -94,16 +103,7 @@
           "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
-          "playerIndex": 3,
-          "bid": 4,
-          "tricks": 4,
-          "score": 26,
-          "made": true,
-          "delta": 0,
-          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
-        },
-        {
-          "playerIndex": 1,
+          "playerIndex": 2,
           "bid": 3,
           "tricks": 3,
           "score": 19,
@@ -112,7 +112,7 @@
           "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
         },
         {
-          "playerIndex": 2,
+          "playerIndex": 3,
           "bid": 1,
           "tricks": 2,
           "score": -10,
@@ -123,17 +123,17 @@
       ],
       "cumulativeScores": [
         26,
+        26,
         19,
-        -10,
-        26
+        -10
       ],
       "completedAt": "2026-09-01T06:16:50.041Z"
     }
   ],
   "activeRound": {
     "roundNumber": 2,
-    "dealerIndex": 3,
-    "leadBidderIndex": 0,
+    "dealerIndex": 0,
+    "leadBidderIndex": 1,
     "stage": "TRICKS",
     "trump": {
       "winnerIndex": null,
@@ -143,14 +143,14 @@
     },
     "bets": [
       3,
-      2,
-      4,
-      3
-    ],
-    "tricks": [
       3,
       2,
+      4
+    ],
+    "tricks": [
       4,
+      3,
+      2,
       4
     ],
     "scores": [
@@ -164,5 +164,5 @@
     "timestamp": "2026-09-01T06:16:50.041Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-01T08:04:51.908Z"
+  "updatedAt": "2026-09-01T08:06:47.178Z"
 }
