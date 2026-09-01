@@ -1,5 +1,5 @@
 /**
- * Mobile-First Sleek Round Wizard (Simplified & Full Modes)
+ * Mobile-First Sleek Round Wizard (Simplified & Full Modes) with i18n
  */
 import { SUITS, calculatePlayerScore, validateBetsHook, validateTricksSum } from '../engine/whist-rules.js';
 
@@ -30,16 +30,17 @@ export class RoundView {
 
   render() {
     if (!this.container) return;
+    const t = this.i18n;
     const round = this.session.activeRound;
     const stage = round.stage;
     const isSimplified = this.session.simplifiedMode;
 
     let stageLabel = '';
     if (isSimplified) {
-      stageLabel = stage === 'BETS' ? '1. Player Bids' : '2. Actual Tricks';
+      stageLabel = stage === 'BETS' ? t.stageBets : t.stageTricks;
     } else {
-      stageLabel = stage === 'TRUMP' ? '1. Trump Auction' : 
-                   stage === 'BETS' ? '2. Player Bids' : '3. Actual Tricks';
+      stageLabel = stage === 'TRUMP' ? t.stageTrump : 
+                   stage === 'BETS' ? t.stageBetsFull : t.stageTricksFull;
     }
 
     let html = `
@@ -47,12 +48,12 @@ export class RoundView {
         <div class="stage-header">
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <div class="stage-title">${stageLabel}</div>
-            <button class="btn-pill" id="btn-toggle-simplified" title="Tap to toggle Simplified vs Full mode" style="font-size: 0.72rem; height: 26px; padding: 0 8px; background: ${isSimplified ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; border-color: ${isSimplified ? 'rgba(16, 185, 129, 0.4)' : 'rgba(99, 102, 241, 0.4)'}; color: ${isSimplified ? '#a7f3d0' : '#c7d2fe'};">
-              ${isSimplified ? '⚡ Simplified' : 'Full Trump'}
+            <button class="btn-pill" id="btn-toggle-simplified" title="Toggle Mode" style="font-size: 0.72rem; height: 26px; padding: 0 8px; background: ${isSimplified ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; border-color: ${isSimplified ? 'rgba(16, 185, 129, 0.4)' : 'rgba(99, 102, 241, 0.4)'}; color: ${isSimplified ? '#a7f3d0' : '#c7d2fe'};">
+              ${isSimplified ? t.simplified : t.fullTrump}
             </button>
           </div>
           <div class="round-pill">
-            Deal #${this.session.roundNumber}
+            ${t.deal} #${this.session.roundNumber}
           </div>
         </div>
     `;
@@ -71,18 +72,20 @@ export class RoundView {
   }
 
   renderTrumpStage(round) {
+    const t = this.i18n;
+    const isHe = t.lang === 'he';
     const dealer = this.session.players[round.dealerIndex];
     const leadBidder = this.session.players[round.leadBidderIndex];
 
     return `
       <div>
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.85rem; display: flex; justify-content: space-between;">
-          <span>Dealer: <strong>${dealer.name}</strong></span>
-          <span>Lead: <strong>${leadBidder.name}</strong></span>
+          <span>${t.dealer}: <strong>${dealer.name}</strong></span>
+          <span>${t.lead}: <strong>${leadBidder.name}</strong></span>
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          1. Auction Winner
+          ${t.auctionWinner}
         </div>
 
         <div class="trump-grid-2x2">
@@ -97,20 +100,20 @@ export class RoundView {
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          2. Denomination / Suit
+          ${t.denomination}
         </div>
 
         <div class="suits-row">
           ${SUITS.map(s => `
             <div class="suit-option ${round.trump.suitId === s.id && !round.trump.isPasRound ? 'active' : ''}" data-suit-id="${s.id}">
               <span class="suit-symbol" style="color: ${round.trump.suitId === s.id ? '#ffffff' : s.color}">${s.symbol}</span>
-              <span class="suit-label">${s.nameEn}</span>
+              <span class="suit-label">${isHe ? s.nameHe : s.nameEn}</span>
             </div>
           `).join('')}
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          3. Winning Target (Tricks)
+          ${t.winningTarget}
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem; margin-bottom: 1rem;">
@@ -124,18 +127,19 @@ export class RoundView {
         <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
             <input type="checkbox" id="chk-pas-round" ${round.trump.isPasRound ? 'checked' : ''} style="width: 18px; height: 18px;">
-            <span style="font-size: 0.85rem; font-weight: 600;">All 4 Passed (Pas Round)</span>
+            <span style="font-size: 0.85rem; font-weight: 600;">${t.pasRound}</span>
           </label>
         </div>
 
         <button class="btn-block" id="btn-confirm-trump" ${round.trump.winnerIndex === null && !round.trump.isPasRound ? 'disabled' : ''}>
-          Confirm Trump & Enter Bids →
+          ${t.confirmTrump}
         </button>
       </div>
     `;
   }
 
   renderBetsStage(round, isSimplified) {
+    const t = this.i18n;
     const lastBidderIdx = this.session.getLastBidderIndex();
     const lastBidderPlayer = lastBidderIdx !== null ? this.session.players[lastBidderIdx] : null;
     const forbidden = this.session.getForbiddenBetForLastBidder();
@@ -148,15 +152,15 @@ export class RoundView {
     let hookMessage = '';
     if (isSimplified) {
       if (allFilled && sum === 13) {
-        hookMessage = '⚠️ Total equals 13 (Hook Violation). Total bids must be ≠ 13 to proceed.';
+        hookMessage = t.hookViolation;
       } else {
-        hookMessage = `Total Bids: <strong>${sum}</strong> (${sum > 13 ? 'Over' : sum < 13 ? 'Under' : 'Equal 13'})`;
+        hookMessage = `${t.totalBids}: <strong>${sum}</strong> (${sum > 13 ? t.over : sum < 13 ? t.under : '13'})`;
       }
     } else {
       if (forbidden !== null && lastBidderPlayer) {
-        hookMessage = `Total: <strong>${sum}</strong> • Last Bidder (${lastBidderPlayer.name}) cannot bid <strong>${forbidden}</strong>`;
+        hookMessage = `${t.totalBids}: <strong>${sum}</strong> • ${t.lastBidder} (${lastBidderPlayer.name}) ${t.lastBidderCannotBid} <strong>${forbidden}</strong>`;
       } else {
-        hookMessage = `Total: <strong>${sum}</strong> (${hook.status === 'OVER' ? 'Over' : hook.status === 'UNDER' ? 'Under' : 'Equal 13'})`;
+        hookMessage = `${t.totalBids}: <strong>${sum}</strong> (${hook.status === 'OVER' ? t.over : hook.status === 'UNDER' ? t.under : '13'})`;
       }
     }
 
@@ -164,11 +168,11 @@ export class RoundView {
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
           <div style="font-size: 0.82rem; color: var(--text-secondary);">
-            ${isSimplified ? `Dealer: <strong>${dealer.name}</strong>` : 
-              `Trump Maker: <strong>${trumpWinner ? trumpWinner.name : '—'}</strong> (Last: <strong>${lastBidderPlayer ? lastBidderPlayer.name : ''}</strong>)`}
+            ${isSimplified ? `${t.dealer}: <strong>${dealer.name}</strong>` : 
+              `${t.trumpMaker}: <strong>${trumpWinner ? trumpWinner.name : '—'}</strong> (${t.lastBidder}: <strong>${lastBidderPlayer ? lastBidderPlayer.name : ''}</strong>)`}
           </div>
           ${!isSimplified ? `
-            <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem; min-height: 26px; padding: 2px 8px;">Edit Trump</button>
+            <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem; min-height: 26px; padding: 2px 8px;">${t.editTrump}</button>
           ` : ''}
         </div>
 
@@ -193,9 +197,9 @@ export class RoundView {
                 <div class="input-row-name">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
-                  ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">TRUMP MAKER</span>` : ''}
-                  ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">LAST BIDDER</span>` : ''}
-                  ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">DEALER</span>` : ''}
+                  ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${t.trumpMaker.toUpperCase()}</span>` : ''}
+                  ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">${t.lastBidder.toUpperCase()}</span>` : ''}
+                  ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">${t.dealer.toUpperCase()}</span>` : ''}
                 </div>
                 
                 <div class="stepper">
@@ -218,13 +222,14 @@ export class RoundView {
         }).join('')}
 
         <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || !allFilled ? 'disabled' : ''} style="margin-top: 0.5rem;">
-          Enter Actual Tricks →
+          ${t.enterTricksBtn}
         </button>
       </div>
     `;
   }
 
   renderTricksStage(round, isSimplified) {
+    const t = this.i18n;
     const tricks = round.tricks;
     const sumTricks = tricks.reduce((a, b) => a + (typeof b === 'number' && !isNaN(b) ? b : 0), 0);
     const isValidSum = (sumTricks === 13 && tricks.every(t => typeof t === 'number' && !isNaN(t)));
@@ -234,10 +239,10 @@ export class RoundView {
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
           <div style="font-size: 0.82rem; font-weight: 700; color: ${isValidSum ? 'var(--success)' : 'var(--warning)'};">
-            ${isValidSum ? '✓ 13 Tricks Total' : `Remaining to Assign: ${remaining}`}
+            ${isValidSum ? t.tricksValid : `${t.remainingToAssign}: ${remaining}`}
           </div>
           <button class="btn-pill" id="btn-auto-fill-tricks" style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); color: #c7d2fe;">
-            ⚡ Auto-Fill Bids
+            ${t.autoFillBids}
           </button>
         </div>
 
@@ -253,9 +258,9 @@ export class RoundView {
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
                   <span class="input-row-sub">
-                    (Bid: <strong>${bet !== null ? bet : '—'}</strong>)
+                    (${t.bid}: <strong>${bet !== null ? bet : '—'}</strong>)
                   </span>
-                  ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">✓ Exact</span>` : ''}
+                  ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">${t.exact}</span>` : ''}
                 </div>
 
                 <div class="stepper">
@@ -281,10 +286,10 @@ export class RoundView {
 
         <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
           <button class="btn-outline" id="btn-back-to-bets" style="flex: 1;">
-            ← Edit Bids
+            ${t.editBids}
           </button>
           <button class="btn-block" id="btn-commit-round" style="flex: 2;" ${!isValidSum ? 'disabled' : ''}>
-            Calculate & Next Deal ✓
+            ${t.calculateNextDeal}
           </button>
         </div>
       </div>
@@ -292,13 +297,14 @@ export class RoundView {
   }
 
   renderScorePreview(round) {
+    const t = this.i18n;
     const totalBets = round.bets.reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
     const isPas = round.trump ? round.trump.isPasRound : false;
 
     return `
       <div class="breakdown-box">
         <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Round Score Calculation
+          ${t.roundScoreCalc}
         </div>
         ${this.session.players.map((p, idx) => {
           const calc = calculatePlayerScore(

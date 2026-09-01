@@ -1,5 +1,5 @@
 /**
- * Modals & Dialogs (Menu, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export)
+ * Modals & Dialogs (Menu, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export) with i18n
  */
 import { RULE_PRESETS } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
@@ -12,6 +12,8 @@ export class Dialogs {
   }
 
   showMenuModal() {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
     const isSimplified = this.app.session.simplifiedMode;
     const recentGames = ArchiveManager.getRecentGames();
 
@@ -20,21 +22,31 @@ export class Dialogs {
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.1rem; font-weight: 700;">Menu & Settings</h3>
+          <h3 style="font-size: 1.1rem; font-weight: 700;">${t.menuTitle}</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         <div class="menu-list">
+          <button class="menu-item-btn" id="menu-opt-toggle-lang" style="background: rgba(251, 191, 36, 0.12); border-color: rgba(251, 191, 36, 0.35);">
+            <div>
+              <div style="font-weight: 700; color: #fde68a;">🌐 ${isHe ? 'שפה: עברית (English)' : 'Language: English (עברית)'}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                ${isHe ? 'לחץ כאן כדי להחליף לאנגלית' : 'Tap to switch to Hebrew'}
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">${t.switchLang} ⇄</span>
+          </button>
+
           <button class="menu-item-btn" id="menu-opt-home-lobby">
-            <span>🏠 Return to Lobby / Home</span>
+            <span>${t.returnToLobby}</span>
             <span>→</span>
           </button>
 
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
             <div>
-              <div style="font-weight: 700; color: #a7f3d0;">📂 Saved Games (${recentGames.length}/10)</div>
+              <div style="font-weight: 700; color: #a7f3d0;">${t.savedGames} (${recentGames.length}/10)</div>
               <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                Resume previous matches with date & scores
+                ${t.savedGamesDesc}
               </div>
             </div>
             <span style="font-size: 0.8rem; font-weight: 700; color: var(--success);">Open →</span>
@@ -42,9 +54,9 @@ export class Dialogs {
 
           <button class="menu-item-btn" id="menu-opt-edit-players" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);">
             <div>
-              <div style="font-weight: 700;">✏️ Edit Players & Settings</div>
+              <div style="font-weight: 700;">${t.editPlayersSettings}</div>
               <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                Rename players, change dealer, or adjust rules
+                ${t.editPlayersDesc}
               </div>
             </div>
             <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary);">Edit →</span>
@@ -52,34 +64,34 @@ export class Dialogs {
 
           <button class="menu-item-btn" id="menu-opt-toggle-mode">
             <div>
-              <div style="font-weight: 700;">Mode: ${isSimplified ? '⚡ Simplified (Quick)' : '🎴 Full Trump Auction'}</div>
+              <div style="font-weight: 700;">${t.modeToggleTitle}: ${isSimplified ? t.simplified : t.fullTrump}</div>
               <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                ${isSimplified ? 'Direct Bids & Tricks (Tap to switch to Full)' : 'Includes Trump winner & suits (Tap to switch)'}
+                ${isSimplified ? (isHe ? 'הכרזות ולקיחות ישירות' : 'Direct Bids & Tricks') : (isHe ? 'כולל קביעת שליט וסדרות' : 'Includes Trump & Suits')}
               </div>
             </div>
             <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary);">Switch ⇄</span>
           </button>
 
           <button class="menu-item-btn" id="menu-opt-share">
-            <span>📲 Share Link & QR Code</span>
+            <span>📲 ${t.shareTitle}</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-stats">
-            <span>📊 Player Stats & Accuracy</span>
+            <span>${t.statsAccuracy}</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-export">
-            <span>📤 Export / Share Text</span>
+            <span>${t.exportShare}</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-new-game" style="border-color: rgba(239, 68, 68, 0.3); color: #fca5a5;">
-            <span>🎲 Start New Game</span>
+            <span>${t.startNewGameMenu}</span>
             <span>→</span>
           </button>
         </div>
 
         <button class="btn-block modal-close" style="margin-top: 0.5rem;">
-          Close
+          ${t.close}
         </button>
       </div>
     `;
@@ -87,6 +99,11 @@ export class Dialogs {
     document.body.appendChild(modal);
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelector('#menu-opt-toggle-lang').addEventListener('click', () => {
+      closeModal();
+      this.app.setLanguage(isHe ? 'en' : 'he');
+    });
 
     modal.querySelector('#menu-opt-home-lobby').addEventListener('click', () => {
       closeModal();
@@ -130,6 +147,8 @@ export class Dialogs {
   }
 
   showSavedGamesModal() {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
     const recentGames = ArchiveManager.getRecentGames();
 
     const modal = document.createElement('div');
@@ -138,16 +157,16 @@ export class Dialogs {
       <div class="modal-box" style="max-width: 480px;">
         <div class="modal-head">
           <div>
-            <h3 style="font-size: 1.1rem; font-weight: 700;">Saved Games (Recent 10)</h3>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">Quickly resume any previous match</div>
+            <h3 style="font-size: 1.1rem; font-weight: 700;">${t.savedGames} (10)</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${t.savedGamesDesc}</div>
           </div>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         ${recentGames.length === 0 ? `
           <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
-            <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">No Saved Games Yet</div>
-            <div style="font-size: 0.8rem;">Completed and active games will automatically appear here.</div>
+            <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">${t.noSavedGames}</div>
+            <div style="font-size: 0.8rem;">${t.noSavedGamesSub}</div>
           </div>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1rem; max-height: 55vh; overflow-y: auto;">
@@ -161,10 +180,10 @@ export class Dialogs {
                     <div style="display: flex; align-items: center; gap: 0.4rem;">
                       <span class="room-pill" style="font-size: 0.7rem;">${g.roomId}</span>
                       <span style="font-size: 0.72rem; color: var(--text-secondary);">${timeDisplay}</span>
-                      ${isCurrent ? `<span style="font-size: 0.65rem; background: var(--accent-primary); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 800;">ACTIVE</span>` : ''}
+                      ${isCurrent ? `<span style="font-size: 0.65rem; background: var(--accent-primary); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${t.currentGame}</span>` : ''}
                     </div>
                     <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">
-                      ${g.completedRoundsCount} Deals
+                      ${g.completedRoundsCount} ${t.deals}
                     </span>
                   </div>
 
@@ -180,10 +199,10 @@ export class Dialogs {
 
                   <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
                     <button class="btn-pill btn-delete-game" data-room-id="${g.roomId}" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); font-size: 0.72rem;">
-                      Delete
+                      ${t.delete}
                     </button>
                     <button class="btn-pill btn-resume-game ${isCurrent ? '' : 'btn-share'}" data-game-idx="${idx}" style="font-size: 0.75rem; padding: 0 10px;">
-                      ${isCurrent ? 'Current Game' : 'Resume Deal →'}
+                      ${isCurrent ? t.currentGame : t.resumeMatch}
                     </button>
                   </div>
                 </div>
@@ -193,7 +212,7 @@ export class Dialogs {
         `}
 
         <button class="btn-block modal-close">
-          Done
+          ${t.done}
         </button>
       </div>
     `;
@@ -217,7 +236,7 @@ export class Dialogs {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const roomId = btn.dataset.roomId;
-        if (confirm(`Remove room ${roomId} from saved games?`)) {
+        if (confirm(`${t.deleteConfirm} (${roomId})`)) {
           ArchiveManager.deleteGame(roomId);
           closeModal();
           this.showSavedGamesModal();
@@ -227,6 +246,8 @@ export class Dialogs {
   }
 
   showEditSettingsModal(focusPlayerIndex = null) {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
     const session = this.app.session;
 
     const modal = document.createElement('div');
@@ -234,48 +255,48 @@ export class Dialogs {
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.1rem; font-weight: 700;">Edit Players & Settings</h3>
+          <h3 style="font-size: 1.1rem; font-weight: 700;">${t.editTitle}</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-          Player Names
+          ${t.playerNames}
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span class="player-dot" style="background: ${p.color};"></span>
-              <input type="text" class="input-field edit-player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="Player ${idx + 1}" style="margin-bottom:0;" />
+              <input type="text" class="input-field edit-player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`}" style="margin-bottom:0;" />
             </div>
           `).join('')}
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Current Dealer
+          ${t.currentDealer}
         </div>
         <select class="select-field" id="edit-dealer-select" style="margin-bottom: 0.85rem;">
           ${session.players.map((p, idx) => `
             <option value="${idx}" ${session.currentDealerIndex === idx ? 'selected' : ''}>
-              ${p.name} (Player ${idx + 1})
+              ${p.name} (${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`})
             </option>
           `).join('')}
         </select>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Game Mode
+          ${t.gameMode}
         </div>
         <select class="select-field" id="edit-mode-select" style="margin-bottom: 0.85rem;">
-          <option value="SIMPLIFIED" ${session.simplifiedMode ? 'selected' : ''}>⚡ Simplified (Direct Bids & Tricks)</option>
-          <option value="FULL" ${!session.simplifiedMode ? 'selected' : ''}>🎴 Full (With Trump Auction & Suits)</option>
+          <option value="SIMPLIFIED" ${session.simplifiedMode ? 'selected' : ''}>${t.simplifiedOpt}</option>
+          <option value="FULL" ${!session.simplifiedMode ? 'selected' : ''}>${t.fullOpt}</option>
         </select>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Scoring Rules Preset
+          ${t.scoringRules}
         </div>
         <select class="select-field" id="edit-rule-select" style="margin-bottom: 0.85rem;">
           ${Object.values(RULE_PRESETS).map(r => `
             <option value="${r.id}" ${session.rules.id === r.id ? 'selected' : ''}>
-              ${r.nameEn}
+              ${isHe ? r.nameHe : r.nameEn}
             </option>
           `).join('')}
         </select>
@@ -283,13 +304,13 @@ export class Dialogs {
         <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.2); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
             <input type="checkbox" id="chk-edit-hook" ${session.rules.enforceHookRule ? 'checked' : ''} style="width: 16px; height: 16px;">
-            <span style="font-size: 0.82rem; font-weight: 600;">Enforce Hook Rule (Total Bets ≠ 13)</span>
+            <span style="font-size: 0.82rem; font-weight: 600;">${t.enforceHook}</span>
           </label>
         </div>
 
         <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
-          <button class="btn-outline modal-close" style="flex: 1;">Cancel</button>
-          <button class="btn-block" id="btn-save-settings" style="flex: 2;">Save Changes ✓</button>
+          <button class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+          <button class="btn-block" id="btn-save-settings" style="flex: 2;">${t.saveChanges}</button>
         </div>
       </div>
     `;
@@ -338,6 +359,7 @@ export class Dialogs {
   }
 
   showShareModal() {
+    const t = this.app.i18n;
     const sync = this.app.syncManager;
     const shareUrl = sync ? sync.getShareUrl() : window.location.href;
     const roomId = sync ? sync.roomId : 'Local';
@@ -349,8 +371,8 @@ export class Dialogs {
       <div class="modal-box">
         <div class="modal-head">
           <div>
-            <h3 style="font-size: 1.05rem; font-weight: 700;">Share Game Session</h3>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">Real-time live multi-device sync</div>
+            <h3 style="font-size: 1.05rem; font-weight: 700;">${t.shareTitle}</h3>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${t.shareSub}</div>
           </div>
           <button class="btn-pill modal-close">✕</button>
         </div>
@@ -360,27 +382,27 @@ export class Dialogs {
             <img src="${qrUrl}" alt="Game QR Code" width="150" height="150" style="display: block;" />
           </div>
           <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">
-            Scan QR code with phone camera to join
+            ${t.scanQr}
           </div>
         </div>
 
         <div style="margin-bottom: 0.85rem;">
           <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.3rem;">
-            Direct Shareable URL
+            ${t.shareUrlLabel}
           </label>
           <div style="display: flex; gap: 0.4rem;">
             <input type="text" class="input-field" id="txt-share-url" value="${shareUrl}" readonly style="margin-bottom: 0; font-family: monospace; font-size: 0.78rem;" />
-            <button class="btn-pill btn-share" id="btn-copy-url" style="height: 42px; padding: 0 12px;">Copy</button>
+            <button class="btn-pill btn-share" id="btn-copy-url" style="height: 42px; padding: 0 12px;">${t.copy}</button>
           </div>
         </div>
 
         <div style="display: flex; gap: 0.4rem; margin-top: 1rem;">
           ${navigator.share ? `
             <button class="btn-block" id="btn-native-share" style="flex: 1; background: #2563eb;">
-              Share (Mobile)
+              ${t.shareMobile}
             </button>
           ` : ''}
-          <button class="btn-outline modal-close" style="flex: 1;">Close</button>
+          <button class="btn-outline modal-close" style="flex: 1;">${t.close}</button>
         </div>
       </div>
     `;
@@ -392,16 +414,16 @@ export class Dialogs {
     modal.querySelector('#btn-copy-url').addEventListener('click', () => {
       navigator.clipboard.writeText(shareUrl);
       const btn = modal.querySelector('#btn-copy-url');
-      btn.textContent = 'Copied!';
-      setTimeout(() => btn.textContent = 'Copy', 2000);
+      btn.textContent = t.copied;
+      setTimeout(() => btn.textContent = t.copy, 2000);
     });
 
     const btnNative = modal.querySelector('#btn-native-share');
     if (btnNative) {
       btnNative.addEventListener('click', () => {
         navigator.share({
-          title: 'Israeli Whist Scorekeeper',
-          text: `Join my live Israeli Whist session (Room: ${roomId})`,
+          title: t.appTitle,
+          text: `${t.shareTitle} (${roomId})`,
           url: shareUrl
         }).catch(() => {});
       });
@@ -409,6 +431,8 @@ export class Dialogs {
   }
 
   showNewGameModal() {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
     const session = this.app.session;
     const recentGames = ArchiveManager.getRecentGames();
 
@@ -417,22 +441,22 @@ export class Dialogs {
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.05rem; font-weight: 700;">New Game Session</h3>
+          <h3 style="font-size: 1.05rem; font-weight: 700;">${t.newGameTitle}</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          Configure players and start a fresh deal.
+          ${t.newGameSub}
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-          Player Names
+          ${t.playerNames}
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.85rem;">
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span class="player-dot" style="background: ${p.color};"></span>
-              <input type="text" class="input-field player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="Player ${idx + 1}" style="margin-bottom:0;" />
+              <input type="text" class="input-field player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`}" style="margin-bottom:0;" />
             </div>
           `).join('')}
         </div>
@@ -441,43 +465,43 @@ export class Dialogs {
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
             <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px;">
             <div>
-              <div style="font-size: 0.85rem; font-weight: 700;">⚡ Simplified Mode</div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary);">Direct Bids & Tricks (Skip trump & suit selection)</div>
+              <div style="font-size: 0.85rem; font-weight: 700;">${t.simplified}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">${isHe ? 'הכרזות ולקיחות ישירות (ללא מכרז שליט)' : 'Direct Bids & Tricks (Skip trump & suit selection)'}</div>
             </div>
           </label>
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Scoring Rules Preset
+          ${t.scoringRules}
         </div>
         <select class="select-field" id="new-game-rule-select">
           ${Object.values(RULE_PRESETS).map(r => `
             <option value="${r.id}" ${session.rules.id === r.id ? 'selected' : ''}>
-              ${r.nameEn}
+              ${isHe ? r.nameHe : r.nameEn}
             </option>
           `).join('')}
         </select>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Game Limit
+          ${t.gameLimit}
         </div>
         <select class="select-field" id="new-game-target-select">
-          <option value="UNLIMITED">Free Play (Unlimited Deals)</option>
-          <option value="13_ROUNDS">13 Deals</option>
-          <option value="16_ROUNDS">16 Deals (4 Deals per Player)</option>
-          <option value="TARGET_500">First to 500 Points</option>
-          <option value="TARGET_1000">First to 1000 Points</option>
+          <option value="UNLIMITED">${t.freePlay}</option>
+          <option value="13_ROUNDS">${t.deals13}</option>
+          <option value="16_ROUNDS">${t.deals16}</option>
+          <option value="TARGET_500">${t.target500}</option>
+          <option value="TARGET_1000">${t.target1000}</option>
         </select>
 
         <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
-          <button class="btn-outline modal-close" style="flex: 1;">Cancel</button>
-          <button class="btn-block" id="btn-start-new-game" style="flex: 1;">Start Game</button>
+          <button class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+          <button class="btn-block" id="btn-start-new-game" style="flex: 1;">${t.startGame}</button>
         </div>
 
         ${recentGames.length > 0 ? `
           <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); text-align: center;">
             <button class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0;">
-              📂 Or Resume from Saved Games (${recentGames.length}) →
+              ${t.orResume} (${recentGames.length}) →
             </button>
           </div>
         ` : ''}
@@ -527,6 +551,7 @@ export class Dialogs {
   }
 
   showStatsModal() {
+    const t = this.app.i18n;
     const session = this.app.session;
     const stats = calculateGameStatistics(session);
 
@@ -535,27 +560,27 @@ export class Dialogs {
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.05rem; font-weight: 700;">Game Statistics</h3>
+          <h3 style="font-size: 1.05rem; font-weight: 700;">${t.gameStats}</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-bottom: 0.85rem;">
           <div style="background: rgba(0,0,0,0.25); padding: 0.5rem; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-subtle);">
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Deals</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">${t.deals}</div>
             <div style="font-size: 1.15rem; font-weight: 800;">${stats.numRounds}</div>
           </div>
           <div style="background: rgba(0,0,0,0.25); padding: 0.5rem; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-subtle);">
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Over</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">${t.over}</div>
             <div style="font-size: 1.15rem; font-weight: 800; color: #a5b4fc;">${stats.overRoundsCount}</div>
           </div>
           <div style="background: rgba(0,0,0,0.25); padding: 0.5rem; border-radius: var(--radius-md); text-align: center; border: 1px solid var(--border-subtle);">
-            <div style="font-size: 0.68rem; color: var(--text-muted);">Under</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);">${t.under}</div>
             <div style="font-size: 1.15rem; font-weight: 800; color: #6ee7b7;">${stats.underRoundsCount}</div>
           </div>
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-          Player Accuracy
+          ${t.playerAccuracy}
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
@@ -569,16 +594,16 @@ export class Dialogs {
                 <span style="font-weight: 800; font-size: 0.82rem; color: ${ps.hitRate >= 50 ? 'var(--success)' : 'var(--warning)'};">${ps.hitRate}%</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted);">
-                <span>Made: ${ps.madeBidsCount}/${ps.totalBidsCount}</span>
-                <span>Avg Tricks: ${ps.avgTricksPerRound}</span>
-                <span>Pass: ${ps.passSuccess}/${ps.passAttempts}</span>
+                <span>${t.made}: ${ps.madeBidsCount}/${ps.totalBidsCount}</span>
+                <span>${t.avgTricksPerDeal}: ${ps.avgTricksPerRound}</span>
+                <span>${t.passSuccess}: ${ps.passSuccess}/${ps.passAttempts}</span>
               </div>
             </div>
           `).join('')}
         </div>
 
         <button class="btn-block modal-close">
-          Done
+          ${t.done}
         </button>
       </div>
     `;
@@ -589,6 +614,7 @@ export class Dialogs {
   }
 
   showExportModal() {
+    const t = this.app.i18n;
     const session = this.app.session;
     const jsonStr = session.exportJson();
     const rankings = session.getRankings();
@@ -604,7 +630,7 @@ export class Dialogs {
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.05rem; font-weight: 700;">Export / Share</h3>
+          <h3 style="font-size: 1.05rem; font-weight: 700;">${t.exportShare}</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
@@ -621,7 +647,7 @@ export class Dialogs {
         </div>
 
         <button class="btn-block modal-close">
-          Done
+          ${t.done}
         </button>
       </div>
     `;
@@ -632,12 +658,12 @@ export class Dialogs {
 
     modal.querySelector('#btn-copy-share').addEventListener('click', () => {
       navigator.clipboard.writeText(shareText);
-      alert('Summary copied to clipboard.');
+      alert(t.copied || 'Copied to clipboard.');
     });
 
     modal.querySelector('#btn-copy-json').addEventListener('click', () => {
       navigator.clipboard.writeText(jsonStr);
-      alert('JSON copied to clipboard.');
+      alert(t.copied || 'JSON copied to clipboard.');
     });
   }
 }

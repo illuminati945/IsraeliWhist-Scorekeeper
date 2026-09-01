@@ -1,5 +1,5 @@
 /**
- * Israeli Whist Scorekeeper - Main Entrypoint with Landing Page & Real-Time Sync
+ * Israeli Whist Scorekeeper - Main Entrypoint with Landing Page, Real-Time Sync & Bilingual i18n
  */
 import { GameSession } from './engine/game-state.js';
 import { SyncManager } from './engine/sync-manager.js';
@@ -10,16 +10,18 @@ import { Scoreboard } from './ui/scoreboard.js';
 import { ChartView } from './ui/chart-view.js';
 import { Dialogs } from './ui/dialogs.js';
 import { EN } from './i18n/en.js';
+import { HE } from './i18n/he.js';
 
 class IsraeliWhistApp {
   constructor() {
-    this.i18n = EN;
+    this.initLanguage();
     this.session = GameSession.loadFromStorage();
     
     this.initElements();
     this.initControllers();
     this.initSyncManager();
     this.bindGlobalEvents();
+    this.updateStaticI18n();
 
     // Check if URL specifies a game room or if we should show landing lobby
     const urlParams = new URLSearchParams(window.location.search);
@@ -44,6 +46,57 @@ class IsraeliWhistApp {
     });
   }
 
+  initLanguage() {
+    let savedLang = null;
+    try {
+      savedLang = localStorage.getItem('israeli_whist_lang');
+    } catch (e) {}
+
+    if (!savedLang && typeof navigator !== 'undefined' && navigator.language) {
+      if (navigator.language.startsWith('he')) {
+        savedLang = 'he';
+      }
+    }
+
+    this.i18n = savedLang === 'he' ? HE : EN;
+    document.documentElement.lang = this.i18n.lang;
+    document.documentElement.dir = this.i18n.dir;
+  }
+
+  setLanguage(langCode) {
+    this.i18n = langCode === 'he' ? HE : EN;
+    document.documentElement.lang = this.i18n.lang;
+    document.documentElement.dir = this.i18n.dir;
+    
+    try {
+      localStorage.setItem('israeli_whist_lang', langCode);
+    } catch (e) {}
+
+    this.updateStaticI18n();
+
+    this.landingView.render();
+    this.roundView.updateI18n(this.i18n);
+    this.scoreboard.updateI18n(this.i18n);
+    this.chartView.render();
+  }
+
+  updateStaticI18n() {
+    const t = this.i18n;
+    if (this.btnBrandHome) this.btnBrandHome.textContent = t.appName;
+    if (this.btnLangToggle) this.btnLangToggle.textContent = t.switchLang;
+    if (this.btnShare) this.btnShare.textContent = t.share;
+    if (this.btnMenu) this.btnMenu.textContent = t.menu;
+    if (this.btnLobbyHome) this.btnLobbyHome.textContent = t.lobby;
+
+    const tabRound = document.getElementById('tab-btn-round');
+    const tabHistory = document.getElementById('tab-btn-history');
+    const tabChart = document.getElementById('tab-btn-chart');
+
+    if (tabRound) tabRound.textContent = t.tabActiveDeal;
+    if (tabHistory) tabHistory.textContent = t.tabHistory;
+    if (tabChart) tabChart.textContent = t.tabChart;
+  }
+
   initElements() {
     this.landingContainer = document.getElementById('landing-view-container');
     this.gameContainer = document.getElementById('game-view-container');
@@ -55,6 +108,9 @@ class IsraeliWhistApp {
     this.syncIndicator = document.getElementById('sync-indicator');
     this.btnLobbyHome = document.getElementById('btn-lobby-home');
     this.btnBrandHome = document.getElementById('btn-brand-home');
+    this.btnLangToggle = document.getElementById('btn-lang-toggle');
+    this.btnShare = document.getElementById('btn-open-share');
+    this.btnMenu = document.getElementById('btn-open-menu');
   }
 
   initControllers() {
@@ -252,13 +308,17 @@ class IsraeliWhistApp {
   }
 
   bindGlobalEvents() {
-    const btnShare = document.getElementById('btn-open-share');
+    if (this.btnShare) this.btnShare.addEventListener('click', () => this.dialogs.showShareModal());
     const btnRoom = document.getElementById('btn-room-badge');
-    const btnMenu = document.getElementById('btn-open-menu');
-
-    if (btnShare) btnShare.addEventListener('click', () => this.dialogs.showShareModal());
     if (btnRoom) btnRoom.addEventListener('click', () => this.dialogs.showShareModal());
-    if (btnMenu) btnMenu.addEventListener('click', () => this.dialogs.showMenuModal());
+    if (this.btnMenu) this.btnMenu.addEventListener('click', () => this.dialogs.showMenuModal());
+
+    if (this.btnLangToggle) {
+      this.btnLangToggle.addEventListener('click', () => {
+        const nextLang = this.i18n.lang === 'he' ? 'en' : 'he';
+        this.setLanguage(nextLang);
+      });
+    }
 
     if (this.btnLobbyHome) {
       this.btnLobbyHome.addEventListener('click', () => this.showLandingView());

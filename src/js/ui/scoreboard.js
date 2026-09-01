@@ -1,5 +1,5 @@
 /**
- * Sleek Leaderboard & Score History Table
+ * Sleek Leaderboard & Score History Table with i18n
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -30,6 +30,7 @@ export class Scoreboard {
 
   renderLeaderboard() {
     if (!this.leaderboardContainer) return;
+    const t = this.i18n;
     const rankings = this.session.getRankings();
     const scores = this.session.getCumulativeScores();
     const topScore = rankings.length > 0 ? rankings[0].score : 0;
@@ -45,7 +46,7 @@ export class Scoreboard {
 
           return `
             <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" data-player-idx="${idx}">
-              ${isDealer ? `<span class="tag-dealer">DEALER</span>` : ''}
+              ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
               <div class="player-title">
                 <span class="player-dot" style="background: ${p.color};"></span>
                 <span>${p.name}</span>
@@ -54,7 +55,7 @@ export class Scoreboard {
                 ${score >= 0 ? `+${score}` : score}
               </div>
               <div class="player-meta">
-                Rank #${rankIndex + 1}
+                ${t.rank} #${rankIndex + 1}
               </div>
             </div>
           `;
@@ -67,13 +68,14 @@ export class Scoreboard {
 
   renderHistoryTable() {
     if (!this.historyContainer) return;
+    const t = this.i18n;
     const rounds = this.session.completedRounds;
 
     if (rounds.length === 0) {
       this.historyContainer.innerHTML = `
         <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">No Deals Recorded</div>
-          <div style="font-size: 0.85rem;">Start Deal 1 above to record score history.</div>
+          <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">${t.noDeals}</div>
+          <div style="font-size: 0.85rem;">${t.noDealsSub}</div>
         </div>
       `;
       return;
@@ -82,9 +84,9 @@ export class Scoreboard {
     let html = `
       <div class="card">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
-          <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">History (${rounds.length} Deals)</h3>
+          <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${t.historyTitle} (${rounds.length} ${t.deals})</h3>
           <button class="btn-pill" id="btn-undo-round" style="font-size: 0.72rem; color: var(--danger); height: 28px;">
-            Undo Last Deal
+            ${t.undoLastDeal}
           </button>
         </div>
 
@@ -92,8 +94,8 @@ export class Scoreboard {
           <table class="table-custom">
             <thead>
               <tr>
-                <th style="min-width: 60px;">Deal</th>
-                <th style="min-width: 95px;">Dealer</th>
+                <th style="min-width: 60px;">${t.deal}</th>
+                <th style="min-width: 95px;">${t.dealer}</th>
                 ${this.session.players.map(p => `
                   <th style="min-width: 85px;">
                     <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
@@ -151,7 +153,7 @@ export class Scoreboard {
     const btnUndo = this.historyContainer.querySelector('#btn-undo-round');
     if (btnUndo) {
       btnUndo.addEventListener('click', () => {
-        if (confirm('Undo the last completed deal?')) {
+        if (confirm(t.undoConfirm)) {
           if (this.onUndo) this.onUndo();
         }
       });

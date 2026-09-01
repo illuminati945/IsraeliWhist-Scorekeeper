@@ -816,3 +816,27 @@ body {
 .menu-item-btn:active {
   background: var(--bg-card-hover);
 }
+
+/* RTL & Hebrew Support */
+[dir="rtl"] {
+  text-align: right;
+  direction: rtl;
+}
+
+[dir="rtl"] .player-dot {
+  margin-right: 0;
+  margin-left: 4px;
+}
+
+[dir="rtl"] .tag-dealer {
+  right: auto;
+  left: 4px;
+}
+
+[dir="rtl"] .join-box {
+  flex-direction: row;
+}
+
+[dir="rtl"] .menu-item-btn {
+  text-align: right;
+}
