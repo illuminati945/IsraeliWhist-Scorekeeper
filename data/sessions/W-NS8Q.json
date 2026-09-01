@@ -1,0 +1,87 @@
+{
+  "id": "game_1788243521110",
+  "createdAt": "2026-09-01T06:18:41.110Z",
+  "rules": {
+    "id": "STANDARD",
+    "nameEn": "Standard Israeli Whist (Quadratic)",
+    "nameHe": "Standard Israeli Whist",
+    "descriptionEn": "Exact Made: +10 + Bid² | Miss: -10 × diff | Pass (0): +50 / -50 | Hook Rule: On",
+    "descriptionHe": "Exact Made: +10 + Bid² | Miss: -10 × diff | Pass (0): +50 / -50 | Hook Rule: On",
+    "bidMadeFormula": "QUADRATIC",
+    "missPenaltyRate": 10,
+    "useProgressivePenalty": false,
+    "passMadeScore": 50,
+    "passMissPenalty": 50,
+    "passMissAdditionalPerTrick": 0,
+    "pasRoundTrickPenalty": 10,
+    "pasRoundZeroBonus": 50,
+    "enforceHookRule": true,
+    "trumpMakerMissDoublePenalty": false
+  },
+  "targetPoints": null,
+  "maxRounds": null,
+  "simplifiedMode": true,
+  "players": [
+    {
+      "id": "p0",
+      "name": "Player 1",
+      "color": "#6366f1",
+      "initial": "1"
+    },
+    {
+      "id": "p1",
+      "name": "Player 2",
+      "color": "#10b981",
+      "initial": "2"
+    },
+    {
+      "id": "p2",
+      "name": "Player 3",
+      "color": "#f59e0b",
+      "initial": "3"
+    },
+    {
+      "id": "p3",
+      "name": "Player 4",
+      "color": "#ec4899",
+      "initial": "4"
+    }
+  ],
+  "currentDealerIndex": 0,
+  "roundNumber": 1,
+  "completedRounds": [],
+  "activeRound": {
+    "roundNumber": 1,
+    "dealerIndex": 0,
+    "leadBidderIndex": 1,
+    "stage": "BETS",
+    "trump": {
+      "winnerIndex": null,
+      "suitId": "NT",
+      "bidAmount": 0,
+      "isPasRound": false
+    },
+    "bets": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "tricks": [
+      null,
+      null,
+      null,
+      null
+    ],
+    "scores": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "roundTotalBets": 0,
+    "bettingMode": null,
+    "timestamp": "2026-09-01T06:18:41.110Z"
+  },
+  "status": "IN_PROGRESS"
+}

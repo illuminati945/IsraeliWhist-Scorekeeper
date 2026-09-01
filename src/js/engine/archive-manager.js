@@ -1,17 +1,22 @@
 /**
- * Israeli Whist - Saved Games Archive Manager (Recent 10 Games)
+ * Israeli Whist - Saved Games Archive Manager (Persistent Server + Local Storage)
  */
 
 const RECENT_GAMES_KEY = 'israeli_whist_recent_games_v1';
 const MAX_SAVED_GAMES = 10;
+let inMemoryRecentGames = [];
 
 export class ArchiveManager {
   static getRecentGames() {
+    if (inMemoryRecentGames && inMemoryRecentGames.length > 0) {
+      return inMemoryRecentGames;
+    }
     if (typeof localStorage === 'undefined') return [];
     try {
       const data = localStorage.getItem(RECENT_GAMES_KEY);
       if (data) {
-        return JSON.parse(data);
+        inMemoryRecentGames = JSON.parse(data);
+        return inMemoryRecentGames;
       }
     } catch (e) {
       console.warn('Failed to read recent games archive:', e);
@@ -19,8 +24,58 @@ export class ArchiveManager {
     return [];
   }
 
+  static async syncWithServer(onUpdate = null) {
+    try {
+      const loc = typeof window !== 'undefined' ? window.location : null;
+      let apiUrl = '/whist/api/recent-games';
+      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
+        apiUrl = '/api/recent-games';
+      }
+
+      const res = await fetch(apiUrl);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.success && Array.isArray(json.games)) {
+          const serverGames = json.games;
+          const localGames = this.getRecentGames();
+
+          // Merge server and local games by roomId
+          const map = new Map();
+          // Add local games first
+          localGames.forEach(g => {
+            if (g && g.roomId) map.set(g.roomId, g);
+          });
+          // Overwrite/add server games
+          serverGames.forEach(g => {
+            if (g && g.roomId) map.set(g.roomId, g);
+          });
+
+          const merged = Array.from(map.values())
+            .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+            .slice(0, MAX_SAVED_GAMES);
+
+          inMemoryRecentGames = merged;
+          if (typeof localStorage !== 'undefined') {
+            try {
+              localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(merged));
+            } catch (e) {}
+          }
+
+          if (onUpdate) onUpdate(merged);
+          return merged;
+        }
+      }
+    } catch (e) {
+      console.warn('Error syncing recent games with server:', e);
+    }
+
+    const local = this.getRecentGames();
+    if (onUpdate) onUpdate(local);
+    return local;
+  }
+
   static saveGameToArchive(session, roomId) {
-    if (!session || typeof localStorage === 'undefined') return;
+    if (!session) return;
 
     try {
       const existing = this.getRecentGames();
@@ -34,7 +89,7 @@ export class ArchiveManager {
         createdAt: session.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         roundNumber: session.roundNumber,
-        completedRoundsCount: session.completedRounds.length,
+        completedRoundsCount: session.completedRounds ? session.completedRounds.length : 0,
         status: session.status || 'IN_PROGRESS',
         simplifiedMode: session.simplifiedMode,
         players: session.players.map((p, idx) => ({
@@ -60,24 +115,48 @@ export class ArchiveManager {
         }
       };
 
-      // Filter out existing game with same roomId/id
       const filtered = existing.filter(g => g.roomId !== summary.roomId && g.id !== summary.id);
-      
-      // Add current game at the top and cap to MAX_SAVED_GAMES
       const updated = [summary, ...filtered].slice(0, MAX_SAVED_GAMES);
+      inMemoryRecentGames = updated;
 
-      localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(updated));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(updated));
+      }
+
+      // Also persist to server via REST API
+      const loc = typeof window !== 'undefined' ? window.location : null;
+      let postUrl = `/whist/api/session/${summary.roomId}`;
+      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
+        postUrl = `/api/session/${summary.roomId}`;
+      }
+
+      fetch(postUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(summary.fullState)
+      }).catch(() => {});
+
     } catch (e) {
       console.warn('Failed to save game to archive:', e);
     }
   }
 
   static deleteGame(roomId) {
-    if (typeof localStorage === 'undefined') return;
     try {
       const existing = this.getRecentGames();
       const updated = existing.filter(g => g.roomId !== roomId && g.id !== roomId);
-      localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(updated));
+      inMemoryRecentGames = updated;
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(updated));
+      }
+
+      // Also delete from server
+      const loc = typeof window !== 'undefined' ? window.location : null;
+      let delUrl = `/whist/api/delete-session/${roomId}`;
+      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
+        delUrl = `/api/delete-session/${roomId}`;
+      }
+      fetch(delUrl).catch(() => {});
     } catch (e) {
       console.warn('Failed to delete game from archive:', e);
     }

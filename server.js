@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'src');
 const SESSIONS_DIR = path.join(__dirname, 'data', 'sessions');
+const ARCHIVE_FILE = path.join(__dirname, 'data', 'archive.json');
 
 if (!fs.existsSync(SESSIONS_DIR)) {
   fs.mkdirSync(SESSIONS_DIR, { recursive: true });
@@ -39,6 +40,79 @@ function generateRoomCode() {
 // In-memory sessions cache
 const memorySessions = new Map();
 
+// Helper to extract summary from session state
+function createGameSummary(roomId, session) {
+  if (!session) return null;
+  const players = (session.players || []).map((p, idx) => {
+    let score = 0;
+    if (session.completedRounds && session.completedRounds.length > 0) {
+      const lastRound = session.completedRounds[session.completedRounds.length - 1];
+      if (lastRound.cumulativeScores && typeof lastRound.cumulativeScores[idx] === 'number') {
+        score = lastRound.cumulativeScores[idx];
+      }
+    }
+    return {
+      name: p.name,
+      color: p.color,
+      score
+    };
+  });
+
+  let leaderName = players[0] ? players[0].name : 'Player 1';
+  let leaderScore = players[0] ? players[0].score : 0;
+  players.forEach(p => {
+    if (p.score > leaderScore) {
+      leaderScore = p.score;
+      leaderName = p.name;
+    }
+  });
+
+  return {
+    roomId: roomId || session.id || 'W-LOCAL',
+    id: session.id || roomId,
+    createdAt: session.createdAt || new Date().toISOString(),
+    updatedAt: session.updatedAt || new Date().toISOString(),
+    roundNumber: session.roundNumber || 1,
+    completedRoundsCount: session.completedRounds ? session.completedRounds.length : 0,
+    status: session.status || 'IN_PROGRESS',
+    simplifiedMode: session.simplifiedMode !== undefined ? session.simplifiedMode : true,
+    players,
+    leaderName,
+    leaderScore,
+    fullState: session
+  };
+}
+
+// Helper to get persistent recent games (top 10)
+function getRecentGames() {
+  const summaries = [];
+  try {
+    const files = fs.readdirSync(SESSIONS_DIR);
+    for (const file of files) {
+      if (!file.endsWith('.json') || file.startsWith('TEST-')) continue;
+      const roomId = file.replace('.json', '');
+      const filePath = path.join(SESSIONS_DIR, file);
+      try {
+        const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const summary = createGameSummary(roomId, data);
+        if (summary) {
+          const stats = fs.statSync(filePath);
+          summary.updatedAt = stats.mtime.toISOString();
+          summaries.push(summary);
+        }
+      } catch (e) {
+        console.error(`Error reading session file ${file}:`, e);
+      }
+    }
+  } catch (e) {
+    console.error('Error scanning sessions directory:', e);
+  }
+
+  // Sort by updatedAt descending
+  summaries.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  return summaries.slice(0, 10);
+}
+
 // Helper to load session
 function loadSession(roomId) {
   if (memorySessions.has(roomId)) {
@@ -59,12 +133,26 @@ function loadSession(roomId) {
 
 // Helper to save session
 function saveSession(roomId, state) {
+  state.updatedAt = new Date().toISOString();
   memorySessions.set(roomId, state);
   const filePath = path.join(SESSIONS_DIR, `${roomId}.json`);
   try {
     fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf8');
   } catch (e) {
     console.error(`Error saving session file for ${roomId}:`, e);
+  }
+}
+
+// Helper to delete session
+function deleteSession(roomId) {
+  memorySessions.delete(roomId);
+  const filePath = path.join(SESSIONS_DIR, `${roomId}.json`);
+  if (fs.existsSync(filePath)) {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (e) {
+      console.error(`Error deleting session file for ${roomId}:`, e);
+    }
   }
 }
 
@@ -87,6 +175,21 @@ const server = http.createServer((req, res) => {
     const roomId = generateRoomCode();
     res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
     res.end(JSON.stringify({ roomId }));
+    return;
+  }
+
+  if (reqPath === '/api/recent-games') {
+    const games = getRecentGames();
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ success: true, games }));
+    return;
+  }
+
+  if (reqPath.startsWith('/api/delete-session/')) {
+    const roomId = reqPath.replace('/api/delete-session/', '').trim();
+    deleteSession(roomId);
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ success: true, roomId }));
     return;
   }
 
@@ -216,6 +319,12 @@ wss.on('connection', (ws) => {
             userCount: count
           }, ws);
         }
+      } else if (msg.type === 'GET_RECENT_GAMES') {
+        const games = getRecentGames();
+        ws.send(JSON.stringify({
+          type: 'RECENT_GAMES_LIST',
+          games
+        }));
       } else if (msg.type === 'PING') {
         ws.send(JSON.stringify({ type: 'PONG' }));
       }

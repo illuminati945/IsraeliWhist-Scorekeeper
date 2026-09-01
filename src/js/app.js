@@ -1,5 +1,5 @@
 /**
- * Israeli Whist Scorekeeper - Main Entrypoint with Landing Page, Real-Time Sync & Bilingual i18n
+ * Israeli Whist Scorekeeper - Main Entrypoint with Landing Page, Real-Time Sync, Server Archive & Bilingual i18n
  */
 import { GameSession } from './engine/game-state.js';
 import { SyncManager } from './engine/sync-manager.js';
@@ -26,6 +26,13 @@ class IsraeliWhistApp {
     // Check if URL specifies a game room or if we should show landing lobby
     const urlParams = new URLSearchParams(window.location.search);
     const hasGameParam = urlParams.has('game') || urlParams.has('room') || window.location.hash.length > 1;
+
+    // Sync persistent games from server
+    ArchiveManager.syncWithServer(() => {
+      if (this.landingContainer && this.landingContainer.style.display !== 'none') {
+        this.landingView.render();
+      }
+    });
 
     if (hasGameParam) {
       this.showGameView();
@@ -84,7 +91,6 @@ class IsraeliWhistApp {
     const t = this.i18n;
     if (this.btnBrandHome) this.btnBrandHome.textContent = t.appName;
     if (this.btnLangToggle) {
-      // Compact indicator: 'EN' when currently in Hebrew, 'עב' when currently in English
       this.btnLangToggle.textContent = t.lang === 'he' ? 'EN' : 'עב';
     }
     if (this.btnShare) this.btnShare.textContent = t.share;
@@ -170,6 +176,10 @@ class IsraeliWhistApp {
   showLandingView() {
     if (this.landingContainer) this.landingContainer.style.display = 'block';
     if (this.gameContainer) this.gameContainer.style.display = 'none';
+
+    ArchiveManager.syncWithServer(() => {
+      this.landingView.render();
+    });
 
     this.landingView.render();
     
