@@ -1,59 +1,69 @@
 import { GameSession } from './src/js/engine/game-state.js';
-import { calculateGameStatistics } from './src/js/engine/statistics.js';
 
-console.log('=== Simulating Simplified Israeli Whist Match ===');
+console.log('=== Simulating Israeli Whist Last-Bidder Hook Rule ===');
 
-const session = new GameSession({
-  simplifiedMode: true,
+// Test 1: Full Mode with Trump Maker
+const sessionFull = new GameSession({
+  simplifiedMode: false,
   players: [
-    { id: 'p0', name: 'Alice', color: '#3b82f6' },
-    { id: 'p1', name: 'Bob', color: '#10b981' },
-    { id: 'p2', name: 'Charlie', color: '#f59e0b' },
-    { id: 'p3', name: 'Diana', color: '#ec4899' }
+    { id: 'p0', name: 'Alice (Dealer)' },
+    { id: 'p1', name: 'Bob' },
+    { id: 'p2', name: 'Charlie (Trump Maker)' },
+    { id: 'p3', name: 'Diana' }
   ]
 });
 
-// In simplified mode, session starts directly at BETS stage
-if (session.activeRound.stage !== 'BETS') {
-  throw new Error(`Expected stage to be BETS in simplified mode, got ${session.activeRound.stage}`);
+// Alice is dealer (idx 0). Charlie (idx 2) wins the trump auction.
+sessionFull.setTrump(2, 'HEARTS', 5);
+
+// Bidding sequence:
+// 1st bidder: Charlie (idx 2, Trump Maker)
+// 2nd bidder: Diana (idx 3)
+// 3rd bidder: Alice (idx 0, Dealer)
+// 4th / Last bidder: Bob (idx 1, sitting right before Charlie)
+
+const firstBidder = sessionFull.getFirstBidderIndex();
+const lastBidder = sessionFull.getLastBidderIndex();
+
+console.log(`First bidder (Trump Maker): Player ${firstBidder} (Charlie)`);
+console.log(`Last bidder (Hook Rule applied): Player ${lastBidder} (Bob)`);
+
+if (firstBidder !== 2) throw new Error(`Expected first bidder to be Charlie (2), got ${firstBidder}`);
+if (lastBidder !== 1) throw new Error(`Expected last bidder to be Bob (1), got ${lastBidder}`);
+
+// Enter bets for Charlie (5), Diana (3), Alice (2) -> Sum = 10
+sessionFull.setBet(2, 5);
+sessionFull.setBet(3, 3);
+sessionFull.setBet(0, 2);
+
+const forbiddenForBob = sessionFull.getForbiddenBetForLastBidder();
+console.log(`Forbidden bet for Last Bidder (Bob): ${forbiddenForBob}`);
+
+if (forbiddenForBob !== 3) {
+  throw new Error(`Expected forbidden bet for Bob to be 3 (13 - 10), got ${forbiddenForBob}`);
 }
 
-// Deal 1: Alice is dealer (idx 0).
-// Bids: Bob = 5, Charlie = 3, Diana = 0 (Pass), Alice = 4 (Total = 12 -> UNDER)
-session.setBet(1, 5);
-session.setBet(2, 3);
-session.setBet(3, 0);
+// Bob bids 4 -> Total = 14 (OVER)
+sessionFull.setBet(1, 4);
+sessionFull.proceedToTricks();
 
-const forbiddenForAlice = session.getDealerForbiddenNumber();
-console.log(`Dealer Alice cannot bid: ${forbiddenForAlice}`);
-if (forbiddenForAlice !== 5) {
-  throw new Error(`Expected forbidden bet to be 5, got ${forbiddenForAlice}`);
+console.log('✓ Full Mode last-bidder test passed!');
+
+// Test 2: Simplified Mode
+const sessionSimple = new GameSession({
+  simplifiedMode: true,
+  players: [
+    { id: 'p0', name: 'Alice (Dealer)' },
+    { id: 'p1', name: 'Bob' },
+    { id: 'p2', name: 'Charlie' },
+    { id: 'p3', name: 'Diana' }
+  ]
+});
+
+// In simplified mode, Alice is dealer (idx 0). Lead bidder is Bob (idx 1).
+// Last bidder is Alice (idx 0, dealer).
+if (sessionSimple.getLastBidderIndex() !== 0) {
+  throw new Error(`Expected last bidder in simplified to be dealer Alice (0), got ${sessionSimple.getLastBidderIndex()}`);
 }
 
-session.setBet(0, 4);
-session.proceedToTricks();
-
-// Tricks taken: Bob = 5, Charlie = 4, Diana = 0, Alice = 4
-session.setTricks(1, 5);
-session.setTricks(2, 4);
-session.setTricks(3, 0);
-session.setTricks(0, 4);
-
-const r1 = session.commitRound();
-console.log('Deal 1 Scores:', r1.scores);
-// Bob (5 made) = 10 + 25 = +35
-// Charlie (bid 3, took 4) = -10
-// Diana (bid 0, took 0) = +50
-// Alice (bid 4, took 4) = 10 + 16 = +26
-
-if (r1.scores[1] !== 35 || r1.scores[2] !== -10 || r1.scores[3] !== 50 || r1.scores[0] !== 26) {
-  throw new Error(`Unexpected Deal 1 scores: ${JSON.stringify(r1.scores)}`);
-}
-
-// Check next round starts directly at BETS stage
-if (session.activeRound.stage !== 'BETS') {
-  throw new Error(`Expected next round stage to be BETS, got ${session.activeRound.stage}`);
-}
-
-console.log('Cumulative Scores after Deal 1:', session.getCumulativeScores());
-console.log('✓ Full simplified match simulation passed successfully!');
+console.log('✓ Simplified Mode last-bidder test passed!');

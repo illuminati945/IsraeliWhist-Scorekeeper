@@ -1,7 +1,7 @@
 /**
  * Israeli Whist Game State & Session Manager
  */
-import { RULE_PRESETS, calculatePlayerScore, validateBetsHook, validateTricksSum, getDealerForbiddenBet } from './whist-rules.js';
+import { RULE_PRESETS, calculatePlayerScore, validateBetsHook, validateTricksSum } from './whist-rules.js';
 
 const STORAGE_KEY = 'israeli_whist_current_game_v2';
 
@@ -14,7 +14,6 @@ export class GameSession {
     this.maxRounds = options.maxRounds || null;
     this.simplifiedMode = options.simplifiedMode !== undefined ? options.simplifiedMode : true;
     
-    // Default 4 players with clean color accents
     this.players = options.players || [
       { id: 'p0', name: 'Player 1', color: '#6366f1', initial: '1' },
       { id: 'p1', name: 'Player 2', color: '#10b981', initial: '2' },
@@ -80,6 +79,48 @@ export class GameSession {
     this.notify();
   }
 
+  getFirstBidderIndex() {
+    if (!this.simplifiedMode && this.activeRound.trump.winnerIndex !== null && !this.activeRound.trump.isPasRound) {
+      return this.activeRound.trump.winnerIndex;
+    }
+    return (this.currentDealerIndex + 1) % 4;
+  }
+
+  getLastBidderIndex() {
+    const firstBidder = this.getFirstBidderIndex();
+    return (firstBidder + 3) % 4;
+  }
+
+  getBiddingOrder() {
+    const first = this.getFirstBidderIndex();
+    return [
+      first,
+      (first + 1) % 4,
+      (first + 2) % 4,
+      (first + 3) % 4
+    ];
+  }
+
+  getForbiddenBetForLastBidder() {
+    const lastBidderIdx = this.getLastBidderIndex();
+    const otherBets = [];
+    for (let i = 0; i < 4; i++) {
+      if (i !== lastBidderIdx) {
+        if (typeof this.activeRound.bets[i] === 'number' && !isNaN(this.activeRound.bets[i])) {
+          otherBets.push(this.activeRound.bets[i]);
+        }
+      }
+    }
+    if (otherBets.length === 3) {
+      const sum = otherBets.reduce((a, b) => a + b, 0);
+      const forbidden = 13 - sum;
+      if (forbidden >= 0 && forbidden <= 13) {
+        return forbidden;
+      }
+    }
+    return null;
+  }
+
   setTrump(winnerIndex, suitId, bidAmount, isPasRound = false) {
     this.activeRound.trump = {
       winnerIndex: isPasRound ? null : winnerIndex,
@@ -116,22 +157,6 @@ export class GameSession {
     this.notify();
   }
 
-  getDealerForbiddenNumber() {
-    const dealerIdx = this.activeRound.dealerIndex;
-    const otherBets = [];
-    for (let i = 0; i < 4; i++) {
-      if (i !== dealerIdx) {
-        if (typeof this.activeRound.bets[i] === 'number') {
-          otherBets.push(this.activeRound.bets[i]);
-        }
-      }
-    }
-    if (otherBets.length === 3) {
-      return getDealerForbiddenBet(otherBets);
-    }
-    return null;
-  }
-
   proceedToTricks() {
     const filledBets = this.activeRound.bets.filter(b => typeof b === 'number' && !isNaN(b));
     if (filledBets.length !== 4 && !this.activeRound.trump.isPasRound) {
@@ -141,7 +166,8 @@ export class GameSession {
     if (this.rules.enforceHookRule && !this.activeRound.trump.isPasRound) {
       const hookCheck = validateBetsHook(this.activeRound.bets);
       if (!hookCheck.isValid) {
-        throw new Error('Total bets cannot equal 13 (Dealer Hook Rule).');
+        const lastBidder = this.players[this.getLastBidderIndex()];
+        throw new Error(`Total bets cannot equal 13 (Hook Rule). Last bidder (${lastBidder.name}) must change their bet.`);
       }
     }
 

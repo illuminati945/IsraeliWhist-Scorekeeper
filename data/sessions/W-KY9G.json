@@ -53,7 +53,7 @@
     "roundNumber": 1,
     "dealerIndex": 0,
     "leadBidderIndex": 1,
-    "stage": "BETS",
+    "stage": "TRICKS",
     "trump": {
       "winnerIndex": 1,
       "suitId": "NT",
@@ -61,16 +61,16 @@
       "isPasRound": false
     },
     "bets": [
-      null,
-      7,
-      null,
-      null
+      2,
+      3,
+      4,
+      3
     ],
     "tricks": [
-      null,
-      null,
-      null,
-      null
+      2,
+      3,
+      0,
+      3
     ],
     "scores": [
       0,
@@ -78,8 +78,8 @@
       0,
       0
     ],
-    "roundTotalBets": 0,
-    "bettingMode": null,
+    "roundTotalBets": 12,
+    "bettingMode": "UNDER",
     "timestamp": "2026-09-01T05:17:21.223Z"
   },
   "status": "IN_PROGRESS"

@@ -136,16 +136,20 @@ export class RoundView {
   }
 
   renderBetsStage(round, isSimplified) {
-    const forbidden = this.session.getDealerForbiddenNumber();
+    const lastBidderIdx = this.session.getLastBidderIndex();
+    const lastBidderPlayer = this.session.players[lastBidderIdx];
+    const forbidden = this.session.getForbiddenBetForLastBidder();
     const hook = validateBetsHook(round.bets);
     const sum = round.bets.reduce((a, b) => a + (typeof b === 'number' && !isNaN(b) ? b : 0), 0);
     const dealer = this.session.players[round.dealerIndex];
+    const trumpWinner = round.trump.winnerIndex !== null ? this.session.players[round.trump.winnerIndex] : null;
 
     return `
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
           <div style="font-size: 0.82rem; color: var(--text-secondary);">
-            Dealer: <strong>${dealer.name}</strong>
+            ${isSimplified ? `Dealer: <strong>${dealer.name}</strong> • Last: <strong>${lastBidderPlayer.name}</strong>` : 
+              `Trump Maker: <strong>${trumpWinner ? trumpWinner.name : '—'}</strong> (Last: <strong>${lastBidderPlayer.name}</strong>)`}
           </div>
           ${!isSimplified ? `
             <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem; min-height: 26px; padding: 2px 8px;">Edit Trump</button>
@@ -162,7 +166,7 @@ export class RoundView {
           </div>
           ${forbidden !== null ? `
             <span style="font-size: 0.78rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: var(--radius-sm);">
-              Dealer cannot bid <strong>${forbidden}</strong>
+              Last Bidder (<strong>${lastBidderPlayer.name}</strong>) cannot bid <strong>${forbidden}</strong>
             </span>
           ` : ''}
         </div>
@@ -170,15 +174,19 @@ export class RoundView {
         <!-- Player Input Cards -->
         ${this.session.players.map((p, idx) => {
           const isDealer = (idx === round.dealerIndex);
+          const isLastBidder = (idx === lastBidderIdx);
+          const isTrumpMaker = (idx === round.trump.winnerIndex && !isSimplified);
           const currentBet = round.bets[idx];
 
           return `
-            <div class="input-row ${isDealer ? 'dealer-row' : ''}">
+            <div class="input-row ${isLastBidder ? 'dealer-row' : ''}">
               <div class="input-row-header">
                 <div class="input-row-name">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
-                  ${isDealer ? `<span class="tag-dealer" style="position:static;">DEALER</span>` : ''}
+                  ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">TRUMP MAKER</span>` : ''}
+                  ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">LAST BIDDER</span>` : ''}
+                  ${isDealer && !isLastBidder ? `<span class="tag-dealer" style="position:static; background: var(--text-muted);">DEALER</span>` : ''}
                 </div>
                 
                 <div class="stepper">
@@ -190,7 +198,7 @@ export class RoundView {
 
               <div class="chips-row">
                 ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                  <button class="chip ${currentBet === n ? 'active' : ''} ${isDealer && forbidden === n ? 'forbidden' : ''}" 
+                  <button class="chip ${currentBet === n ? 'active' : ''} ${isLastBidder && forbidden === n ? 'forbidden' : ''}" 
                           data-player-idx="${idx}" data-amount="${n}">
                     ${n === 0 ? '0' : n}
                   </button>
