@@ -1,5 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with In-Place iOS Springboard Reordering
+ * (Dismiss by tapping outside the squares, no clutter buttons)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -13,6 +14,7 @@ export class Scoreboard {
     this.onReorganizeSeating = onReorganizeSeating;
     this.isJiggleMode = false;
     this.isDragging = false;
+    this.outsideDismissListener = null;
     this.render();
   }
 
@@ -28,6 +30,26 @@ export class Scoreboard {
 
   setJiggleMode(active) {
     this.isJiggleMode = active;
+
+    if (this.outsideDismissListener) {
+      window.removeEventListener('pointerdown', this.outsideDismissListener, { capture: true });
+      this.outsideDismissListener = null;
+    }
+
+    if (active) {
+      this.outsideDismissListener = (e) => {
+        if (this.isDragging) return;
+        if (!e.target.closest('.player-card')) {
+          this.setJiggleMode(false);
+        }
+      };
+      setTimeout(() => {
+        if (this.isJiggleMode && this.outsideDismissListener) {
+          window.addEventListener('pointerdown', this.outsideDismissListener, { capture: true });
+        }
+      }, 80);
+    }
+
     this.renderLeaderboard();
   }
 
@@ -73,21 +95,6 @@ export class Scoreboard {
       </div>
     `;
 
-    // iOS Jiggle Mode Action Bar placed BELOW the squares to avoid layout jolt
-    if (this.isJiggleMode) {
-      html += `
-        <div class="jiggle-done-bar" style="margin-top: 0.55rem; margin-bottom: 0.25rem;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
-            <span>🪑</span>
-            <span>${t.dragToReorder || 'Drag player cards to swap seats'}</span>
-          </div>
-          <button class="btn-pill btn-done-jiggle" style="height: 26px; font-size: 0.72rem; background: var(--accent-primary); border-color: var(--accent-primary); color: white; padding: 0 10px;">
-            ${t.doneReordering || 'Done ✓'}
-          </button>
-        </div>
-      `;
-    }
-
     this.leaderboardContainer.innerHTML = html;
     this.bindLeaderboardEvents();
   }
@@ -96,15 +103,6 @@ export class Scoreboard {
     if (!this.leaderboardContainer) return;
 
     const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
-    const btnDone = this.leaderboardContainer.querySelector('.btn-done-jiggle');
-
-    if (btnDone) {
-      btnDone.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.setJiggleMode(false);
-      });
-    }
-
     const cards = Array.from(this.leaderboardContainer.querySelectorAll('.player-card'));
 
     cards.forEach(card => {
@@ -177,32 +175,10 @@ export class Scoreboard {
         currentTargetSlotIndex = fromSlotIndex;
         initialSlotRects = computeSlotPositions();
 
-        this.isJiggleMode = true;
+        this.setJiggleMode(true);
         if (grid) {
           grid.classList.add('is-jiggling');
           grid.classList.add('is-actively-dragging');
-        }
-
-        // Show jiggle bottom bar if not already present
-        if (!this.leaderboardContainer.querySelector('.jiggle-done-bar')) {
-          const bar = document.createElement('div');
-          bar.className = 'jiggle-done-bar';
-          bar.style.marginTop = '0.55rem';
-          bar.style.marginBottom = '0.25rem';
-          bar.innerHTML = `
-            <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
-              <span>🪑</span>
-              <span>${this.i18n.dragToReorder || 'Drag player cards to swap seats'}</span>
-            </div>
-            <button class="btn-pill btn-done-jiggle" style="height: 26px; font-size: 0.72rem; background: var(--accent-primary); border-color: var(--accent-primary); color: white; padding: 0 10px;">
-              ${this.i18n.doneReordering || 'Done ✓'}
-            </button>
-          `;
-          this.leaderboardContainer.appendChild(bar);
-          bar.querySelector('.btn-done-jiggle').addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.setJiggleMode(false);
-          });
         }
 
         card.classList.remove('card-pressing');
@@ -286,7 +262,6 @@ export class Scoreboard {
           const targetRect = initialSlotRects[targetSlot];
 
           if (originRect && targetRect) {
-            // Smooth spring snap directly into target slot position
             const finalDx = targetRect.left - originRect.left;
             const finalDy = targetRect.top - originRect.top;
 
@@ -346,7 +321,6 @@ export class Scoreboard {
         if (this.isJiggleMode) {
           liftAndStartDrag(startX, startY);
         } else {
-          // Automatic lift-off on hold (~300ms)
           pressTimer = setTimeout(() => {
             liftAndStartDrag(startX, startY);
           }, 300);

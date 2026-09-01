@@ -386,19 +386,6 @@ body {
   animation: none !important;
 }
 
-/* Jiggle Done Bar */
-.jiggle-done-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(251, 191, 36, 0.15);
-  border: 1px solid rgba(251, 191, 36, 0.4);
-  border-radius: var(--radius-md);
-  padding: 0.4rem 0.75rem;
-  margin-bottom: 0.55rem;
-  animation: fadeIn 0.2s ease;
-}
-
 .player-card.is-leader {
   border-color: rgba(251, 191, 36, 0.5);
   box-shadow: 0 0 10px rgba(251, 191, 36, 0.12);
