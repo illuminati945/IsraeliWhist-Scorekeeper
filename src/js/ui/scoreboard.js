@@ -1,6 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with Hardware-Accelerated iOS Springboard Reordering
- * (Zero-race condition rapid drag-and-drop chaining)
+ * (Permanent in-place DOM architecture for seamless rapid drag chaining)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -14,8 +14,6 @@ export class Scoreboard {
     this.onReorganizeSeating = onReorganizeSeating;
     this.isJiggleMode = false;
     this.isDragging = false;
-    this.pendingDropTimer = null;
-    this.pendingDropCommit = null;
 
     // Global listener to dismiss jiggle mode on tapping outside (on pointerup to prevent drag conflicts)
     document.addEventListener('pointerup', (e) => {
@@ -32,7 +30,11 @@ export class Scoreboard {
   updateSession(session) {
     this.session = session;
     if (!this.isDragging) {
-      this.render();
+      if (this.isJiggleMode) {
+        this.updateCardsContentInPlace();
+      } else {
+        this.render();
+      }
     }
   }
 
@@ -43,20 +45,7 @@ export class Scoreboard {
     }
   }
 
-  flushPendingDrop() {
-    if (this.pendingDropTimer) {
-      clearTimeout(this.pendingDropTimer);
-      this.pendingDropTimer = null;
-    }
-    if (this.pendingDropCommit) {
-      const commit = this.pendingDropCommit;
-      this.pendingDropCommit = null;
-      commit();
-    }
-  }
-
   setJiggleMode(active) {
-    this.flushPendingDrop();
     this.isJiggleMode = active;
     if (this.leaderboardContainer) {
       const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
@@ -67,6 +56,46 @@ export class Scoreboard {
     if (!active) {
       this.renderLeaderboard();
     }
+  }
+
+  updateCardsContentInPlace() {
+    if (!this.leaderboardContainer) return;
+    const t = this.i18n;
+    const rankings = this.session.getRankings();
+    const scores = this.session.getCumulativeScores();
+    const topScore = rankings.length > 0 ? rankings[0].score : 0;
+    const currentDealer = this.session.currentDealerIndex;
+
+    const cards = this.leaderboardContainer.querySelectorAll('.player-card');
+    cards.forEach((card, idx) => {
+      card.dataset.playerIdx = idx;
+      const p = this.session.players[idx];
+      const score = scores[idx];
+      const rankIndex = rankings.findIndex(r => r.index === idx);
+      const isLeader = (score === topScore && this.session.completedRounds.length > 0);
+      const isDealer = (idx === currentDealer);
+
+      card.className = `player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}`;
+      card.style.transform = '';
+      card.style.zIndex = '';
+      card.style.transition = '';
+
+      card.innerHTML = `
+        <div class="player-card-inner">
+          ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
+          <div class="player-title">
+            <span class="player-dot" style="background: ${p.color};"></span>
+            <span>${p.name}</span>
+          </div>
+          <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
+            ${score >= 0 ? `+${score}` : score}
+          </div>
+          <div class="player-meta">
+            ${t.rank} #${rankIndex + 1}
+          </div>
+        </div>
+      `;
+    });
   }
 
   render() {
@@ -227,8 +256,6 @@ export class Scoreboard {
       };
 
       const liftAndStartDrag = (clientX, clientY) => {
-        this.flushPendingDrop();
-
         if (this.isDragging) return;
         this.isDragging = true;
         isCardDragging = true;
@@ -305,37 +332,27 @@ export class Scoreboard {
           const originRect = initialSlotRects[fromSlotIndex];
           const targetRect = initialSlotRects[targetSlot];
 
-          if (originRect && targetRect) {
+          if (originRect && targetRect && fromSlotIndex !== targetSlot) {
             const finalDx = targetRect.left - originRect.left;
             const finalDy = targetRect.top - originRect.top;
 
             card.classList.add('is-dropping');
             card.style.transform = `translate3d(${finalDx}px, ${finalDy}px, 0) scale(1.0) rotate(0deg)`;
 
-            // Define the commit callback
-            this.pendingDropCommit = () => {
+            triggerHaptic(30);
+            const order = [0, 1, 2, 3];
+            const [moved] = order.splice(fromSlotIndex, 1);
+            order.splice(targetSlot, 0, moved);
+
+            this.session.reorderPlayers(order);
+
+            setTimeout(() => {
               card.classList.remove('is-lifted', 'is-dropping');
-              card.style.transform = '';
-              resetCardShifts();
-
-              if (fromSlotIndex !== null && targetSlot !== null && fromSlotIndex !== targetSlot) {
-                triggerHaptic(30);
-                const order = [0, 1, 2, 3];
-                const [moved] = order.splice(fromSlotIndex, 1);
-                order.splice(targetSlot, 0, moved);
-
-                this.session.reorderPlayers(order);
-              }
-              this.renderLeaderboard();
-            };
-
-            this.pendingDropTimer = setTimeout(() => {
-              this.flushPendingDrop();
-            }, 320);
+              this.updateCardsContentInPlace();
+            }, 250);
           } else {
             card.classList.remove('is-lifted');
             resetCardShifts();
-            this.renderLeaderboard();
           }
         }
 
@@ -345,9 +362,6 @@ export class Scoreboard {
       };
 
       const onPointerDown = (e) => {
-        // If a drop from a previous card was still animating, flush it immediately before starting
-        this.flushPendingDrop();
-
         if (this.isDragging) return;
 
         activePointerId = e.pointerId;
