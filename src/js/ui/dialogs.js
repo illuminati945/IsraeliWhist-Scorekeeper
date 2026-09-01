@@ -42,16 +42,6 @@ export class Dialogs {
             <span>→</span>
           </button>
 
-          <button class="menu-item-btn" id="menu-opt-reorg-seating" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35);">
-            <div>
-              <div style="font-weight: 700; color: #fde68a;">${t.reorganizeSeating}</div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
-                ${t.reorganizeDesc}
-              </div>
-            </div>
-            <span style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">Move →</span>
-          </button>
-
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
             <div>
               <div style="font-weight: 700; color: #a7f3d0;">${t.savedGames} (${recentGames.length}/10)</div>
@@ -118,11 +108,6 @@ export class Dialogs {
     modal.querySelector('#menu-opt-home-lobby').addEventListener('click', () => {
       closeModal();
       this.app.showLandingView();
-    });
-
-    modal.querySelector('#menu-opt-reorg-seating').addEventListener('click', () => {
-      closeModal();
-      this.app.scoreboard.setJiggleMode(true);
     });
 
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {

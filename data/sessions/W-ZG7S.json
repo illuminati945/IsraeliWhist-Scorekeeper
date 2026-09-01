@@ -29,16 +29,16 @@
       "initial": "1"
     },
     {
-      "id": "p2",
-      "name": "איל",
-      "color": "#f59e0b",
-      "initial": "3"
-    },
-    {
       "id": "p1",
       "name": "אביגיל",
       "color": "#10b981",
       "initial": "2"
+    },
+    {
+      "id": "p2",
+      "name": "איל",
+      "color": "#f59e0b",
+      "initial": "3"
     },
     {
       "id": "p3",
@@ -47,13 +47,13 @@
       "initial": "4"
     }
   ],
-  "currentDealerIndex": 2,
+  "currentDealerIndex": 1,
   "roundNumber": 2,
   "completedRounds": [
     {
       "roundNumber": 1,
       "dealerIndex": 0,
-      "leadBidderIndex": 2,
+      "leadBidderIndex": 1,
       "stage": "TRICKS",
       "trump": {
         "winnerIndex": null,
@@ -75,8 +75,8 @@
       ],
       "scores": [
         26,
-        19,
         26,
+        19,
         -10
       ],
       "roundTotalBets": 12,
@@ -94,7 +94,7 @@
           "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
-          "playerIndex": 2,
+          "playerIndex": 1,
           "bid": 4,
           "tricks": 4,
           "score": 26,
@@ -103,7 +103,7 @@
           "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
-          "playerIndex": 1,
+          "playerIndex": 2,
           "bid": 3,
           "tricks": 3,
           "score": 19,
@@ -123,8 +123,8 @@
       ],
       "cumulativeScores": [
         26,
-        19,
         26,
+        19,
         -10
       ],
       "completedAt": "2026-09-01T06:16:50.041Z"
@@ -132,8 +132,8 @@
   ],
   "activeRound": {
     "roundNumber": 2,
-    "dealerIndex": 2,
-    "leadBidderIndex": 3,
+    "dealerIndex": 1,
+    "leadBidderIndex": 2,
     "stage": "TRICKS",
     "trump": {
       "winnerIndex": null,
@@ -143,14 +143,14 @@
     },
     "bets": [
       3,
-      2,
       3,
+      2,
       4
     ],
     "tricks": [
       3,
-      2,
-      4,
+      3,
+      3,
       4
     ],
     "scores": [
@@ -164,5 +164,5 @@
     "timestamp": "2026-09-01T06:16:50.041Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-01T08:17:44.634Z"
+  "updatedAt": "2026-09-01T08:24:12.380Z"
 }
