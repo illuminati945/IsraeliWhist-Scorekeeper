@@ -87,6 +87,7 @@ export class GameSession {
   }
 
   getLastBidderIndex() {
+    if (this.simplifiedMode) return null;
     const firstBidder = this.getFirstBidderIndex();
     return (firstBidder + 3) % 4;
   }
@@ -102,7 +103,10 @@ export class GameSession {
   }
 
   getForbiddenBetForLastBidder() {
+    if (this.simplifiedMode) return null;
     const lastBidderIdx = this.getLastBidderIndex();
+    if (lastBidderIdx === null) return null;
+
     const otherBets = [];
     for (let i = 0; i < 4; i++) {
       if (i !== lastBidderIdx) {
@@ -166,8 +170,7 @@ export class GameSession {
     if (this.rules.enforceHookRule && !this.activeRound.trump.isPasRound) {
       const hookCheck = validateBetsHook(this.activeRound.bets);
       if (!hookCheck.isValid) {
-        const lastBidder = this.players[this.getLastBidderIndex()];
-        throw new Error(`Total bets cannot equal 13 (Hook Rule). Last bidder (${lastBidder.name}) must change their bet.`);
+        throw new Error('Total bets cannot equal 13 (Hook Rule). Please adjust the bids.');
       }
     }
 

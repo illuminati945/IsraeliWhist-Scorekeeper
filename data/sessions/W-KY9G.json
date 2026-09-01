@@ -61,15 +61,15 @@
       "isPasRound": false
     },
     "bets": [
-      2,
-      3,
-      4,
+      0,
+      6,
+      5,
       3
     ],
     "tricks": [
-      2,
-      3,
       0,
+      3,
+      7,
       3
     ],
     "scores": [
@@ -78,8 +78,8 @@
       0,
       0
     ],
-    "roundTotalBets": 12,
-    "bettingMode": "UNDER",
+    "roundTotalBets": 14,
+    "bettingMode": "OVER",
     "timestamp": "2026-09-01T05:17:21.223Z"
   },
   "status": "IN_PROGRESS"

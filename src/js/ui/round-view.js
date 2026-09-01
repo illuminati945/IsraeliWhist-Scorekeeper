@@ -137,19 +137,35 @@ export class RoundView {
 
   renderBetsStage(round, isSimplified) {
     const lastBidderIdx = this.session.getLastBidderIndex();
-    const lastBidderPlayer = this.session.players[lastBidderIdx];
+    const lastBidderPlayer = lastBidderIdx !== null ? this.session.players[lastBidderIdx] : null;
     const forbidden = this.session.getForbiddenBetForLastBidder();
     const hook = validateBetsHook(round.bets);
     const sum = round.bets.reduce((a, b) => a + (typeof b === 'number' && !isNaN(b) ? b : 0), 0);
+    const allFilled = round.bets.every(b => typeof b === 'number' && !isNaN(b));
     const dealer = this.session.players[round.dealerIndex];
     const trumpWinner = round.trump.winnerIndex !== null ? this.session.players[round.trump.winnerIndex] : null;
+
+    let hookMessage = '';
+    if (isSimplified) {
+      if (allFilled && sum === 13) {
+        hookMessage = '⚠️ Total equals 13 (Hook Violation). Total bids must be ≠ 13 to proceed.';
+      } else {
+        hookMessage = `Total Bids: <strong>${sum}</strong> (${sum > 13 ? 'Over' : sum < 13 ? 'Under' : 'Equal 13'})`;
+      }
+    } else {
+      if (forbidden !== null && lastBidderPlayer) {
+        hookMessage = `Total: <strong>${sum}</strong> • Last Bidder (${lastBidderPlayer.name}) cannot bid <strong>${forbidden}</strong>`;
+      } else {
+        hookMessage = `Total: <strong>${sum}</strong> (${hook.status === 'OVER' ? 'Over' : hook.status === 'UNDER' ? 'Under' : 'Equal 13'})`;
+      }
+    }
 
     return `
       <div>
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
           <div style="font-size: 0.82rem; color: var(--text-secondary);">
-            ${isSimplified ? `Dealer: <strong>${dealer.name}</strong> • Last: <strong>${lastBidderPlayer.name}</strong>` : 
-              `Trump Maker: <strong>${trumpWinner ? trumpWinner.name : '—'}</strong> (Last: <strong>${lastBidderPlayer.name}</strong>)`}
+            ${isSimplified ? `Dealer: <strong>${dealer.name}</strong>` : 
+              `Trump Maker: <strong>${trumpWinner ? trumpWinner.name : '—'}</strong> (Last: <strong>${lastBidderPlayer ? lastBidderPlayer.name : ''}</strong>)`}
           </div>
           ${!isSimplified ? `
             <button class="btn-nav" id="btn-back-to-trump" style="font-size: 0.75rem; min-height: 26px; padding: 2px 8px;">Edit Trump</button>
@@ -159,34 +175,27 @@ export class RoundView {
         <!-- Hook Banner -->
         <div class="hook-banner ${hook.status}">
           <div>
-            <span>Total Bids: <strong>${sum}</strong></span>
-            <span style="margin-left: 4px; opacity: 0.85;">
-              (${hook.status === 'OVER' ? 'Over' : hook.status === 'UNDER' ? 'Under' : 'Equal 13'})
-            </span>
+            <span>${hookMessage}</span>
           </div>
-          ${forbidden !== null ? `
-            <span style="font-size: 0.78rem; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: var(--radius-sm);">
-              Last Bidder (<strong>${lastBidderPlayer.name}</strong>) cannot bid <strong>${forbidden}</strong>
-            </span>
-          ` : ''}
         </div>
 
         <!-- Player Input Cards -->
         ${this.session.players.map((p, idx) => {
           const isDealer = (idx === round.dealerIndex);
-          const isLastBidder = (idx === lastBidderIdx);
-          const isTrumpMaker = (idx === round.trump.winnerIndex && !isSimplified);
+          const isLastBidder = (!isSimplified && idx === lastBidderIdx);
+          const isTrumpMaker = (!isSimplified && idx === round.trump.winnerIndex);
           const currentBet = round.bets[idx];
+          const isForbiddenChip = (!isSimplified && isLastBidder && forbidden !== null);
 
           return `
-            <div class="input-row ${isLastBidder ? 'dealer-row' : ''}">
+            <div class="input-row ${isDealer ? 'dealer-row' : ''}">
               <div class="input-row-header">
                 <div class="input-row-name">
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
                   ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">TRUMP MAKER</span>` : ''}
                   ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">LAST BIDDER</span>` : ''}
-                  ${isDealer && !isLastBidder ? `<span class="tag-dealer" style="position:static; background: var(--text-muted);">DEALER</span>` : ''}
+                  ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">DEALER</span>` : ''}
                 </div>
                 
                 <div class="stepper">
@@ -198,7 +207,7 @@ export class RoundView {
 
               <div class="chips-row">
                 ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                  <button class="chip ${currentBet === n ? 'active' : ''} ${isLastBidder && forbidden === n ? 'forbidden' : ''}" 
+                  <button class="chip ${currentBet === n ? 'active' : ''} ${isForbiddenChip && forbidden === n ? 'forbidden' : ''}" 
                           data-player-idx="${idx}" data-amount="${n}">
                     ${n === 0 ? '0' : n}
                   </button>
@@ -208,7 +217,7 @@ export class RoundView {
           `;
         }).join('')}
 
-        <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || round.bets.some(b => b === null) ? 'disabled' : ''} style="margin-top: 0.5rem;">
+        <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || !allFilled ? 'disabled' : ''} style="margin-top: 0.5rem;">
           Enter Actual Tricks →
         </button>
       </div>
