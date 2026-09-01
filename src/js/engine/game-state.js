@@ -184,7 +184,8 @@ export class GameSession {
     this.notify();
   }
 
-  autoFillLastPlayerTricks() {
+  autoFillTricksFromBids() {
+    // 1. If 3 players are filled and 1 is missing, fill the exact math remainder to 13
     const filled = [];
     let missingIdx = -1;
     for (let i = 0; i < 4; i++) {
@@ -203,7 +204,14 @@ export class GameSession {
         return true;
       }
     }
-    return false;
+
+    // 2. Otherwise automatically copy all players' bids into tricks
+    for (let i = 0; i < 4; i++) {
+      const bet = this.activeRound.bets[i];
+      this.activeRound.tricks[i] = (typeof bet === 'number' && !isNaN(bet)) ? bet : 0;
+    }
+    this.notify();
+    return true;
   }
 
   commitRound() {

@@ -236,8 +236,8 @@ export class RoundView {
           <div style="font-size: 0.82rem; font-weight: 700; color: ${isValidSum ? 'var(--success)' : 'var(--warning)'};">
             ${isValidSum ? '✓ 13 Tricks Total' : `Remaining to Assign: ${remaining}`}
           </div>
-          <button class="btn-pill" id="btn-auto-fill-tricks" style="font-size: 0.75rem;">
-            Auto-Fill
+          <button class="btn-pill" id="btn-auto-fill-tricks" style="font-size: 0.75rem; background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.4); color: #c7d2fe;">
+            ⚡ Auto-Fill Bids
           </button>
         </div>
 
@@ -482,9 +482,8 @@ export class RoundView {
       if (btnAuto) {
         btnAuto.addEventListener('click', () => {
           triggerHaptic();
-          const success = this.session.autoFillLastPlayerTricks();
-          if (success) this.render();
-          else alert('Please enter tricks for at least 3 players.');
+          this.session.autoFillTricksFromBids();
+          this.render();
         });
       }
 

@@ -46,31 +46,111 @@
       "initial": "4"
     }
   ],
-  "currentDealerIndex": 0,
-  "roundNumber": 1,
-  "completedRounds": [],
+  "currentDealerIndex": 1,
+  "roundNumber": 2,
+  "completedRounds": [
+    {
+      "roundNumber": 1,
+      "dealerIndex": 0,
+      "leadBidderIndex": 1,
+      "stage": "TRICKS",
+      "trump": {
+        "winnerIndex": 1,
+        "suitId": "NT",
+        "bidAmount": 7,
+        "isPasRound": false
+      },
+      "bets": [
+        0,
+        6,
+        5,
+        3
+      ],
+      "tricks": [
+        0,
+        3,
+        7,
+        3
+      ],
+      "scores": [
+        50,
+        -30,
+        -20,
+        19
+      ],
+      "roundTotalBets": 14,
+      "bettingMode": "OVER",
+      "timestamp": "2026-09-01T05:17:21.223Z",
+      "simplified": true,
+      "results": [
+        {
+          "playerIndex": 0,
+          "bid": 0,
+          "tricks": 0,
+          "score": 50,
+          "made": true,
+          "delta": 0,
+          "explanation": "Pass (0) made: +50 pts"
+        },
+        {
+          "playerIndex": 1,
+          "bid": 6,
+          "tricks": 3,
+          "score": -30,
+          "made": false,
+          "delta": 3,
+          "explanation": "Bid 6, took 3 (3 diff × -10): -30 pts"
+        },
+        {
+          "playerIndex": 2,
+          "bid": 5,
+          "tricks": 7,
+          "score": -20,
+          "made": false,
+          "delta": 2,
+          "explanation": "Bid 5, took 7 (2 diff × -10): -20 pts"
+        },
+        {
+          "playerIndex": 3,
+          "bid": 3,
+          "tricks": 3,
+          "score": 19,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
+        }
+      ],
+      "cumulativeScores": [
+        50,
+        -30,
+        -20,
+        19
+      ],
+      "completedAt": "2026-09-01T05:26:16.573Z"
+    }
+  ],
   "activeRound": {
-    "roundNumber": 1,
-    "dealerIndex": 0,
-    "leadBidderIndex": 1,
+    "roundNumber": 2,
+    "dealerIndex": 1,
+    "leadBidderIndex": 2,
     "stage": "TRICKS",
     "trump": {
-      "winnerIndex": 1,
+      "winnerIndex": null,
       "suitId": "NT",
-      "bidAmount": 7,
+      "bidAmount": 0,
       "isPasRound": false
     },
     "bets": [
-      0,
-      6,
-      5,
-      3
+      2,
+      3,
+      2,
+      5
     ],
     "tricks": [
-      0,
+      4,
       3,
-      7,
-      3
+      4,
+      4
     ],
     "scores": [
       0,
@@ -78,9 +158,9 @@
       0,
       0
     ],
-    "roundTotalBets": 14,
-    "bettingMode": "OVER",
-    "timestamp": "2026-09-01T05:17:21.223Z"
+    "roundTotalBets": 12,
+    "bettingMode": "UNDER",
+    "timestamp": "2026-09-01T05:26:16.573Z"
   },
   "status": "IN_PROGRESS"
 }
