@@ -46,8 +46,8 @@
       "initial": "4"
     }
   ],
-  "currentDealerIndex": 2,
-  "roundNumber": 3,
+  "currentDealerIndex": 3,
+  "roundNumber": 4,
   "completedRounds": [
     {
       "roundNumber": 1,
@@ -206,12 +206,91 @@
         9
       ],
       "completedAt": "2026-09-01T05:28:32.404Z"
+    },
+    {
+      "roundNumber": 3,
+      "dealerIndex": 2,
+      "leadBidderIndex": 3,
+      "stage": "TRICKS",
+      "trump": {
+        "winnerIndex": null,
+        "suitId": "NT",
+        "bidAmount": 0,
+        "isPasRound": false
+      },
+      "bets": [
+        3,
+        3,
+        5,
+        3
+      ],
+      "tricks": [
+        3,
+        3,
+        4,
+        3
+      ],
+      "scores": [
+        19,
+        19,
+        -10,
+        19
+      ],
+      "roundTotalBets": 14,
+      "bettingMode": "OVER",
+      "timestamp": "2026-09-01T05:28:32.404Z",
+      "simplified": true,
+      "results": [
+        {
+          "playerIndex": 0,
+          "bid": 3,
+          "tricks": 3,
+          "score": 19,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
+        },
+        {
+          "playerIndex": 1,
+          "bid": 3,
+          "tricks": 3,
+          "score": 19,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
+        },
+        {
+          "playerIndex": 2,
+          "bid": 5,
+          "tricks": 4,
+          "score": -10,
+          "made": false,
+          "delta": 1,
+          "explanation": "Bid 5, took 4 (1 diff × -10): -10 pts"
+        },
+        {
+          "playerIndex": 3,
+          "bid": 3,
+          "tricks": 3,
+          "score": 19,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
+        }
+      ],
+      "cumulativeScores": [
+        49,
+        8,
+        -16,
+        28
+      ],
+      "completedAt": "2026-09-01T05:35:36.919Z"
     }
   ],
   "activeRound": {
-    "roundNumber": 3,
-    "dealerIndex": 2,
-    "leadBidderIndex": 3,
+    "roundNumber": 4,
+    "dealerIndex": 3,
+    "leadBidderIndex": 0,
     "stage": "BETS",
     "trump": {
       "winnerIndex": null,
@@ -222,7 +301,7 @@
     "bets": [
       null,
       null,
-      8,
+      null,
       null
     ],
     "tricks": [
@@ -237,9 +316,9 @@
       0,
       0
     ],
-    "roundTotalBets": 8,
-    "bettingMode": "UNDER",
-    "timestamp": "2026-09-01T05:28:32.404Z"
+    "roundTotalBets": 0,
+    "bettingMode": null,
+    "timestamp": "2026-09-01T05:35:36.919Z"
   },
   "status": "IN_PROGRESS"
 }

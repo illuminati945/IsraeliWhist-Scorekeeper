@@ -44,12 +44,11 @@ export class Scoreboard {
           const isDealer = (idx === currentDealer);
 
           return `
-            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" data-player-idx="${idx}" title="Tap to rename player" style="cursor: pointer;">
+            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" data-player-idx="${idx}">
               ${isDealer ? `<span class="tag-dealer">DEALER</span>` : ''}
               <div class="player-title">
                 <span class="player-dot" style="background: ${p.color};"></span>
                 <span>${p.name}</span>
-                <span style="font-size: 0.65rem; opacity: 0.6; margin-left: 2px;">✏️</span>
               </div>
               <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
                 ${score >= 0 ? `+${score}` : score}
@@ -64,16 +63,6 @@ export class Scoreboard {
     `;
 
     this.leaderboardContainer.innerHTML = html;
-
-    // 1-Tap quick edit on player card
-    this.leaderboardContainer.querySelectorAll('.player-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const pIdx = parseInt(card.dataset.playerIdx, 10);
-        if (window.app && window.app.dialogs) {
-          window.app.dialogs.showEditSettingsModal(pIdx);
-        }
-      });
-    });
   }
 
   renderHistoryTable() {
