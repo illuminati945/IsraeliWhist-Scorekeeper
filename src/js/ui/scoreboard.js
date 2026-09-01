@@ -1,6 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with In-Place iOS Springboard Reordering
- * (Dismiss by tapping outside the squares, no clutter buttons)
+ * (Active wobbly jiggle animation, fluid slide displacement, and tap-outside dismissal)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -14,7 +14,16 @@ export class Scoreboard {
     this.onReorganizeSeating = onReorganizeSeating;
     this.isJiggleMode = false;
     this.isDragging = false;
-    this.outsideDismissListener = null;
+
+    // Global listener to dismiss jiggle mode on tapping outside
+    document.addEventListener('pointerdown', (e) => {
+      if (this.isJiggleMode && !this.isDragging) {
+        if (!e.target.closest('.player-card')) {
+          this.setJiggleMode(false);
+        }
+      }
+    });
+
     this.render();
   }
 
@@ -30,27 +39,12 @@ export class Scoreboard {
 
   setJiggleMode(active) {
     this.isJiggleMode = active;
-
-    if (this.outsideDismissListener) {
-      window.removeEventListener('pointerdown', this.outsideDismissListener, { capture: true });
-      this.outsideDismissListener = null;
+    if (this.leaderboardContainer) {
+      const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
+      if (grid) {
+        grid.classList.toggle('is-jiggling', active);
+      }
     }
-
-    if (active) {
-      this.outsideDismissListener = (e) => {
-        if (this.isDragging) return;
-        if (!e.target.closest('.player-card')) {
-          this.setJiggleMode(false);
-        }
-      };
-      setTimeout(() => {
-        if (this.isJiggleMode && this.outsideDismissListener) {
-          window.addEventListener('pointerdown', this.outsideDismissListener, { capture: true });
-        }
-      }, 80);
-    }
-
-    this.renderLeaderboard();
   }
 
   render() {
@@ -176,10 +170,6 @@ export class Scoreboard {
         initialSlotRects = computeSlotPositions();
 
         this.setJiggleMode(true);
-        if (grid) {
-          grid.classList.add('is-jiggling');
-          grid.classList.add('is-actively-dragging');
-        }
 
         card.classList.remove('card-pressing');
         card.classList.add('is-lifted');
@@ -197,7 +187,7 @@ export class Scoreboard {
         const clientY = e.clientY;
 
         if (!isCardDragging) {
-          if (Math.abs(clientX - startX) > 12 || Math.abs(clientY - startY) > 12) {
+          if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
             if (pressTimer) {
               clearTimeout(pressTimer);
               pressTimer = null;
@@ -255,7 +245,6 @@ export class Scoreboard {
         if (isCardDragging) {
           isCardDragging = false;
           this.isDragging = false;
-          if (grid) grid.classList.remove('is-actively-dragging');
 
           const targetSlot = currentTargetSlotIndex;
           const originRect = initialSlotRects[fromSlotIndex];
@@ -280,7 +269,7 @@ export class Scoreboard {
                 order.splice(targetSlot, 0, moved);
 
                 this.session.reorderPlayers(order);
-                this.setJiggleMode(true);
+                this.renderLeaderboard();
               } else {
                 this.renderLeaderboard();
               }
@@ -299,8 +288,6 @@ export class Scoreboard {
 
       const onPointerDown = (e) => {
         if (this.isDragging) return;
-
-        if (e.cancelable) e.preventDefault();
 
         startX = e.clientX;
         startY = e.clientY;
@@ -321,9 +308,10 @@ export class Scoreboard {
         if (this.isJiggleMode) {
           liftAndStartDrag(startX, startY);
         } else {
+          // Automatic lift-off on hold (~280ms)
           pressTimer = setTimeout(() => {
             liftAndStartDrag(startX, startY);
-          }, 300);
+          }, 280);
         }
       };
 
