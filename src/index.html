@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Whist Score">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=3">
+  <link rel="stylesheet" href="css/styles.css?v=4">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♠</text></svg>">
 </head>
 <body>
@@ -19,13 +19,14 @@
   <header class="navbar">
     <div class="nav-left">
       <div class="brand-indicator" id="sync-indicator" title="Connected"></div>
-      <span class="brand-name">Whist</span>
+      <span class="brand-name" id="btn-brand-home" style="cursor: pointer;">Whist</span>
       <button class="room-pill" id="btn-room-badge" title="Tap to Share">
         <span id="room-code-display">W-...</span>
       </button>
     </div>
 
     <div class="nav-right">
+      <button class="btn-pill" id="btn-lobby-home" style="font-size: 0.75rem; display: none;">🏠 Lobby</button>
       <button class="btn-pill btn-share" id="btn-open-share">Share</button>
       <button class="btn-pill btn-menu" id="btn-open-menu">Menu ☰</button>
     </div>
@@ -34,31 +35,37 @@
   <!-- Main Container -->
   <main class="container">
     
-    <!-- Top Leaderboard -->
-    <section id="leaderboard-section"></section>
+    <!-- Landing / Welcome Lobby View -->
+    <section id="landing-view-container"></section>
 
-    <!-- Tabs -->
-    <nav class="tabs">
-      <button class="tab-item active" data-tab="tab-round" id="tab-btn-round">Active Deal</button>
-      <button class="tab-item" data-tab="tab-history" id="tab-btn-history">History</button>
-      <button class="tab-item" data-tab="tab-chart" id="tab-btn-chart">Chart</button>
-    </nav>
+    <!-- Active Game View -->
+    <section id="game-view-container" style="display: none;">
+      <!-- Top Leaderboard -->
+      <section id="leaderboard-section"></section>
 
-    <!-- Tab Panels -->
-    <div id="tab-round" class="tab-panel active">
-      <div id="round-view-container"></div>
-    </div>
+      <!-- Tabs -->
+      <nav class="tabs">
+        <button class="tab-item active" data-tab="tab-round" id="tab-btn-round">Active Deal</button>
+        <button class="tab-item" data-tab="tab-history" id="tab-btn-history">History</button>
+        <button class="tab-item" data-tab="tab-chart" id="tab-btn-chart">Chart</button>
+      </nav>
 
-    <div id="tab-history" class="tab-panel" style="display: none;">
-      <div id="history-view-container"></div>
-    </div>
+      <!-- Tab Panels -->
+      <div id="tab-round" class="tab-panel active">
+        <div id="round-view-container"></div>
+      </div>
 
-    <div id="tab-chart" class="tab-panel" style="display: none;">
-      <div id="chart-view-container"></div>
-    </div>
+      <div id="tab-history" class="tab-panel" style="display: none;">
+        <div id="history-view-container"></div>
+      </div>
+
+      <div id="tab-chart" class="tab-panel" style="display: none;">
+        <div id="chart-view-container"></div>
+      </div>
+    </section>
 
   </main>
 
-  <script type="module" src="js/app.js?v=3"></script>
+  <script type="module" src="js/app.js?v=4"></script>
 </body>
 </html>

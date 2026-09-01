@@ -1,9 +1,10 @@
 /**
- * Israeli Whist Scorekeeper - Main Entrypoint with Real-Time Multiplayer Sync & Archive
+ * Israeli Whist Scorekeeper - Main Entrypoint with Landing Page & Real-Time Sync
  */
 import { GameSession } from './engine/game-state.js';
 import { SyncManager } from './engine/sync-manager.js';
 import { ArchiveManager } from './engine/archive-manager.js';
+import { LandingView } from './ui/landing-view.js';
 import { RoundView } from './ui/round-view.js';
 import { Scoreboard } from './ui/scoreboard.js';
 import { ChartView } from './ui/chart-view.js';
@@ -20,7 +21,15 @@ class IsraeliWhistApp {
     this.initSyncManager();
     this.bindGlobalEvents();
 
-    this.archiveCurrentGame();
+    // Check if URL specifies a game room or if we should show landing lobby
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasGameParam = urlParams.has('game') || urlParams.has('room') || window.location.hash.length > 1;
+
+    if (hasGameParam) {
+      this.showGameView();
+    } else {
+      this.showLandingView();
+    }
 
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
@@ -36,16 +45,21 @@ class IsraeliWhistApp {
   }
 
   initElements() {
+    this.landingContainer = document.getElementById('landing-view-container');
+    this.gameContainer = document.getElementById('game-view-container');
     this.leaderboardContainer = document.getElementById('leaderboard-section');
     this.roundContainer = document.getElementById('round-view-container');
     this.historyContainer = document.getElementById('history-view-container');
     this.chartContainer = document.getElementById('chart-view-container');
     this.roomCodeDisplay = document.getElementById('room-code-display');
     this.syncIndicator = document.getElementById('sync-indicator');
+    this.btnLobbyHome = document.getElementById('btn-lobby-home');
+    this.btnBrandHome = document.getElementById('btn-brand-home');
   }
 
   initControllers() {
     this.dialogs = new Dialogs(this);
+    this.landingView = new LandingView(this, this.landingContainer);
 
     this.roundView = new RoundView(
       this.session, 
@@ -96,6 +110,44 @@ class IsraeliWhistApp {
     this.syncManager.notify();
   }
 
+  showLandingView() {
+    if (this.landingContainer) this.landingContainer.style.display = 'block';
+    if (this.gameContainer) this.gameContainer.style.display = 'none';
+    if (this.btnLobbyHome) this.btnLobbyHome.style.display = 'none';
+
+    this.landingView.render();
+    
+    // Clear URL param while in lobby
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete('game');
+    newUrl.searchParams.delete('room');
+    newUrl.hash = '';
+    window.history.replaceState({}, '', newUrl.toString());
+  }
+
+  showGameView() {
+    if (this.landingContainer) this.landingContainer.style.display = 'none';
+    if (this.gameContainer) this.gameContainer.style.display = 'block';
+    if (this.btnLobbyHome) this.btnLobbyHome.style.display = 'inline-flex';
+
+    if (this.syncManager) {
+      this.syncManager.updateUrl(this.syncManager.roomId);
+    }
+
+    this.roundView.updateSession(this.session);
+    this.scoreboard.updateSession(this.session);
+    this.chartView.updateSession(this.session);
+    this.archiveCurrentGame();
+  }
+
+  joinRoomByCode(code) {
+    if (!code) return;
+    if (this.syncManager) {
+      this.syncManager.joinRoom(code);
+    }
+    this.showGameView();
+  }
+
   archiveCurrentGame() {
     if (this.session) {
       const roomId = this.syncManager ? this.syncManager.roomId : this.session.id;
@@ -104,25 +156,26 @@ class IsraeliWhistApp {
   }
 
   startNewGame(options = {}) {
-    // 1. Ensure current active game is archived before starting fresh
+    // 1. Archive current active game before switching
     if (this.session) {
       this.archiveCurrentGame();
     }
 
-    // 2. Generate a new room ID, update URL, and join new room
+    // 2. Generate a new room ID and update URL & WebSocket
     let newRoomId = 'game_' + Date.now();
     if (this.syncManager) {
       newRoomId = this.syncManager.createNewRoom();
     }
 
-    // 3. Create fresh GameSession with the new room ID
+    // 3. Create fresh GameSession
     const newSession = new GameSession({
       id: newRoomId,
       ...options
     });
 
-    // 4. Set as active session
+    // 4. Set as active session and show game view
     this.setSession(newSession);
+    this.showGameView();
   }
 
   applyRemoteState(remoteState) {
@@ -183,10 +236,7 @@ class IsraeliWhistApp {
       this.syncManager.joinRoom(gameSummary.roomId);
     }
 
-    this.roundView.updateSession(this.session);
-    this.scoreboard.updateSession(this.session);
-    this.chartView.updateSession(this.session);
-    this.archiveCurrentGame();
+    this.showGameView();
 
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
@@ -209,6 +259,13 @@ class IsraeliWhistApp {
     if (btnShare) btnShare.addEventListener('click', () => this.dialogs.showShareModal());
     if (btnRoom) btnRoom.addEventListener('click', () => this.dialogs.showShareModal());
     if (btnMenu) btnMenu.addEventListener('click', () => this.dialogs.showMenuModal());
+
+    if (this.btnLobbyHome) {
+      this.btnLobbyHome.addEventListener('click', () => this.showLandingView());
+    }
+    if (this.btnBrandHome) {
+      this.btnBrandHome.addEventListener('click', () => this.showLandingView());
+    }
 
     const tabs = document.querySelectorAll('.tab-item');
     const panels = document.querySelectorAll('.tab-panel');

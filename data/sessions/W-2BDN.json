@@ -20,6 +20,7 @@
   },
   "targetPoints": null,
   "maxRounds": null,
+  "simplifiedMode": true,
   "players": [
     {
       "id": "p0",

@@ -1,6 +1,6 @@
 {
-  "id": "game_1788241865143",
-  "createdAt": "2026-09-01T05:51:05.143Z",
+  "id": "W-HEUJ",
+  "createdAt": "2026-09-01T05:51:12.421Z",
   "rules": {
     "id": "STANDARD",
     "nameEn": "Standard Israeli Whist (Quadratic)",
@@ -20,6 +20,7 @@
   },
   "targetPoints": null,
   "maxRounds": null,
+  "simplifiedMode": true,
   "players": [
     {
       "id": "p0",
@@ -80,7 +81,7 @@
     ],
     "roundTotalBets": 0,
     "bettingMode": null,
-    "timestamp": "2026-09-01T05:51:05.143Z"
+    "timestamp": "2026-09-01T05:51:12.422Z"
   },
   "status": "IN_PROGRESS"
 }

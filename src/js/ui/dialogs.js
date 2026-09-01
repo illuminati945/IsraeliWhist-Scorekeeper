@@ -25,6 +25,11 @@ export class Dialogs {
         </div>
 
         <div class="menu-list">
+          <button class="menu-item-btn" id="menu-opt-home-lobby">
+            <span>🏠 Return to Lobby / Home</span>
+            <span>→</span>
+          </button>
+
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
             <div>
               <div style="font-weight: 700; color: #a7f3d0;">📂 Saved Games (${recentGames.length}/10)</div>
@@ -82,6 +87,11 @@ export class Dialogs {
     document.body.appendChild(modal);
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelector('#menu-opt-home-lobby').addEventListener('click', () => {
+      closeModal();
+      this.app.showLandingView();
+    });
 
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {
       closeModal();
@@ -412,7 +422,7 @@ export class Dialogs {
         </div>
 
         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          Starting a new game will create a fresh shareable link.
+          Configure players and start a fresh deal.
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
@@ -422,7 +432,7 @@ export class Dialogs {
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span class="player-dot" style="background: ${p.color};"></span>
-              <input type="text" class="input-field player-name-input" data-p-idx="${idx}" value="${p.name}" style="margin-bottom:0;" />
+              <input type="text" class="input-field player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="Player ${idx + 1}" style="margin-bottom:0;" />
             </div>
           `).join('')}
         </div>
