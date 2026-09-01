@@ -119,6 +119,7 @@ export class Scoreboard {
       let fromSlotIndex = null;
       let currentTargetSlotIndex = null;
       let initialSlotRects = [];
+      let capturedPointerId = null;
 
       const triggerHaptic = (pattern = 25) => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -143,7 +144,6 @@ export class Scoreboard {
       const applyLiveSlotShifts = (hoveredSlot) => {
         if (hoveredSlot === null || hoveredSlot === undefined) return;
         
-        // Compute where each original slot's card will shift
         const order = [0, 1, 2, 3];
         const [moved] = order.splice(fromSlotIndex, 1);
         order.splice(hoveredSlot, 0, moved);
@@ -230,11 +230,11 @@ export class Scoreboard {
       };
 
       const onPointerMove = (e) => {
-        const clientX = e.clientX;
-        const clientY = e.clientY;
+        const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
 
         if (!isDragging) {
-          if (Math.abs(clientX - startX) > 8 || Math.abs(clientY - startY) > 8) {
+          if (Math.abs(clientX - startX) > 14 || Math.abs(clientY - startY) > 14) {
             if (pressTimer) {
               clearTimeout(pressTimer);
               pressTimer = null;
@@ -284,6 +284,11 @@ export class Scoreboard {
         }
         card.classList.remove('card-pressing');
 
+        if (capturedPointerId !== null && card.releasePointerCapture) {
+          try { card.releasePointerCapture(capturedPointerId); } catch (err) {}
+          capturedPointerId = null;
+        }
+
         if (isDragging) {
           isDragging = false;
           if (grid) grid.classList.remove('is-actively-dragging');
@@ -293,7 +298,6 @@ export class Scoreboard {
           const targetRect = initialSlotRects[targetSlot];
 
           if (dragClone && targetRect) {
-            // Smooth spring snap directly into the target slot
             dragClone.classList.add('is-dropping');
             dragClone.style.left = `${targetRect.left}px`;
             dragClone.style.top = `${targetRect.top}px`;
@@ -333,32 +337,47 @@ export class Scoreboard {
         window.removeEventListener('pointermove', onPointerMove);
         window.removeEventListener('pointerup', onPointerUp);
         window.removeEventListener('pointercancel', onPointerUp);
+        window.removeEventListener('touchmove', onPointerMove);
+        window.removeEventListener('touchend', onPointerUp);
       };
 
       const onPointerDown = (e) => {
         if (this.dragState) return;
 
-        startX = e.clientX;
-        startY = e.clientY;
-        lastX = e.clientX;
+        // Prevent browser scroll or callout
+        if (e.cancelable) e.preventDefault();
+
+        startX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        startY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+        lastX = startX;
         card.classList.add('card-pressing');
+
+        if (e.pointerId && card.setPointerCapture) {
+          try {
+            card.setPointerCapture(e.pointerId);
+            capturedPointerId = e.pointerId;
+          } catch (err) {}
+        }
 
         window.addEventListener('pointermove', onPointerMove, { passive: false });
         window.addEventListener('pointerup', onPointerUp);
         window.addEventListener('pointercancel', onPointerUp);
+        window.addEventListener('touchmove', onPointerMove, { passive: false });
+        window.addEventListener('touchend', onPointerUp);
 
         if (this.isJiggleMode) {
-          e.preventDefault();
-          liftAndStartDrag(e.clientX, e.clientY);
+          liftAndStartDrag(startX, startY);
         } else {
-          // Automatic lift-off when timeout passes (~350ms)
+          // Automatic lift-off on hold (~300ms)
           pressTimer = setTimeout(() => {
             liftAndStartDrag(startX, startY);
-          }, 350);
+          }, 300);
         }
       };
 
       card.addEventListener('pointerdown', onPointerDown);
+      card.addEventListener('touchstart', onPointerDown, { passive: false });
+      card.addEventListener('contextmenu', (e) => e.preventDefault());
     });
   }
 

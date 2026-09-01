@@ -1,6 +1,6 @@
 {
-  "id": "game_1788241865143",
-  "createdAt": "2026-09-01T05:51:05.143Z",
+  "id": "W-VJN2",
+  "createdAt": "2026-09-01T06:18:17.885Z",
   "rules": {
     "id": "STANDARD",
     "nameEn": "Standard Israeli Whist (Quadratic)",
@@ -23,6 +23,12 @@
   "simplifiedMode": false,
   "players": [
     {
+      "id": "p0",
+      "name": "איתי",
+      "color": "#6366f1",
+      "initial": "1"
+    },
+    {
       "id": "p1",
       "name": "אביגיל",
       "color": "#10b981",
@@ -39,102 +45,16 @@
       "name": "יותם",
       "color": "#ec4899",
       "initial": "4"
-    },
-    {
-      "id": "p0",
-      "name": "איתי",
-      "color": "#6366f1",
-      "initial": "1"
     }
   ],
   "currentDealerIndex": 0,
-  "roundNumber": 2,
-  "completedRounds": [
-    {
-      "roundNumber": 1,
-      "dealerIndex": 3,
-      "leadBidderIndex": 0,
-      "stage": "TRICKS",
-      "trump": {
-        "winnerIndex": null,
-        "suitId": "NT",
-        "bidAmount": 0,
-        "isPasRound": false
-      },
-      "bets": [
-        4,
-        4,
-        3,
-        1
-      ],
-      "tricks": [
-        4,
-        4,
-        3,
-        2
-      ],
-      "scores": [
-        26,
-        19,
-        -10,
-        26
-      ],
-      "roundTotalBets": 12,
-      "bettingMode": "UNDER",
-      "timestamp": "2026-09-01T05:51:05.143Z",
-      "simplified": true,
-      "results": [
-        {
-          "playerIndex": 3,
-          "bid": 4,
-          "tricks": 4,
-          "score": 26,
-          "made": true,
-          "delta": 0,
-          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
-        },
-        {
-          "playerIndex": 0,
-          "bid": 4,
-          "tricks": 4,
-          "score": 26,
-          "made": true,
-          "delta": 0,
-          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
-        },
-        {
-          "playerIndex": 1,
-          "bid": 3,
-          "tricks": 3,
-          "score": 19,
-          "made": true,
-          "delta": 0,
-          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
-        },
-        {
-          "playerIndex": 2,
-          "bid": 1,
-          "tricks": 2,
-          "score": -10,
-          "made": false,
-          "delta": 1,
-          "explanation": "Bid 1, took 2 (1 diff × -10): -10 pts"
-        }
-      ],
-      "cumulativeScores": [
-        26,
-        19,
-        -10,
-        26
-      ],
-      "completedAt": "2026-09-01T06:16:50.041Z"
-    }
-  ],
+  "roundNumber": 1,
+  "completedRounds": [],
   "activeRound": {
-    "roundNumber": 2,
+    "roundNumber": 1,
     "dealerIndex": 0,
     "leadBidderIndex": 1,
-    "stage": "TRICKS",
+    "stage": "TRUMP",
     "trump": {
       "winnerIndex": null,
       "suitId": "NT",
@@ -142,16 +62,16 @@
       "isPasRound": false
     },
     "bets": [
-      3,
-      2,
-      4,
-      3
+      null,
+      null,
+      null,
+      null
     ],
     "tricks": [
-      4,
-      2,
-      4,
-      3
+      null,
+      null,
+      null,
+      null
     ],
     "scores": [
       0,
@@ -159,10 +79,10 @@
       0,
       0
     ],
-    "roundTotalBets": 12,
-    "bettingMode": "UNDER",
-    "timestamp": "2026-09-01T06:16:50.041Z"
+    "roundTotalBets": 0,
+    "bettingMode": null,
+    "timestamp": "2026-09-01T06:18:17.886Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-01T07:51:17.161Z"
+  "updatedAt": "2026-09-01T07:54:36.704Z"
 }
