@@ -10,24 +10,23 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Whist Score">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=5">
+  <link rel="stylesheet" href="css/styles.css?v=6">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♠</text></svg>">
 </head>
 <body>
 
-  <!-- Top Mobile Bar (Zero Overlap Guaranteed) -->
+  <!-- Top Mobile Bar (Compact Zero Clutter) -->
   <header class="navbar">
     <div class="nav-left">
       <div class="brand-indicator" id="sync-indicator" title="Connected"></div>
-      <span class="brand-name" id="btn-brand-home" style="cursor: pointer;">Whist</span>
+      <span class="brand-name" id="btn-brand-home" title="Tap to return to Lobby" style="cursor: pointer;">Whist</span>
       <button class="room-pill" id="btn-room-badge" title="Tap to Share">
         <span id="room-code-display">W-...</span>
       </button>
     </div>
 
     <div class="nav-right">
-      <button class="btn-pill" id="btn-lang-toggle" style="font-size: 0.75rem; padding: 0 8px; color: #fde68a;">עברית</button>
-      <button class="btn-pill" id="btn-lobby-home" style="font-size: 0.75rem; display: none;">🏠 Lobby</button>
+      <button class="btn-pill btn-lang" id="btn-lang-toggle" title="Switch Language / החלף שפה">עב</button>
       <button class="btn-pill btn-share" id="btn-open-share">Share</button>
       <button class="btn-pill btn-menu" id="btn-open-menu">Menu ☰</button>
     </div>
@@ -67,6 +66,6 @@
 
   </main>
 
-  <script type="module" src="js/app.js?v=5"></script>
+  <script type="module" src="js/app.js?v=6"></script>
 </body>
 </html>

@@ -83,10 +83,12 @@ class IsraeliWhistApp {
   updateStaticI18n() {
     const t = this.i18n;
     if (this.btnBrandHome) this.btnBrandHome.textContent = t.appName;
-    if (this.btnLangToggle) this.btnLangToggle.textContent = t.switchLang;
+    if (this.btnLangToggle) {
+      // Compact indicator: 'EN' when currently in Hebrew, 'עב' when currently in English
+      this.btnLangToggle.textContent = t.lang === 'he' ? 'EN' : 'עב';
+    }
     if (this.btnShare) this.btnShare.textContent = t.share;
     if (this.btnMenu) this.btnMenu.textContent = t.menu;
-    if (this.btnLobbyHome) this.btnLobbyHome.textContent = t.lobby;
 
     const tabRound = document.getElementById('tab-btn-round');
     const tabHistory = document.getElementById('tab-btn-history');
@@ -106,7 +108,6 @@ class IsraeliWhistApp {
     this.chartContainer = document.getElementById('chart-view-container');
     this.roomCodeDisplay = document.getElementById('room-code-display');
     this.syncIndicator = document.getElementById('sync-indicator');
-    this.btnLobbyHome = document.getElementById('btn-lobby-home');
     this.btnBrandHome = document.getElementById('btn-brand-home');
     this.btnLangToggle = document.getElementById('btn-lang-toggle');
     this.btnShare = document.getElementById('btn-open-share');
@@ -169,7 +170,6 @@ class IsraeliWhistApp {
   showLandingView() {
     if (this.landingContainer) this.landingContainer.style.display = 'block';
     if (this.gameContainer) this.gameContainer.style.display = 'none';
-    if (this.btnLobbyHome) this.btnLobbyHome.style.display = 'none';
 
     this.landingView.render();
     
@@ -184,7 +184,6 @@ class IsraeliWhistApp {
   showGameView() {
     if (this.landingContainer) this.landingContainer.style.display = 'none';
     if (this.gameContainer) this.gameContainer.style.display = 'block';
-    if (this.btnLobbyHome) this.btnLobbyHome.style.display = 'inline-flex';
 
     if (this.syncManager) {
       this.syncManager.updateUrl(this.syncManager.roomId);
@@ -320,9 +319,6 @@ class IsraeliWhistApp {
       });
     }
 
-    if (this.btnLobbyHome) {
-      this.btnLobbyHome.addEventListener('click', () => this.showLandingView());
-    }
     if (this.btnBrandHome) {
       this.btnBrandHome.addEventListener('click', () => this.showLandingView());
     }
