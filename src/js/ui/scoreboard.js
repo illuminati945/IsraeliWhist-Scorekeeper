@@ -44,24 +44,7 @@ export class Scoreboard {
     const topScore = rankings.length > 0 ? rankings[0].score : 0;
     const currentDealer = this.session.currentDealerIndex;
 
-    let html = '';
-
-    // iOS Jiggle Mode Action Bar
-    if (this.isJiggleMode) {
-      html += `
-        <div class="jiggle-done-bar">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
-            <span>🪑</span>
-            <span>${t.dragToReorder || 'Drag player cards to swap seats'}</span>
-          </div>
-          <button class="btn-pill btn-done-jiggle" style="height: 26px; font-size: 0.72rem; background: var(--accent-primary); border-color: var(--accent-primary); color: white; padding: 0 10px;">
-            ${t.doneReordering || 'Done ✓'}
-          </button>
-        </div>
-      `;
-    }
-
-    html += `
+    let html = `
       <div class="leaderboard-grid ${this.isJiggleMode ? 'is-jiggling' : ''}">
         ${this.session.players.map((p, idx) => {
           const score = scores[idx];
@@ -89,6 +72,21 @@ export class Scoreboard {
         }).join('')}
       </div>
     `;
+
+    // iOS Jiggle Mode Action Bar placed BELOW the squares to avoid layout jolt
+    if (this.isJiggleMode) {
+      html += `
+        <div class="jiggle-done-bar" style="margin-top: 0.55rem; margin-bottom: 0.25rem;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
+            <span>🪑</span>
+            <span>${t.dragToReorder || 'Drag player cards to swap seats'}</span>
+          </div>
+          <button class="btn-pill btn-done-jiggle" style="height: 26px; font-size: 0.72rem; background: var(--accent-primary); border-color: var(--accent-primary); color: white; padding: 0 10px;">
+            ${t.doneReordering || 'Done ✓'}
+          </button>
+        </div>
+      `;
+    }
 
     this.leaderboardContainer.innerHTML = html;
     this.bindLeaderboardEvents();
@@ -148,7 +146,7 @@ export class Scoreboard {
         order.splice(hoveredSlot, 0, moved);
 
         cards.forEach((c, originalSlot) => {
-          if (originalSlot === fromSlotIndex) return; // Dragged card handled separately
+          if (originalSlot === fromSlotIndex) return;
 
           c.classList.add('is-shifting');
           const targetSlot = order.indexOf(originalSlot);
@@ -185,10 +183,12 @@ export class Scoreboard {
           grid.classList.add('is-actively-dragging');
         }
 
-        // Show jiggle top bar if not already present
+        // Show jiggle bottom bar if not already present
         if (!this.leaderboardContainer.querySelector('.jiggle-done-bar')) {
           const bar = document.createElement('div');
           bar.className = 'jiggle-done-bar';
+          bar.style.marginTop = '0.55rem';
+          bar.style.marginBottom = '0.25rem';
           bar.innerHTML = `
             <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
               <span>🪑</span>
@@ -198,7 +198,7 @@ export class Scoreboard {
               ${this.i18n.doneReordering || 'Done ✓'}
             </button>
           `;
-          this.leaderboardContainer.prepend(bar);
+          this.leaderboardContainer.appendChild(bar);
           bar.querySelector('.btn-done-jiggle').addEventListener('click', (e) => {
             e.stopPropagation();
             this.setJiggleMode(false);
