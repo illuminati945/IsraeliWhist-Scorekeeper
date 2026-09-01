@@ -1,6 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with Hardware-Accelerated iOS Springboard Reordering
- * (Permanent in-place DOM architecture for seamless rapid drag chaining)
+ * (Physical DOM node reordering - 100% coupled card & content)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -29,18 +29,14 @@ export class Scoreboard {
 
   updateSession(session) {
     this.session = session;
-    if (!this.isDragging) {
-      if (this.isJiggleMode) {
-        this.updateCardsContentInPlace();
-      } else {
-        this.render();
-      }
+    if (!this.isDragging && !this.isJiggleMode) {
+      this.render();
     }
   }
 
   updateI18n(i18n) {
     this.i18n = i18n;
-    if (!this.isDragging) {
+    if (!this.isDragging && !this.isJiggleMode) {
       this.render();
     }
   }
@@ -56,46 +52,6 @@ export class Scoreboard {
     if (!active) {
       this.renderLeaderboard();
     }
-  }
-
-  updateCardsContentInPlace() {
-    if (!this.leaderboardContainer) return;
-    const t = this.i18n;
-    const rankings = this.session.getRankings();
-    const scores = this.session.getCumulativeScores();
-    const topScore = rankings.length > 0 ? rankings[0].score : 0;
-    const currentDealer = this.session.currentDealerIndex;
-
-    const cards = this.leaderboardContainer.querySelectorAll('.player-card');
-    cards.forEach((card, idx) => {
-      card.dataset.playerIdx = idx;
-      const p = this.session.players[idx];
-      const score = scores[idx];
-      const rankIndex = rankings.findIndex(r => r.index === idx);
-      const isLeader = (score === topScore && this.session.completedRounds.length > 0);
-      const isDealer = (idx === currentDealer);
-
-      card.className = `player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}`;
-      card.style.transform = '';
-      card.style.zIndex = '';
-      card.style.transition = '';
-
-      card.innerHTML = `
-        <div class="player-card-inner">
-          ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
-          <div class="player-title">
-            <span class="player-dot" style="background: ${p.color};"></span>
-            <span>${p.name}</span>
-          </div>
-          <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
-            ${score >= 0 ? `+${score}` : score}
-          </div>
-          <div class="player-meta">
-            ${t.rank} #${rankIndex + 1}
-          </div>
-        </div>
-      `;
-    });
   }
 
   render() {
@@ -149,6 +105,7 @@ export class Scoreboard {
   bindLeaderboardEvents() {
     if (!this.leaderboardContainer) return;
 
+    const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
     const cards = Array.from(this.leaderboardContainer.querySelectorAll('.player-card'));
 
     cards.forEach(card => {
@@ -174,7 +131,8 @@ export class Scoreboard {
       };
 
       const computeSlotPositions = () => {
-        return cards.map(c => {
+        const currentCards = Array.from(grid.querySelectorAll('.player-card'));
+        return currentCards.map(c => {
           const r = c.getBoundingClientRect();
           return {
             left: r.left,
@@ -190,11 +148,12 @@ export class Scoreboard {
       const applyLiveSlotShifts = (hoveredSlot) => {
         if (hoveredSlot === null || hoveredSlot === undefined) return;
         
+        const currentCards = Array.from(grid.querySelectorAll('.player-card'));
         const order = [0, 1, 2, 3];
         const [moved] = order.splice(fromSlotIndex, 1);
         order.splice(hoveredSlot, 0, moved);
 
-        cards.forEach((c, originalSlot) => {
+        currentCards.forEach((c, originalSlot) => {
           if (originalSlot === fromSlotIndex) return;
 
           const targetSlot = order.indexOf(originalSlot);
@@ -210,7 +169,8 @@ export class Scoreboard {
       };
 
       const resetCardShifts = () => {
-        cards.forEach(c => {
+        const currentCards = Array.from(grid.querySelectorAll('.player-card'));
+        currentCards.forEach(c => {
           c.style.transform = '';
           c.style.zIndex = '';
         });
@@ -348,8 +308,20 @@ export class Scoreboard {
 
             setTimeout(() => {
               card.classList.remove('is-lifted', 'is-dropping');
-              this.updateCardsContentInPlace();
-            }, 250);
+
+              // Physically reorder the existing DOM nodes in the grid
+              const currentCards = Array.from(grid.querySelectorAll('.player-card'));
+              const newCardElementsOrder = order.map(oldIdx => currentCards[oldIdx]);
+
+              newCardElementsOrder.forEach((c, newSlotIdx) => {
+                c.dataset.playerIdx = newSlotIdx;
+                c.style.transform = '';
+                c.style.zIndex = '';
+                grid.appendChild(c);
+              });
+
+              resetCardShifts();
+            }, 260);
           } else {
             card.classList.remove('is-lifted');
             resetCardShifts();
