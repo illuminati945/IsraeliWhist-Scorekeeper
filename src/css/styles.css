@@ -428,6 +428,18 @@ body {
   font-weight: 800;
   margin: 0.1rem 0;
   font-variant-numeric: tabular-nums;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  display: inline-block;
+}
+
+.signed-score,
+.score-delta,
+.score-cum,
+.score-val {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  display: inline-block;
 }
 
 .player-meta {

@@ -66,7 +66,7 @@ export class LandingView {
                       <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px;">
                         <span class="player-dot" style="background: ${p.color};"></span>
                         <span>${p.name}:</span>
-                        <strong style="color: ${p.score >= 0 ? 'var(--success)' : 'var(--danger)'};">${p.score >= 0 ? '+' : ''}${p.score}</strong>
+                        <strong class="signed-score" dir="ltr" style="color: ${p.score >= 0 ? 'var(--success)' : 'var(--danger)'}; direction: ltr; unicode-bidi: isolate;">${p.score >= 0 ? '+' : ''}${p.score}</strong>
                       </span>
                     `).join('')}
                   </div>

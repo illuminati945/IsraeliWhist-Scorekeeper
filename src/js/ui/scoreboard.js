@@ -85,7 +85,7 @@ export class Scoreboard {
                   <span class="player-dot" style="background: ${p.color};"></span>
                   <span>${p.name}</span>
                 </div>
-                <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                <div class="player-score signed-score" dir="ltr" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'}; direction: ltr; unicode-bidi: isolate;">
                   ${score >= 0 ? `+${score}` : score}
                 </div>
                 <div class="player-meta">
@@ -424,13 +424,13 @@ export class Scoreboard {
 
                       return `
                         <td>
-                          <div style="font-size: 0.72rem; color: var(--text-muted);">
+                          <div style="font-size: 0.72rem; color: var(--text-muted); direction: ltr; unicode-bidi: isolate;">
                             B:${res.bid} / T:${res.tricks}
                           </div>
-                          <div style="font-weight: 800; color: ${isExact ? 'var(--success)' : 'var(--danger)'};">
+                          <div class="score-delta signed-score" dir="ltr" style="font-weight: 800; direction: ltr; unicode-bidi: isolate; color: ${isExact ? 'var(--success)' : 'var(--danger)'};">
                             ${scoreDelta}
                           </div>
-                          <div style="font-size: 0.68rem; color: var(--text-secondary);">
+                          <div class="score-cum signed-score" dir="ltr" style="font-size: 0.68rem; direction: ltr; unicode-bidi: isolate; color: var(--text-secondary);">
                             (${cum})
                           </div>
                         </td>

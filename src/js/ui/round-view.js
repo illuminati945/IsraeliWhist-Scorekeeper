@@ -322,7 +322,7 @@ export class RoundView {
                 <div style="font-size: 0.82rem; font-weight: 700;">${p.name}</div>
                 <div style="font-size: 0.72rem; color: var(--text-secondary);">${calc.explanation}</div>
               </div>
-              <span class="score-badge ${calc.score >= 0 ? 'plus' : 'minus'}">
+              <span class="score-badge signed-score ${calc.score >= 0 ? 'plus' : 'minus'}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
                 ${calc.score >= 0 ? `+${calc.score}` : calc.score}
               </span>
             </div>
