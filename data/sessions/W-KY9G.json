@@ -1,6 +1,6 @@
 {
-  "id": "game_1788207317661",
-  "createdAt": "2026-08-31T20:15:17.661Z",
+  "id": "game_1788216019789",
+  "createdAt": "2026-08-31T22:40:19.789Z",
   "rules": {
     "id": "STANDARD",
     "nameEn": "Standard Israeli Whist (Quadratic)",
@@ -35,7 +35,7 @@
     },
     {
       "id": "p2",
-      "name": "אייל",
+      "name": "איל",
       "color": "#f59e0b",
       "initial": "3"
     },
@@ -53,12 +53,12 @@
     "roundNumber": 1,
     "dealerIndex": 0,
     "leadBidderIndex": 1,
-    "stage": "TRUMP",
+    "stage": "BETS",
     "trump": {
       "winnerIndex": null,
       "suitId": "NT",
-      "bidAmount": 5,
-      "isPasRound": false
+      "bidAmount": 0,
+      "isPasRound": true
     },
     "bets": [
       null,
@@ -80,7 +80,7 @@
     ],
     "roundTotalBets": 0,
     "bettingMode": null,
-    "timestamp": "2026-08-31T20:15:17.662Z"
+    "timestamp": "2026-08-31T22:40:19.789Z"
   },
   "status": "IN_PROGRESS"
 }

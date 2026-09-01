@@ -72,8 +72,8 @@ export class Scoreboard {
     if (rounds.length === 0) {
       this.historyContainer.innerHTML = `
         <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-          <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">No Rounds Played</div>
-          <div style="font-size: 0.85rem;">Start Round 1 above to record score history.</div>
+          <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">No Deals Recorded</div>
+          <div style="font-size: 0.85rem;">Start Deal 1 above to record score history.</div>
         </div>
       `;
       return;
@@ -81,10 +81,10 @@ export class Scoreboard {
 
     let html = `
       <div class="card">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-          <h3 style="font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Round History (${rounds.length} Rounds)</h3>
-          <button class="btn-nav" id="btn-undo-round" style="font-size: 0.75rem; color: var(--danger);">
-            Undo Last Round
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+          <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">History (${rounds.length} Deals)</h3>
+          <button class="btn-pill" id="btn-undo-round" style="font-size: 0.72rem; color: var(--danger); height: 28px;">
+            Undo Last Deal
           </button>
         </div>
 
@@ -92,9 +92,8 @@ export class Scoreboard {
           <table class="table-custom">
             <thead>
               <tr>
-                <th>R#</th>
+                <th>Deal</th>
                 <th>Dealer</th>
-                <th>Trump</th>
                 ${this.session.players.map(p => `
                   <th>${p.name}</th>
                 `).join('')}
@@ -102,18 +101,10 @@ export class Scoreboard {
             </thead>
             <tbody>
               ${rounds.map((r, rIdx) => {
-                const trumpSuit = SUITS.find(s => s.id === r.trump.suitId) || SUITS[0];
-                const trumpPlayer = r.trump.winnerIndex !== null ? this.session.players[r.trump.winnerIndex] : null;
-
                 return `
                   <tr>
-                    <td style="font-weight: 700;">${r.roundNumber}</td>
+                    <td style="font-weight: 700;">#${r.roundNumber}</td>
                     <td>${this.session.players[r.dealerIndex].name.slice(0, 3)}</td>
-                    <td>
-                      ${r.trump.isPasRound ? 'Pas' : `
-                        <span style="color:${trumpSuit.color}; font-weight:700;">${r.trump.bidAmount}${trumpSuit.symbol}</span>
-                      `}
-                    </td>
                     ${this.session.players.map((p, pIdx) => {
                       const res = r.results.find(res => res.playerIndex === pIdx);
                       if (!res) return `<td>—</td>`;
@@ -123,13 +114,13 @@ export class Scoreboard {
 
                       return `
                         <td>
-                          <div style="font-size: 0.75rem; color: var(--text-muted);">
-                            ${r.trump.isPasRound ? `T:${res.tricks}` : `B:${res.bid} / T:${res.tricks}`}
+                          <div style="font-size: 0.72rem; color: var(--text-muted);">
+                            B:${res.bid} / T:${res.tricks}
                           </div>
                           <div style="font-weight: 800; color: ${isExact ? 'var(--success)' : 'var(--danger)'};">
                             ${scoreDelta}
                           </div>
-                          <div style="font-size: 0.7rem; color: var(--text-secondary);">
+                          <div style="font-size: 0.68rem; color: var(--text-secondary);">
                             (${cum})
                           </div>
                         </td>
@@ -149,7 +140,7 @@ export class Scoreboard {
     const btnUndo = this.historyContainer.querySelector('#btn-undo-round');
     if (btnUndo) {
       btnUndo.addEventListener('click', () => {
-        if (confirm('Undo the last completed round?')) {
+        if (confirm('Undo the last completed deal?')) {
           if (this.onUndo) this.onUndo();
         }
       });

@@ -12,6 +12,7 @@ export class GameSession {
     this.rules = options.rules || { ...RULE_PRESETS.STANDARD };
     this.targetPoints = options.targetPoints || null;
     this.maxRounds = options.maxRounds || null;
+    this.simplifiedMode = options.simplifiedMode !== undefined ? options.simplifiedMode : true;
     
     // Default 4 players with clean color accents
     this.players = options.players || [
@@ -51,11 +52,11 @@ export class GameSession {
       roundNumber: this.roundNumber,
       dealerIndex: dealerIdx,
       leadBidderIndex: leadBidderIdx,
-      stage: 'TRUMP',
+      stage: this.simplifiedMode ? 'BETS' : 'TRUMP',
       trump: {
         winnerIndex: null,
         suitId: 'NT',
-        bidAmount: 5,
+        bidAmount: 0,
         isPasRound: false
       },
       bets: [null, null, null, null],
@@ -65,6 +66,18 @@ export class GameSession {
       bettingMode: null,
       timestamp: new Date().toISOString()
     };
+  }
+
+  setSimplifiedMode(isSimplified) {
+    this.simplifiedMode = isSimplified;
+    if (this.activeRound) {
+      if (isSimplified && this.activeRound.stage === 'TRUMP') {
+        this.activeRound.stage = 'BETS';
+      } else if (!isSimplified && this.activeRound.stage === 'BETS' && this.activeRound.bets.every(b => b === null)) {
+        this.activeRound.stage = 'TRUMP';
+      }
+    }
+    this.notify();
   }
 
   setTrump(winnerIndex, suitId, bidAmount, isPasRound = false) {
@@ -201,6 +214,7 @@ export class GameSession {
 
     const finishedRound = {
       ...this.activeRound,
+      simplified: this.simplifiedMode,
       results: roundResults,
       scores: roundResults.map(r => r.score),
       cumulativeScores: this.calculateCumulativeAfterRound(roundResults.map(r => r.score)),
@@ -301,6 +315,7 @@ export class GameSession {
         rules: this.rules,
         targetPoints: this.targetPoints,
         maxRounds: this.maxRounds,
+        simplifiedMode: this.simplifiedMode,
         players: this.players,
         currentDealerIndex: this.currentDealerIndex,
         roundNumber: this.roundNumber,
@@ -348,6 +363,7 @@ export class GameSession {
         rules: this.rules,
         targetPoints: this.targetPoints,
         maxRounds: this.maxRounds,
+        simplifiedMode: this.simplifiedMode,
         players: this.players,
         completedRounds: this.completedRounds,
         scores: this.getCumulativeScores(),
