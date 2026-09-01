@@ -45,10 +45,10 @@ export class RoundView {
     let html = `
       <div class="card">
         <div class="stage-header">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <div class="stage-title">${stageLabel}</div>
-            <button class="btn-pill" id="btn-toggle-simplified" style="font-size: 0.68rem; height: 24px; padding: 0 6px; background: rgba(255,255,255,0.05); color: var(--text-muted);">
-              ${isSimplified ? '⚡ Quick' : 'Full Trump'}
+            <button class="btn-pill" id="btn-toggle-simplified" title="Tap to toggle Simplified vs Full mode" style="font-size: 0.72rem; height: 26px; padding: 0 8px; background: ${isSimplified ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)'}; border-color: ${isSimplified ? 'rgba(16, 185, 129, 0.4)' : 'rgba(99, 102, 241, 0.4)'}; color: ${isSimplified ? '#a7f3d0' : '#c7d2fe'};">
+              ${isSimplified ? '⚡ Simplified' : 'Full Trump'}
             </button>
           </div>
           <div class="round-pill">
@@ -143,7 +143,6 @@ export class RoundView {
 
     return `
       <div>
-        <!-- Summary / Dealer info -->
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.65rem;">
           <div style="font-size: 0.82rem; color: var(--text-secondary);">
             Dealer: <strong>${dealer.name}</strong>
@@ -311,7 +310,6 @@ export class RoundView {
   }
 
   bindEvents(stage, isSimplified) {
-    // Mode Toggle Button
     const btnToggle = this.container.querySelector('#btn-toggle-simplified');
     if (btnToggle) {
       btnToggle.addEventListener('click', () => {

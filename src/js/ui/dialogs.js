@@ -11,22 +11,34 @@ export class Dialogs {
   }
 
   showMenuModal() {
+    const isSimplified = this.app.session.simplifiedMode;
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
       <div class="modal-box">
         <div class="modal-head">
-          <h3 style="font-size: 1.1rem; font-weight: 700;">Menu & Options</h3>
+          <h3 style="font-size: 1.1rem; font-weight: 700;">Menu & Settings</h3>
           <button class="btn-pill modal-close">✕</button>
         </div>
 
         <div class="menu-list">
+          <button class="menu-item-btn" id="menu-opt-toggle-mode" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);">
+            <div>
+              <div style="font-weight: 700;">Mode: ${isSimplified ? '⚡ Simplified (Quick)' : '🎴 Full Trump Auction'}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                ${isSimplified ? 'Direct Bids & Tricks (Tap to switch to Full)' : 'Includes Trump winner & suits (Tap to switch)'}
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent-primary);">Switch ⇄</span>
+          </button>
+
           <button class="menu-item-btn" id="menu-opt-new-game">
-            <span>🎲 New Game</span>
+            <span>🎲 New Game Session</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-share">
-            <span>📲 Share Room & QR Code</span>
+            <span>📲 Share Link & QR Code</span>
             <span>→</span>
           </button>
           <button class="menu-item-btn" id="menu-opt-rules">
@@ -52,6 +64,11 @@ export class Dialogs {
     document.body.appendChild(modal);
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelector('#menu-opt-toggle-mode').addEventListener('click', () => {
+      this.app.session.setSimplifiedMode(!this.app.session.simplifiedMode);
+      closeModal();
+    });
 
     modal.querySelector('#menu-opt-new-game').addEventListener('click', () => {
       closeModal();
@@ -151,7 +168,6 @@ export class Dialogs {
   }
 
   showNewGameModal() {
-    const i18n = this.app.i18n;
     const session = this.app.session;
 
     const modal = document.createElement('div');
@@ -179,6 +195,16 @@ export class Dialogs {
           `).join('')}
         </div>
 
+        <div style="margin-bottom: 0.85rem; padding: 0.65rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+            <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px;">
+            <div>
+              <div style="font-size: 0.85rem; font-weight: 700;">⚡ Simplified Mode</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary);">Direct Bids & Tricks (Skip trump & suit selection)</div>
+            </div>
+          </label>
+        </div>
+
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
           Scoring Rules Preset
         </div>
@@ -191,7 +217,7 @@ export class Dialogs {
         </select>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          Game Mode / Target
+          Game Limit
         </div>
         <select class="select-field" id="new-game-target-select">
           <option value="UNLIMITED">Free Play (Unlimited Deals)</option>
@@ -214,6 +240,7 @@ export class Dialogs {
 
     modal.querySelector('#btn-start-new-game').addEventListener('click', () => {
       const nameInputs = modal.querySelectorAll('.player-name-input');
+      const isSimplified = modal.querySelector('#chk-new-game-simplified').checked;
       const ruleKey = modal.querySelector('#new-game-rule-select').value;
       const targetVal = modal.querySelector('#new-game-target-select').value;
 
@@ -233,7 +260,8 @@ export class Dialogs {
         players: newPlayers,
         rules: { ...RULE_PRESETS[ruleKey] },
         maxRounds,
-        targetPoints
+        targetPoints,
+        simplifiedMode: isSimplified
       });
 
       this.app.setSession(newSession);
