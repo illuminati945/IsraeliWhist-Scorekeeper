@@ -44,7 +44,7 @@ export class Scoreboard {
           const isDealer = (idx === currentDealer);
 
           return `
-            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}">
+            <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" data-player-idx="${idx}">
               ${isDealer ? `<span class="tag-dealer">DEALER</span>` : ''}
               <div class="player-title">
                 <span class="player-dot" style="background: ${p.color};"></span>

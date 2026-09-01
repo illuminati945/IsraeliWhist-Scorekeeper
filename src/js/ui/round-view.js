@@ -85,7 +85,7 @@ export class RoundView {
           1. Auction Winner
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem; margin-bottom: 0.85rem;">
+        <div class="trump-grid-2x2">
           ${this.session.players.map((p, idx) => `
             <button class="btn-outline trump-player-btn ${round.trump.winnerIndex === idx ? 'active' : ''}" 
                     data-player-idx="${idx}"

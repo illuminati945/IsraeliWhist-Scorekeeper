@@ -207,7 +207,7 @@ body {
   font-weight: 700;
 }
 
-/* Leaderboard */
+/* Clockwise Seating Leaderboard */
 .leaderboard-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -218,8 +218,16 @@ body {
 @media (max-width: 540px) {
   .leaderboard-grid {
     grid-template-columns: repeat(2, 1fr);
+    grid-template-areas:
+      "p0 p1"
+      "p3 p2";
   }
 }
+
+.player-card[data-player-idx="0"] { grid-area: p0; }
+.player-card[data-player-idx="1"] { grid-area: p1; }
+.player-card[data-player-idx="2"] { grid-area: p2; }
+.player-card[data-player-idx="3"] { grid-area: p3; }
 
 .player-card {
   background: var(--bg-secondary);
@@ -304,6 +312,22 @@ body {
   font-weight: 700;
   color: var(--text-primary);
 }
+
+/* Trump Grid 2x2 Clockwise */
+.trump-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-areas:
+    "p0 p1"
+    "p3 p2";
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.trump-player-btn[data-player-idx="0"] { grid-area: p0; }
+.trump-player-btn[data-player-idx="1"] { grid-area: p1; }
+.trump-player-btn[data-player-idx="2"] { grid-area: p2; }
+.trump-player-btn[data-player-idx="3"] { grid-area: p3; }
 
 /* Player Input Cards */
 .input-row {
