@@ -1,6 +1,5 @@
 /**
- * Sleek Leaderboard & Score History Table with In-Place iOS Springboard Reordering
- * (Active wobbly jiggle animation, fluid slide displacement, and tap-outside dismissal)
+ * Sleek Leaderboard & Score History Table with Hardware-Accelerated iOS Springboard Reordering
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -72,16 +71,18 @@ export class Scoreboard {
             <div class="player-card ${isLeader ? 'is-leader' : ''} ${isDealer ? 'is-dealer' : ''}" 
                  data-player-idx="${idx}" 
                  title="Long-press to lift and reorder seating">
-              ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
-              <div class="player-title">
-                <span class="player-dot" style="background: ${p.color};"></span>
-                <span>${p.name}</span>
-              </div>
-              <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
-                ${score >= 0 ? `+${score}` : score}
-              </div>
-              <div class="player-meta">
-                ${t.rank} #${rankIndex + 1}
+              <div class="player-card-inner">
+                ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
+                <div class="player-title">
+                  <span class="player-dot" style="background: ${p.color};"></span>
+                  <span>${p.name}</span>
+                </div>
+                <div class="player-score" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                  ${score >= 0 ? `+${score}` : score}
+                </div>
+                <div class="player-meta">
+                  ${t.rank} #${rankIndex + 1}
+                </div>
               </div>
             </div>
           `;
@@ -96,19 +97,23 @@ export class Scoreboard {
   bindLeaderboardEvents() {
     if (!this.leaderboardContainer) return;
 
-    const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
     const cards = Array.from(this.leaderboardContainer.querySelectorAll('.player-card'));
 
     cards.forEach(card => {
       let pressTimer = null;
       let startX = 0;
       let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
       let lastX = 0;
+      let currentTilt = 0;
+      let targetTilt = 0;
       let isCardDragging = false;
       let fromSlotIndex = null;
       let currentTargetSlotIndex = null;
       let initialSlotRects = [];
       let capturedPointerId = null;
+      let rafId = null;
 
       const triggerHaptic = (pattern = 25) => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -147,19 +152,56 @@ export class Scoreboard {
           if (originRect && targetRect) {
             const dx = targetRect.left - originRect.left;
             const dy = targetRect.top - originRect.top;
-            c.style.setProperty('--tx', `${dx}px`);
-            c.style.setProperty('--ty', `${dy}px`);
+            c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
           }
         });
       };
 
       const resetCardShifts = () => {
         cards.forEach(c => {
-          c.style.removeProperty('--tx');
-          c.style.removeProperty('--ty');
           c.style.transform = '';
           c.style.zIndex = '';
         });
+      };
+
+      const updateDragLoop = () => {
+        if (!isCardDragging) return;
+
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+
+        // Smooth tilt damping
+        currentTilt += (targetTilt - currentTilt) * 0.18;
+
+        card.style.transform = `translate3d(${dx}px, ${dy - 8}px, 0) scale(1.12) rotate(${currentTilt.toFixed(2)}deg)`;
+
+        // Calculate card center
+        const originSlot = initialSlotRects[fromSlotIndex];
+        const cardCenterX = originSlot.centerX + dx;
+        const cardCenterY = originSlot.centerY + dy;
+
+        // Find closest slot with hysteresis threshold
+        let bestSlot = currentTargetSlotIndex;
+        let minScore = Infinity;
+
+        initialSlotRects.forEach((rect, idx) => {
+          const dist = Math.hypot(cardCenterX - rect.centerX, cardCenterY - rect.centerY);
+          // Favor current slot slightly to prevent oscillation
+          const bias = (idx === currentTargetSlotIndex) ? 0.8 : 1.0;
+          const score = dist * bias;
+          if (score < minScore) {
+            minScore = score;
+            bestSlot = idx;
+          }
+        });
+
+        if (bestSlot !== currentTargetSlotIndex) {
+          currentTargetSlotIndex = bestSlot;
+          triggerHaptic(18);
+          applyLiveSlotShifts(currentTargetSlotIndex);
+        }
+
+        rafId = requestAnimationFrame(updateDragLoop);
       };
 
       const liftAndStartDrag = (clientX, clientY) => {
@@ -177,10 +219,15 @@ export class Scoreboard {
         card.style.zIndex = '500';
         triggerHaptic([40, 60, 40]);
 
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-        card.style.transform = `translate(${dx}px, ${dy - 6}px) scale(1.12)`;
+        currentX = clientX;
+        currentY = clientY;
         lastX = clientX;
+        currentTilt = 0;
+        targetTilt = 0;
+
+        card.style.transform = `translate3d(${clientX - startX}px, ${clientY - startY - 8}px, 0) scale(1.12)`;
+
+        rafId = requestAnimationFrame(updateDragLoop);
       };
 
       const onPointerMove = (e) => {
@@ -201,34 +248,12 @@ export class Scoreboard {
         e.preventDefault();
         e.stopPropagation();
 
-        const dx = clientX - startX;
-        const dy = clientY - startY;
+        currentX = clientX;
+        currentY = clientY;
+
         const vx = clientX - lastX;
         lastX = clientX;
-        const tilt = Math.max(-6, Math.min(6, vx * 0.3));
-
-        card.style.transform = `translate(${dx}px, ${dy - 6}px) scale(1.12) rotate(${tilt}deg)`;
-
-        // Find closest slot
-        const cardCenterX = initialSlotRects[fromSlotIndex].centerX + dx;
-        const cardCenterY = initialSlotRects[fromSlotIndex].centerY + dy;
-
-        let closestSlot = fromSlotIndex;
-        let minDistance = Infinity;
-
-        initialSlotRects.forEach((rect, idx) => {
-          const dist = Math.hypot(cardCenterX - rect.centerX, cardCenterY - rect.centerY);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestSlot = idx;
-          }
-        });
-
-        if (closestSlot !== currentTargetSlotIndex) {
-          currentTargetSlotIndex = closestSlot;
-          triggerHaptic(15);
-          applyLiveSlotShifts(currentTargetSlotIndex);
-        }
+        targetTilt = Math.max(-7, Math.min(7, vx * 0.4));
       };
 
       const onPointerUp = (e) => {
@@ -243,6 +268,11 @@ export class Scoreboard {
           capturedPointerId = null;
         }
 
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+
         if (isCardDragging) {
           isCardDragging = false;
           this.isDragging = false;
@@ -255,12 +285,12 @@ export class Scoreboard {
             const finalDx = targetRect.left - originRect.left;
             const finalDy = targetRect.top - originRect.top;
 
-            card.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)';
-            card.style.transform = `translate(${finalDx}px, ${finalDy}px) scale(1.0)`;
+            card.classList.add('is-dropping');
+            card.style.transform = `translate3d(${finalDx}px, ${finalDy}px, 0) scale(1.0) rotate(0deg)`;
 
             setTimeout(() => {
-              card.classList.remove('is-lifted');
-              card.style.transition = '';
+              card.classList.remove('is-lifted', 'is-dropping');
+              card.style.transform = '';
               resetCardShifts();
 
               if (fromSlotIndex !== null && targetSlot !== null && fromSlotIndex !== targetSlot) {
@@ -274,7 +304,7 @@ export class Scoreboard {
               } else {
                 this.renderLeaderboard();
               }
-            }, 200);
+            }, 340);
           } else {
             card.classList.remove('is-lifted');
             resetCardShifts();
@@ -292,6 +322,8 @@ export class Scoreboard {
 
         startX = e.clientX;
         startY = e.clientY;
+        currentX = e.clientX;
+        currentY = e.clientY;
         lastX = e.clientX;
         card.classList.add('card-pressing');
 
