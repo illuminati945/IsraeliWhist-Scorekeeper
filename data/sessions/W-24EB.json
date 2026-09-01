@@ -23,16 +23,16 @@
   "simplifiedMode": false,
   "players": [
     {
-      "id": "p1",
-      "name": "אביגיל",
-      "color": "#10b981",
-      "initial": "2"
-    },
-    {
       "id": "p0",
       "name": "איתי",
       "color": "#6366f1",
       "initial": "1"
+    },
+    {
+      "id": "p1",
+      "name": "אביגיל",
+      "color": "#10b981",
+      "initial": "2"
     },
     {
       "id": "p3",
@@ -47,13 +47,13 @@
       "initial": "3"
     }
   ],
-  "currentDealerIndex": 0,
+  "currentDealerIndex": 1,
   "roundNumber": 2,
   "completedRounds": [
     {
       "roundNumber": 1,
-      "dealerIndex": 1,
-      "leadBidderIndex": 0,
+      "dealerIndex": 0,
+      "leadBidderIndex": 1,
       "stage": "TRICKS",
       "trump": {
         "winnerIndex": null,
@@ -85,7 +85,7 @@
       "simplified": true,
       "results": [
         {
-          "playerIndex": 1,
+          "playerIndex": 0,
           "bid": 4,
           "tricks": 4,
           "score": 26,
@@ -94,7 +94,7 @@
           "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
-          "playerIndex": 0,
+          "playerIndex": 1,
           "bid": 4,
           "tricks": 4,
           "score": 26,
@@ -132,8 +132,8 @@
   ],
   "activeRound": {
     "roundNumber": 2,
-    "dealerIndex": 0,
-    "leadBidderIndex": 1,
+    "dealerIndex": 1,
+    "leadBidderIndex": 2,
     "stage": "TRICKS",
     "trump": {
       "winnerIndex": null,
@@ -148,8 +148,8 @@
       2
     ],
     "tricks": [
-      4,
       3,
+      4,
       4,
       2
     ],
@@ -164,5 +164,5 @@
     "timestamp": "2026-09-01T06:16:50.041Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-01T06:59:32.681Z"
+  "updatedAt": "2026-09-01T07:03:15.981Z"
 }

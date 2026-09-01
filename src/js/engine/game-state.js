@@ -343,6 +343,60 @@ export class GameSession {
     }
   }
 
+  reorderPlayers(newOrderIndices) {
+    if (!Array.isArray(newOrderIndices) || newOrderIndices.length !== 4) return;
+    const oldPlayers = [...this.players];
+    this.players = newOrderIndices.map(oldIdx => oldPlayers[oldIdx]);
+
+    const remap = (idx) => (idx !== null && idx !== undefined && idx >= 0 && idx < 4) ? newOrderIndices.indexOf(idx) : idx;
+
+    this.currentDealerIndex = remap(this.currentDealerIndex);
+
+    if (this.activeRound) {
+      this.activeRound.dealerIndex = remap(this.activeRound.dealerIndex);
+      this.activeRound.leadBidderIndex = (this.activeRound.dealerIndex + 1) % 4;
+
+      if (this.activeRound.trump && this.activeRound.trump.winnerIndex !== null) {
+        this.activeRound.trump.winnerIndex = remap(this.activeRound.trump.winnerIndex);
+      }
+
+      if (Array.isArray(this.activeRound.bets) && this.activeRound.bets.length === 4) {
+        const oldBets = [...this.activeRound.bets];
+        this.activeRound.bets = newOrderIndices.map(oldIdx => oldBets[oldIdx]);
+      }
+      if (Array.isArray(this.activeRound.tricks) && this.activeRound.tricks.length === 4) {
+        const oldTricks = [...this.activeRound.tricks];
+        this.activeRound.tricks = newOrderIndices.map(oldIdx => oldTricks[oldIdx]);
+      }
+      if (Array.isArray(this.activeRound.scores) && this.activeRound.scores.length === 4) {
+        const oldScores = [...this.activeRound.scores];
+        this.activeRound.scores = newOrderIndices.map(oldIdx => oldScores[oldIdx]);
+      }
+    }
+
+    for (const round of this.completedRounds) {
+      round.dealerIndex = remap(round.dealerIndex);
+      if (round.leadBidderIndex !== undefined) round.leadBidderIndex = remap(round.leadBidderIndex);
+      if (round.trump && round.trump.winnerIndex !== null) round.trump.winnerIndex = remap(round.trump.winnerIndex);
+
+      if (Array.isArray(round.scores) && round.scores.length === 4) {
+        const oldScores = [...round.scores];
+        round.scores = newOrderIndices.map(oldIdx => oldScores[oldIdx]);
+      }
+      if (Array.isArray(round.cumulativeScores) && round.cumulativeScores.length === 4) {
+        const oldCum = [...round.cumulativeScores];
+        round.cumulativeScores = newOrderIndices.map(oldIdx => oldCum[oldIdx]);
+      }
+      if (Array.isArray(round.results)) {
+        for (const res of round.results) {
+          res.playerIndex = remap(res.playerIndex);
+        }
+      }
+    }
+
+    this.notify();
+  }
+
   swapPlayers(idxA, idxB) {
     if (idxA === idxB || idxA < 0 || idxA > 3 || idxB < 0 || idxB > 3) return;
 

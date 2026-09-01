@@ -1,5 +1,5 @@
 /**
- * Sleek Leaderboard & Score History Table with iOS App-Icon Style Drag & Drop Reorganization
+ * Sleek Leaderboard & Score History Table with iOS Springboard-Style Dynamic Slot-Shifting Reorder
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -50,9 +50,9 @@ export class Scoreboard {
     if (this.isJiggleMode) {
       html += `
         <div class="jiggle-done-bar">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 4px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; display: flex; align-items: center; gap: 5px;">
             <span>🪑</span>
-            <span>${t.dragToReorder || 'Drag player cards to swap seats'}</span>
+            <span>${t.dragToReorder || 'Drag player cards to reorganize seats'}</span>
           </div>
           <button class="btn-pill btn-done-jiggle" style="height: 26px; font-size: 0.72rem; background: var(--accent-primary); border-color: var(--accent-primary); color: white; padding: 0 10px;">
             ${t.doneReordering || 'Done ✓'}
@@ -97,8 +97,9 @@ export class Scoreboard {
   bindLeaderboardEvents() {
     if (!this.leaderboardContainer) return;
 
-    // Done button event
+    const grid = this.leaderboardContainer.querySelector('.leaderboard-grid');
     const btnDone = this.leaderboardContainer.querySelector('.btn-done-jiggle');
+
     if (btnDone) {
       btnDone.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -106,7 +107,7 @@ export class Scoreboard {
       });
     }
 
-    const cards = this.leaderboardContainer.querySelectorAll('.player-card');
+    const cards = Array.from(this.leaderboardContainer.querySelectorAll('.player-card'));
 
     cards.forEach(card => {
       let pressTimer = null;
@@ -114,8 +115,9 @@ export class Scoreboard {
       let startY = 0;
       let isDragging = false;
       let dragClone = null;
-      let draggedIdx = null;
-      let currentHoverCard = null;
+      let fromSlotIndex = null;
+      let currentTargetSlotIndex = null;
+      let initialSlotRects = [];
 
       const triggerHaptic = (pattern = 25) => {
         if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -123,9 +125,59 @@ export class Scoreboard {
         }
       };
 
+      const computeSlotPositions = () => {
+        return cards.map(c => {
+          const r = c.getBoundingClientRect();
+          return {
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+            centerX: r.left + r.width / 2,
+            centerY: r.top + r.height / 2
+          };
+        });
+      };
+
+      const applyLiveSlotShifts = (hoveredSlot) => {
+        if (hoveredSlot === null || hoveredSlot === undefined) return;
+        
+        // Build new order array
+        const order = [0, 1, 2, 3];
+        const [moved] = order.splice(fromSlotIndex, 1);
+        order.splice(hoveredSlot, 0, moved);
+
+        cards.forEach((c, originalSlot) => {
+          c.classList.add('is-shifting');
+          const targetSlot = order.indexOf(originalSlot);
+          if (originalSlot === fromSlotIndex) {
+            c.style.transform = 'scale(0.92)';
+          } else {
+            const originRect = initialSlotRects[originalSlot];
+            const targetRect = initialSlotRects[targetSlot];
+            if (originRect && targetRect) {
+              const dx = targetRect.left - originRect.left;
+              const dy = targetRect.top - originRect.top;
+              c.style.transform = `translate(${dx}px, ${dy}px)`;
+            }
+          }
+        });
+      };
+
+      const resetCardShifts = () => {
+        cards.forEach(c => {
+          c.classList.remove('is-shifting');
+          c.style.transform = '';
+        });
+      };
+
       const startDragOperation = (clientX, clientY) => {
         isDragging = true;
-        draggedIdx = parseInt(card.dataset.playerIdx, 10);
+        fromSlotIndex = parseInt(card.dataset.playerIdx, 10);
+        currentTargetSlotIndex = fromSlotIndex;
+        initialSlotRects = computeSlotPositions();
+
+        if (grid) grid.classList.add('is-actively-dragging');
         card.classList.add('is-dragging');
         triggerHaptic([30, 50, 30]);
 
@@ -146,16 +198,13 @@ export class Scoreboard {
           offsetX,
           offsetY,
           dragClone,
-          draggedIdx
+          fromSlotIndex
         };
       };
 
       const onPointerMove = (e) => {
-        const clientX = e.clientX;
-        const clientY = e.clientY;
-
         if (!isDragging) {
-          if (Math.abs(clientX - startX) > 10 || Math.abs(clientY - startY) > 10) {
+          if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
             if (pressTimer) {
               clearTimeout(pressTimer);
               pressTimer = null;
@@ -166,6 +215,10 @@ export class Scoreboard {
         }
 
         e.preventDefault();
+        e.stopPropagation();
+
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
         // Update floating clone position
         if (dragClone && this.dragState) {
@@ -173,17 +226,22 @@ export class Scoreboard {
           dragClone.style.top = `${clientY - this.dragState.offsetY}px`;
         }
 
-        // Hit-test drop targets
-        const elemUnder = document.elementFromPoint(clientX, clientY);
-        const targetCard = elemUnder ? elemUnder.closest('.player-card:not(.drag-floating-clone)') : null;
+        // Find closest slot
+        let closestSlot = fromSlotIndex;
+        let minDistance = Infinity;
 
-        cards.forEach(c => c.classList.remove('is-drop-target'));
+        initialSlotRects.forEach((rect, idx) => {
+          const dist = Math.hypot(clientX - rect.centerX, clientY - rect.centerY);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestSlot = idx;
+          }
+        });
 
-        if (targetCard && targetCard !== card) {
-          targetCard.classList.add('is-drop-target');
-          currentHoverCard = targetCard;
-        } else {
-          currentHoverCard = null;
+        if (closestSlot !== currentTargetSlotIndex) {
+          currentTargetSlotIndex = closestSlot;
+          triggerHaptic(15);
+          applyLiveSlotShifts(currentTargetSlotIndex);
         }
       };
 
@@ -196,8 +254,8 @@ export class Scoreboard {
 
         if (isDragging) {
           isDragging = false;
+          if (grid) grid.classList.remove('is-actively-dragging');
           card.classList.remove('is-dragging');
-          cards.forEach(c => c.classList.remove('is-drop-target'));
 
           if (dragClone) {
             dragClone.remove();
@@ -205,14 +263,18 @@ export class Scoreboard {
           }
           this.dragState = null;
 
-          if (currentHoverCard) {
-            const targetIdx = parseInt(currentHoverCard.dataset.playerIdx, 10);
-            if (draggedIdx !== null && targetIdx !== null && draggedIdx !== targetIdx) {
-              triggerHaptic(30);
-              this.session.swapPlayers(draggedIdx, targetIdx);
-              this.setJiggleMode(true);
-              return;
-            }
+          const targetSlot = currentTargetSlotIndex;
+          resetCardShifts();
+
+          if (fromSlotIndex !== null && targetSlot !== null && fromSlotIndex !== targetSlot) {
+            triggerHaptic(30);
+            const order = [0, 1, 2, 3];
+            const [moved] = order.splice(fromSlotIndex, 1);
+            order.splice(targetSlot, 0, moved);
+
+            this.session.reorderPlayers(order);
+            this.setJiggleMode(true);
+            return;
           }
 
           this.renderLeaderboard();
@@ -224,7 +286,6 @@ export class Scoreboard {
       };
 
       const onPointerDown = (e) => {
-        // Prevent multi-touch conflict
         if (this.dragState) return;
 
         startX = e.clientX;
@@ -236,10 +297,9 @@ export class Scoreboard {
         window.addEventListener('pointercancel', onPointerUp);
 
         if (this.isJiggleMode) {
-          // In jiggle mode, dragging starts immediately
+          e.preventDefault();
           startDragOperation(e.clientX, e.clientY);
         } else {
-          // Long press to enter jiggle mode
           pressTimer = setTimeout(() => {
             card.classList.remove('card-pressing');
             this.isJiggleMode = true;
