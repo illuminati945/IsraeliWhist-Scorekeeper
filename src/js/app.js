@@ -1,8 +1,9 @@
 /**
- * Israeli Whist Scorekeeper - Main Entrypoint with Real-Time Multiplayer Sync
+ * Israeli Whist Scorekeeper - Main Entrypoint with Real-Time Multiplayer Sync & Archive
  */
 import { GameSession } from './engine/game-state.js';
 import { SyncManager } from './engine/sync-manager.js';
+import { ArchiveManager } from './engine/archive-manager.js';
 import { RoundView } from './ui/round-view.js';
 import { Scoreboard } from './ui/scoreboard.js';
 import { ChartView } from './ui/chart-view.js';
@@ -19,6 +20,9 @@ class IsraeliWhistApp {
     this.initSyncManager();
     this.bindGlobalEvents();
 
+    // Auto-save to recent games archive
+    this.archiveCurrentGame();
+
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
       this.scoreboard.updateSession(this.session);
@@ -27,6 +31,8 @@ class IsraeliWhistApp {
       if (this.syncManager) {
         this.syncManager.broadcastLocalState();
       }
+
+      this.archiveCurrentGame();
     });
   }
 
@@ -91,6 +97,13 @@ class IsraeliWhistApp {
     this.syncManager.notify();
   }
 
+  archiveCurrentGame() {
+    if (this.session) {
+      const roomId = this.syncManager ? this.syncManager.roomId : this.session.id;
+      ArchiveManager.saveGameToArchive(this.session, roomId);
+    }
+  }
+
   applyRemoteState(remoteState) {
     if (!remoteState) return;
     this.session = new GameSession(remoteState);
@@ -99,6 +112,7 @@ class IsraeliWhistApp {
     this.roundView.updateSession(this.session);
     this.scoreboard.updateSession(this.session);
     this.chartView.updateSession(this.session);
+    this.archiveCurrentGame();
 
     this.session.subscribe(() => {
       this.roundView.updateSession(this.session);
@@ -108,6 +122,8 @@ class IsraeliWhistApp {
       if (this.syncManager) {
         this.syncManager.broadcastLocalState();
       }
+
+      this.archiveCurrentGame();
     });
   }
 
@@ -117,6 +133,7 @@ class IsraeliWhistApp {
     this.roundView.updateSession(this.session);
     this.scoreboard.updateSession(this.session);
     this.chartView.updateSession(this.session);
+    this.archiveCurrentGame();
 
     if (this.syncManager) {
       this.syncManager.broadcastLocalState();
@@ -130,6 +147,36 @@ class IsraeliWhistApp {
       if (this.syncManager) {
         this.syncManager.broadcastLocalState();
       }
+
+      this.archiveCurrentGame();
+    });
+  }
+
+  resumeGameFromArchive(gameSummary) {
+    if (!gameSummary || !gameSummary.fullState) return;
+    
+    this.session = new GameSession(gameSummary.fullState);
+    this.session.saveToStorage();
+
+    if (this.syncManager && gameSummary.roomId) {
+      this.syncManager.joinRoom(gameSummary.roomId);
+    }
+
+    this.roundView.updateSession(this.session);
+    this.scoreboard.updateSession(this.session);
+    this.chartView.updateSession(this.session);
+    this.archiveCurrentGame();
+
+    this.session.subscribe(() => {
+      this.roundView.updateSession(this.session);
+      this.scoreboard.updateSession(this.session);
+      this.chartView.updateSession(this.session);
+
+      if (this.syncManager) {
+        this.syncManager.broadcastLocalState();
+      }
+
+      this.archiveCurrentGame();
     });
   }
 

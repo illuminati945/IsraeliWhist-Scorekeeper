@@ -1,9 +1,10 @@
 /**
- * Modals & Dialogs (Menu, Edit Settings/Names, Share, New Game, Rules, Stats, Export)
+ * Modals & Dialogs (Menu, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export)
  */
 import { RULE_PRESETS } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
 import { GameSession } from '../engine/game-state.js';
+import { ArchiveManager } from '../engine/archive-manager.js';
 
 export class Dialogs {
   constructor(app) {
@@ -12,6 +13,7 @@ export class Dialogs {
 
   showMenuModal() {
     const isSimplified = this.app.session.simplifiedMode;
+    const recentGames = ArchiveManager.getRecentGames();
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -23,6 +25,16 @@ export class Dialogs {
         </div>
 
         <div class="menu-list">
+          <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
+            <div>
+              <div style="font-weight: 700; color: #a7f3d0;">📂 Saved Games (${recentGames.length}/10)</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                Resume previous matches with date & scores
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--success);">Open →</span>
+          </button>
+
           <button class="menu-item-btn" id="menu-opt-edit-players" style="background: rgba(99, 102, 241, 0.15); border-color: rgba(99, 102, 241, 0.35);">
             <div>
               <div style="font-weight: 700;">✏️ Edit Players & Settings</div>
@@ -71,6 +83,11 @@ export class Dialogs {
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
 
+    modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {
+      closeModal();
+      this.showSavedGamesModal();
+    });
+
     modal.querySelector('#menu-opt-edit-players').addEventListener('click', () => {
       closeModal();
       this.showEditSettingsModal();
@@ -99,6 +116,103 @@ export class Dialogs {
     modal.querySelector('#menu-opt-export').addEventListener('click', () => {
       closeModal();
       this.showExportModal();
+    });
+  }
+
+  showSavedGamesModal() {
+    const recentGames = ArchiveManager.getRecentGames();
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 480px;">
+        <div class="modal-head">
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700;">Saved Games (Recent 10)</h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">Quickly resume any previous match</div>
+          </div>
+          <button class="btn-pill modal-close">✕</button>
+        </div>
+
+        ${recentGames.length === 0 ? `
+          <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 1.1rem; margin-bottom: 0.25rem;">No Saved Games Yet</div>
+            <div style="font-size: 0.8rem;">Completed and active games will automatically appear here.</div>
+          </div>
+        ` : `
+          <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1rem; max-height: 55vh; overflow-y: auto;">
+            ${recentGames.map((g, idx) => {
+              const timeDisplay = ArchiveManager.formatTimestamp(g.updatedAt || g.createdAt);
+              const isCurrent = (this.app.syncManager && this.app.syncManager.roomId === g.roomId);
+
+              return `
+                <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid ${isCurrent ? 'var(--accent-primary)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); padding: 0.75rem;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                      <span class="room-pill" style="font-size: 0.7rem;">${g.roomId}</span>
+                      <span style="font-size: 0.72rem; color: var(--text-secondary);">${timeDisplay}</span>
+                      ${isCurrent ? `<span style="font-size: 0.65rem; background: var(--accent-primary); color: white; padding: 1px 5px; border-radius: 4px; font-weight: 800;">ACTIVE</span>` : ''}
+                    </div>
+                    <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">
+                      ${g.completedRoundsCount} Deals
+                    </span>
+                  </div>
+
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.6rem;">
+                    ${g.players.map(p => `
+                      <span style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: var(--radius-sm); font-size: 0.75rem; display: inline-flex; align-items: center; gap: 3px;">
+                        <span class="player-dot" style="background: ${p.color};"></span>
+                        <span>${p.name}:</span>
+                        <strong style="color: ${p.score >= 0 ? 'var(--success)' : 'var(--danger)'};">${p.score >= 0 ? '+' : ''}${p.score}</strong>
+                      </span>
+                    `).join('')}
+                  </div>
+
+                  <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+                    <button class="btn-pill btn-delete-game" data-room-id="${g.roomId}" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); font-size: 0.72rem;">
+                      Delete
+                    </button>
+                    <button class="btn-pill btn-resume-game ${isCurrent ? '' : 'btn-share'}" data-game-idx="${idx}" style="font-size: 0.75rem; padding: 0 10px;">
+                      ${isCurrent ? 'Current Game' : 'Resume Deal →'}
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+
+        <button class="btn-block modal-close">
+          Done
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const closeModal = () => modal.remove();
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelectorAll('.btn-resume-game').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.gameIdx, 10);
+        const game = recentGames[idx];
+        if (game) {
+          this.app.resumeGameFromArchive(game);
+          closeModal();
+        }
+      });
+    });
+
+    modal.querySelectorAll('.btn-delete-game').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const roomId = btn.dataset.roomId;
+        if (confirm(`Remove room ${roomId} from saved games?`)) {
+          ArchiveManager.deleteGame(roomId);
+          closeModal();
+          this.showSavedGamesModal();
+        }
+      });
     });
   }
 
@@ -286,6 +400,7 @@ export class Dialogs {
 
   showNewGameModal() {
     const session = this.app.session;
+    const recentGames = ArchiveManager.getRecentGames();
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -297,7 +412,7 @@ export class Dialogs {
         </div>
 
         <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          Starting a new game will reset current scores.
+          Starting a new game will start a fresh deal.
         </div>
 
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
@@ -348,12 +463,28 @@ export class Dialogs {
           <button class="btn-outline modal-close" style="flex: 1;">Cancel</button>
           <button class="btn-block" id="btn-start-new-game" style="flex: 1;">Start Game</button>
         </div>
+
+        ${recentGames.length > 0 ? `
+          <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+            <button class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0;">
+              📂 Or Resume from Saved Games (${recentGames.length}) →
+            </button>
+          </div>
+        ` : ''}
       </div>
     `;
 
     document.body.appendChild(modal);
     const closeModal = () => modal.remove();
     modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    const btnRecent = modal.querySelector('#btn-open-recent-from-new');
+    if (btnRecent) {
+      btnRecent.addEventListener('click', () => {
+        closeModal();
+        this.showSavedGamesModal();
+      });
+    }
 
     modal.querySelector('#btn-start-new-game').addEventListener('click', () => {
       const nameInputs = modal.querySelectorAll('.player-name-input');
