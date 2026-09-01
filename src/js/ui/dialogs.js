@@ -122,7 +122,7 @@ export class Dialogs {
 
     modal.querySelector('#menu-opt-reorg-seating').addEventListener('click', () => {
       closeModal();
-      this.showReorganizeSeatingModal();
+      this.app.scoreboard.setJiggleMode(true);
     });
 
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {

@@ -60,11 +60,13 @@ export const HE = {
   deals: 'סיבובים',
   undoLastDeal: 'בטל סיבוב אחרון',
   undoConfirm: 'לבטל את הסיבוב האחרון שהושלם?',
+  dragToReorder: 'גרור כרטיס שחקן להחלפת מקום ישיבה',
+  doneReordering: 'סיום ✓',
   
   // Menu & Modals
   menuTitle: 'תפריט והגדרות',
   reorganizeSeating: '🪑 סידור מקומות ישיבה',
-  reorganizeDesc: 'לחיצה ארוכה על שחקן או החלפת סדר הישיבה',
+  reorganizeDesc: 'לחיצה ארוכה על שחקן וגרירה להחלפת מקומות',
   editPlayersSettings: '✏️ עריכת שחקנים והגדרות',
   editPlayersDesc: 'שינוי שמות שחקנים, החלפת מחלק או התאמת חוקים',
   modeToggleTitle: 'מצב משחק',
@@ -81,10 +83,10 @@ export const HE = {
   
   // Reorganize Seating Dialog
   reorganizeTitle: 'סידור מקומות ישיבה',
-  reorganizeSub: 'הקש על שני שחקנים להחלפת מקומות, או סובב את השולחן עם כיוון השעון.',
+  reorganizeSub: 'גרור ושחרר שחקנים להחלפת מקומות, או סובב עם השעון.',
   rotateClockwise: '↻ סיבוב עם השעון',
   rotateCounterClockwise: '↺ נגד השעון',
-  swapSeatsHint: 'הקש על שני שחקנים להחלפת המקומות ביניהם',
+  swapSeatsHint: 'גרור שחקן או הקש על שניים להחלפת מקומות',
   seatNumber: 'מקום',
   doneSeating: 'שמור סידור מקומות ✓',
   tapToSwap: 'הקש להחלפה עם',

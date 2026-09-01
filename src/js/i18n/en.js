@@ -60,11 +60,13 @@ export const EN = {
   deals: 'Deals',
   undoLastDeal: 'Undo Last Deal',
   undoConfirm: 'Undo the last completed deal?',
+  dragToReorder: 'Drag player cards to swap seats',
+  doneReordering: 'Done ✓',
   
   // Menu & Modals
   menuTitle: 'Menu & Settings',
   reorganizeSeating: '🪑 Reorganize Seating',
-  reorganizeDesc: 'Long press player card or swap seating positions',
+  reorganizeDesc: 'Long press player card or drag to swap seats',
   editPlayersSettings: '✏️ Edit Players & Settings',
   editPlayersDesc: 'Rename players, change dealer, or adjust rules',
   modeToggleTitle: 'Mode',
@@ -81,10 +83,10 @@ export const EN = {
   
   // Reorganize Seating Dialog
   reorganizeTitle: 'Reorganize Player Seating',
-  reorganizeSub: 'Tap any two players to swap seats, or rotate the table clockwise.',
+  reorganizeSub: 'Drag & drop or tap two players to swap seats, or rotate clockwise.',
   rotateClockwise: '↻ Rotate Clockwise',
   rotateCounterClockwise: '↺ Counter-Clockwise',
-  swapSeatsHint: 'Tap two players to swap their seats',
+  swapSeatsHint: 'Drag a player or tap any two to swap seats',
   seatNumber: 'Seat',
   doneSeating: 'Save Seating ✓',
   tapToSwap: 'Tap to swap with',
