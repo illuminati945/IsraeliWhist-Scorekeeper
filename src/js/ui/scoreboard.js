@@ -1,5 +1,6 @@
 /**
  * Sleek Leaderboard & Score History Table with Hardware-Accelerated iOS Springboard Reordering
+ * (Robust single-pointer lock, no premature drops, and tap-outside dismissal)
  */
 import { SUITS } from '../engine/whist-rules.js';
 
@@ -14,8 +15,8 @@ export class Scoreboard {
     this.isJiggleMode = false;
     this.isDragging = false;
 
-    // Global listener to dismiss jiggle mode on tapping outside
-    document.addEventListener('pointerdown', (e) => {
+    // Global listener to dismiss jiggle mode on tapping outside (on pointerup to prevent drag conflicts)
+    document.addEventListener('pointerup', (e) => {
       if (this.isJiggleMode && !this.isDragging) {
         if (!e.target.closest('.player-card')) {
           this.setJiggleMode(false);
@@ -112,7 +113,7 @@ export class Scoreboard {
       let fromSlotIndex = null;
       let currentTargetSlotIndex = null;
       let initialSlotRects = [];
-      let capturedPointerId = null;
+      let activePointerId = null;
       let rafId = null;
 
       const triggerHaptic = (pattern = 25) => {
@@ -180,14 +181,13 @@ export class Scoreboard {
         const cardCenterX = originSlot.centerX + dx;
         const cardCenterY = originSlot.centerY + dy;
 
-        // Find closest slot with hysteresis threshold
+        // Find closest slot with deliberate hysteresis threshold
         let bestSlot = currentTargetSlotIndex;
         let minScore = Infinity;
 
         initialSlotRects.forEach((rect, idx) => {
           const dist = Math.hypot(cardCenterX - rect.centerX, cardCenterY - rect.centerY);
-          // Favor current slot slightly to prevent oscillation
-          const bias = (idx === currentTargetSlotIndex) ? 0.8 : 1.0;
+          const bias = (idx === currentTargetSlotIndex) ? 0.75 : 1.0;
           const score = dist * bias;
           if (score < minScore) {
             minScore = score;
@@ -231,6 +231,8 @@ export class Scoreboard {
       };
 
       const onPointerMove = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
         const clientX = e.clientX;
         const clientY = e.clientY;
 
@@ -257,16 +259,14 @@ export class Scoreboard {
       };
 
       const onPointerUp = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
         if (pressTimer) {
           clearTimeout(pressTimer);
           pressTimer = null;
         }
         card.classList.remove('card-pressing');
-
-        if (capturedPointerId !== null && card.releasePointerCapture) {
-          try { card.releasePointerCapture(capturedPointerId); } catch (err) {}
-          capturedPointerId = null;
-        }
+        activePointerId = null;
 
         if (rafId) {
           cancelAnimationFrame(rafId);
@@ -320,19 +320,13 @@ export class Scoreboard {
       const onPointerDown = (e) => {
         if (this.isDragging) return;
 
+        activePointerId = e.pointerId;
         startX = e.clientX;
         startY = e.clientY;
         currentX = e.clientX;
         currentY = e.clientY;
         lastX = e.clientX;
         card.classList.add('card-pressing');
-
-        if (e.pointerId && card.setPointerCapture) {
-          try {
-            card.setPointerCapture(e.pointerId);
-            capturedPointerId = e.pointerId;
-          } catch (err) {}
-        }
 
         window.addEventListener('pointermove', onPointerMove, { passive: false });
         window.addEventListener('pointerup', onPointerUp);
@@ -341,10 +335,10 @@ export class Scoreboard {
         if (this.isJiggleMode) {
           liftAndStartDrag(startX, startY);
         } else {
-          // Automatic lift-off on hold (~280ms)
+          // Automatic lift-off on hold (~260ms)
           pressTimer = setTimeout(() => {
             liftAndStartDrag(startX, startY);
-          }, 280);
+          }, 260);
         }
       };
 
