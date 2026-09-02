@@ -485,6 +485,15 @@ export class Dialogs {
   showShareModal() {
     const t = this.app.i18n;
     const sync = this.app.syncManager;
+
+    // Ensure current active game state is immediately persisted to server before sharing
+    if (this.app.session) {
+      this.app.archiveCurrentGame();
+      if (sync) {
+        sync.broadcastLocalState();
+      }
+    }
+
     const shareUrl = sync ? sync.getShareUrl() : window.location.href;
     const roomId = sync ? sync.roomId : 'Local';
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(shareUrl)}`;

@@ -22,11 +22,10 @@ export class SyncManager {
     if (!id && window.location.hash) {
       id = window.location.hash.replace('#', '').trim();
     }
-    if (!id) {
-      id = this.generateFallbackCode();
+    if (id) {
+      return id;
     }
-    this.updateUrl(id);
-    return id;
+    return this.generateFallbackCode();
   }
 
   generateFallbackCode() {
@@ -39,9 +38,10 @@ export class SyncManager {
   }
 
   updateUrl(roomId) {
+    if (!roomId) return;
     const newUrl = new URL(window.location.href);
     newUrl.searchParams.set('game', roomId);
-    window.history.pushState({ roomId }, '', newUrl.toString());
+    window.history.replaceState({ roomId }, '', newUrl.toString());
   }
 
   getShareUrl() {
@@ -143,6 +143,22 @@ export class SyncManager {
     return newRoomId;
   }
 
+  hasMeaningfulLocalState() {
+    if (!this.app || !this.app.session) return false;
+    const s = this.app.session;
+    if (s.completedRounds && s.completedRounds.length > 0) return true;
+    const isDefault = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
+    const hasCustomNames = (s.players || []).some((p, i) => !isDefault(p.name, i));
+    if (hasCustomNames) return true;
+    if (s.activeRound && (
+      (s.activeRound.bets && s.activeRound.bets.some(b => b !== null)) ||
+      (s.activeRound.tricks && s.activeRound.tricks.some(t => t !== null))
+    )) {
+      return true;
+    }
+    return false;
+  }
+
   handleMessage(msg) {
     if (msg.type === 'JOINED') {
       this.userCount = msg.userCount || 1;
@@ -152,8 +168,10 @@ export class SyncManager {
         this.onRemoteUpdate(msg.state);
         this.isApplyingRemote = false;
       } else {
-        // Broadcast current local state so room has state
-        this.broadcastLocalState();
+        // Only broadcast if we have a meaningful game to populate the room
+        if (this.hasMeaningfulLocalState()) {
+          this.broadcastLocalState();
+        }
       }
     } else if (msg.type === 'USER_COUNT_CHANGED') {
       this.userCount = msg.userCount || 1;
@@ -174,6 +192,7 @@ export class SyncManager {
   broadcastLocalState() {
     if (this.isApplyingRemote) return;
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    if (!this.hasMeaningfulLocalState()) return;
 
     const state = {
       id: this.app.session.id,

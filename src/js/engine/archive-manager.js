@@ -77,6 +77,19 @@ export class ArchiveManager {
   static saveGameToArchive(session, roomId) {
     if (!session) return;
 
+    // GUARD: Never archive or post a completely unplayed blank template!
+    const completedCount = session.completedRounds ? session.completedRounds.length : 0;
+    const isDefault = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
+    const hasCustomNames = (session.players || []).some((p, i) => !isDefault(p.name, i));
+    const hasActiveRoundData = session.activeRound && (
+      (session.activeRound.bets && session.activeRound.bets.some(b => b !== null)) ||
+      (session.activeRound.tricks && session.activeRound.tricks.some(t => t !== null))
+    );
+
+    if (completedCount === 0 && !hasCustomNames && !hasActiveRoundData) {
+      return;
+    }
+
     try {
       const existing = this.getRecentGames();
       const scores = session.getCumulativeScores();
@@ -134,7 +147,15 @@ export class ArchiveManager {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(summary.fullState)
-      }).catch(() => {});
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.rejected && data.session && typeof window !== 'undefined' && window.__ISRAELI_WHIST_APP__) {
+          console.warn('[Sync] Server had an authoritative session; restoring state locally.');
+          window.__ISRAELI_WHIST_APP__.applyRemoteState(data.session);
+        }
+      })
+      .catch(() => {});
 
     } catch (e) {
       console.warn('Failed to save game to archive:', e);

@@ -1,6 +1,6 @@
 {
-  "id": "game_1788239841223",
-  "createdAt": "2026-09-01T05:17:21.223Z",
+  "id": "game_1788241865143",
+  "createdAt": "2026-09-01T05:51:05.143Z",
   "rules": {
     "id": "STANDARD",
     "nameEn": "Standard Israeli Whist (Quadratic)",
@@ -29,10 +29,10 @@
       "initial": "1"
     },
     {
-      "id": "p1",
-      "name": "אביגיל",
-      "color": "#10b981",
-      "initial": "2"
+      "id": "p3",
+      "name": "יותם",
+      "color": "#ec4899",
+      "initial": "4"
     },
     {
       "id": "p2",
@@ -41,10 +41,10 @@
       "initial": "3"
     },
     {
-      "id": "p3",
-      "name": "יותם",
-      "color": "#ec4899",
-      "initial": "4"
+      "id": "p1",
+      "name": "אביגיל",
+      "color": "#10b981",
+      "initial": "2"
     }
   ],
   "currentDealerIndex": 2,
@@ -53,85 +53,85 @@
     {
       "roundNumber": 1,
       "dealerIndex": 0,
-      "leadBidderIndex": 1,
+      "leadBidderIndex": 3,
       "stage": "TRICKS",
       "trump": {
-        "winnerIndex": 1,
+        "winnerIndex": null,
         "suitId": "NT",
-        "bidAmount": 7,
+        "bidAmount": 0,
         "isPasRound": false
       },
       "bets": [
-        0,
-        6,
-        5,
-        3
+        4,
+        4,
+        3,
+        1
       ],
       "tricks": [
-        0,
+        4,
+        4,
         3,
-        7,
-        3
+        2
       ],
       "scores": [
-        50,
-        -30,
-        -20,
-        19
+        26,
+        -10,
+        19,
+        26
       ],
-      "roundTotalBets": 14,
-      "bettingMode": "OVER",
-      "timestamp": "2026-09-01T05:17:21.223Z",
+      "roundTotalBets": 12,
+      "bettingMode": "UNDER",
+      "timestamp": "2026-09-01T05:51:05.143Z",
       "simplified": true,
       "results": [
         {
           "playerIndex": 0,
-          "bid": 0,
-          "tricks": 0,
-          "score": 50,
+          "bid": 4,
+          "tricks": 4,
+          "score": 26,
           "made": true,
           "delta": 0,
-          "explanation": "Pass (0) made: +50 pts"
-        },
-        {
-          "playerIndex": 1,
-          "bid": 6,
-          "tricks": 3,
-          "score": -30,
-          "made": false,
-          "delta": 3,
-          "explanation": "Bid 6, took 3 (3 diff × -10): -30 pts"
-        },
-        {
-          "playerIndex": 2,
-          "bid": 5,
-          "tricks": 7,
-          "score": -20,
-          "made": false,
-          "delta": 2,
-          "explanation": "Bid 5, took 7 (2 diff × -10): -20 pts"
+          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
         },
         {
           "playerIndex": 3,
+          "bid": 4,
+          "tricks": 4,
+          "score": 26,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 4 made: 10 + (4²) = +26 pts"
+        },
+        {
+          "playerIndex": 2,
           "bid": 3,
           "tricks": 3,
           "score": 19,
           "made": true,
           "delta": 0,
           "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
+        },
+        {
+          "playerIndex": 1,
+          "bid": 1,
+          "tricks": 2,
+          "score": -10,
+          "made": false,
+          "delta": 1,
+          "explanation": "Bid 1, took 2 (1 diff × -10): -10 pts"
         }
       ],
       "cumulativeScores": [
-        50,
-        -30,
-        -20,
-        19
+        26,
+        -10,
+        19,
+        26
       ],
-      "completedAt": "2026-09-01T05:26:16.573Z"
+      "completedAt": "2026-09-01T06:16:50.041Z"
     },
     {
       "roundNumber": 2,
-      "dealerIndex": 1,
+      "dealerIndex": 3,
       "leadBidderIndex": 2,
       "stage": "TRICKS",
       "trump": {
@@ -141,39 +141,39 @@
         "isPasRound": false
       },
       "bets": [
-        2,
         3,
-        2,
-        5
-      ],
-      "tricks": [
-        4,
         3,
         2,
         4
       ],
+      "tricks": [
+        3,
+        3,
+        2,
+        5
+      ],
       "scores": [
-        -20,
         19,
+        -10,
         14,
-        -10
+        19
       ],
       "roundTotalBets": 12,
       "bettingMode": "UNDER",
-      "timestamp": "2026-09-01T05:26:16.573Z",
-      "simplified": true,
+      "timestamp": "2026-09-01T06:16:50.041Z",
+      "simplified": false,
       "results": [
         {
           "playerIndex": 0,
-          "bid": 2,
-          "tricks": 4,
-          "score": -20,
-          "made": false,
-          "delta": 2,
-          "explanation": "Bid 2, took 4 (2 diff × -10): -20 pts"
+          "bid": 3,
+          "tricks": 3,
+          "score": 19,
+          "made": true,
+          "delta": 0,
+          "explanation": "Bid 3 made: 10 + (3²) = +19 pts"
         },
         {
-          "playerIndex": 1,
+          "playerIndex": 3,
           "bid": 3,
           "tricks": 3,
           "score": 19,
@@ -191,22 +191,22 @@
           "explanation": "Bid 2 made: 10 + (2²) = +14 pts"
         },
         {
-          "playerIndex": 3,
-          "bid": 5,
-          "tricks": 4,
+          "playerIndex": 1,
+          "bid": 4,
+          "tricks": 5,
           "score": -10,
           "made": false,
           "delta": 1,
-          "explanation": "Bid 5, took 4 (1 diff × -10): -10 pts"
+          "explanation": "Bid 4, took 5 (1 diff × -10): -10 pts"
         }
       ],
       "cumulativeScores": [
-        30,
-        -11,
-        -6,
-        9
+        45,
+        -20,
+        33,
+        45
       ],
-      "completedAt": "2026-09-01T05:28:32.404Z"
+      "completedAt": "2026-09-01T06:43:11.677Z"
     }
   ],
   "activeRound": {
@@ -221,15 +221,15 @@
       "isPasRound": false
     },
     "bets": [
-      3,
-      3,
-      5,
-      3
+      0,
+      1,
+      7,
+      4
     ],
     "tricks": [
-      3,
-      3,
       4,
+      1,
+      5,
       3
     ],
     "scores": [
@@ -238,10 +238,10 @@
       0,
       0
     ],
-    "roundTotalBets": 14,
-    "bettingMode": "OVER",
-    "timestamp": "2026-09-01T05:28:32.404Z"
+    "roundTotalBets": 12,
+    "bettingMode": "UNDER",
+    "timestamp": "2026-09-01T06:43:11.677Z"
   },
   "status": "IN_PROGRESS",
-  "updatedAt": "2026-09-02T16:50:46.016Z"
+  "updatedAt": "2026-09-02T16:51:03.039Z"
 }

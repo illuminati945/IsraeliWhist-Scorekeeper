@@ -9,10 +9,14 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'src');
 const SESSIONS_DIR = path.join(__dirname, 'data', 'sessions');
+const BACKUPS_DIR = path.join(__dirname, 'data', 'backups');
 const ARCHIVE_FILE = path.join(__dirname, 'data', 'archive.json');
 
 if (!fs.existsSync(SESSIONS_DIR)) {
   fs.mkdirSync(SESSIONS_DIR, { recursive: true });
+}
+if (!fs.existsSync(BACKUPS_DIR)) {
+  fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
 // MIME types for static assets
@@ -35,6 +39,42 @@ function generateRoomCode() {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return `W-${code}`;
+}
+
+// Helper to detect state regression (prevent wiping/clearing active games with empty/blank states)
+export function isStateRegression(existing, incoming) {
+  if (!existing) return false;
+  if (!incoming) return true;
+
+  const existingRounds = (existing.completedRounds || []).length;
+  const incomingRounds = (incoming.completedRounds || []).length;
+
+  // 1. If existing game has completed rounds and incoming has 0, strictly reject
+  if (existingRounds > 0 && incomingRounds === 0) {
+    return true;
+  }
+
+  // 2. Player names protection: if existing has custom names, do not allow default names to overwrite
+  const isDefaultName = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
+  const existingHasCustomNames = (existing.players || []).some((p, i) => !isDefaultName(p.name, i));
+  const incomingHasOnlyDefault = (incoming.players || []).every((p, i) => isDefaultName(p.name, i));
+
+  if (existingHasCustomNames && incomingHasOnlyDefault) {
+    return true;
+  }
+
+  // 3. If incoming has fewer rounds than existing, only allow a legitimate single-step undo
+  if (incomingRounds < existingRounds) {
+    const isSingleUndo = (
+      existingRounds - incomingRounds === 1 &&
+      incoming.id === existing.id
+    );
+    if (!isSingleUndo) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // In-memory sessions cache
@@ -136,6 +176,17 @@ function saveSession(roomId, state) {
   state.updatedAt = new Date().toISOString();
   memorySessions.set(roomId, state);
   const filePath = path.join(SESSIONS_DIR, `${roomId}.json`);
+
+  // Maintain automatic rolling backup of previous valid state
+  if (fs.existsSync(filePath)) {
+    try {
+      const backupPath = path.join(BACKUPS_DIR, `${roomId}.bak.json`);
+      fs.copyFileSync(filePath, backupPath);
+    } catch (e) {
+      console.error(`Error creating backup for ${roomId}:`, e);
+    }
+  }
+
   try {
     fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf8');
   } catch (e) {
@@ -211,6 +262,15 @@ const server = http.createServer((req, res) => {
       req.on('end', () => {
         try {
           const parsed = JSON.parse(body);
+          const existing = loadSession(roomId);
+
+          if (isStateRegression(existing, parsed)) {
+            console.warn(`[Security] Blocked session regression for ${roomId} from HTTP POST.`);
+            res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+            res.end(JSON.stringify({ success: true, rejected: true, session: existing }));
+            return;
+          }
+
           saveSession(roomId, parsed);
           res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
           res.end(JSON.stringify({ success: true, roomId }));
@@ -310,6 +370,18 @@ wss.on('connection', (ws) => {
       } else if (msg.type === 'SYNC_STATE') {
         const { roomId, state } = msg;
         if (roomId && state) {
+          const existing = loadSession(roomId);
+          if (isStateRegression(existing, state)) {
+            console.warn(`[Security] Blocked session regression for ${roomId} from WebSocket client. Restoring authoritative state to sender.`);
+            ws.send(JSON.stringify({
+              type: 'STATE_UPDATED',
+              roomId,
+              state: existing,
+              userCount: rooms.get(roomId) ? rooms.get(roomId).size : 1
+            }));
+            return;
+          }
+
           saveSession(roomId, state);
           const count = rooms.get(roomId) ? rooms.get(roomId).size : 1;
           broadcastToRoom(roomId, {
@@ -350,6 +422,8 @@ wss.on('connection', (ws) => {
   });
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Israeli Whist Multiplayer Server running on port ${PORT}`);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Israeli Whist Multiplayer Server running on port ${PORT}`);
+  });
+}

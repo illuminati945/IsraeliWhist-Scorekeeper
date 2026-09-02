@@ -14,18 +14,22 @@ import { HE } from './i18n/he.js';
 
 class IsraeliWhistApp {
   constructor() {
+    window.__ISRAELI_WHIST_APP__ = this;
     this.initLanguage();
-    this.session = GameSession.loadFromStorage();
+
+    // Check if URL specifies a game room or if we should show landing lobby
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetRoomId = urlParams.get('game') || urlParams.get('room') || (window.location.hash.length > 1 ? window.location.hash.replace('#', '').trim() : null);
+    const hasGameParam = !!targetRoomId;
+
+    // Load initial session safely without wiping shared rooms
+    this.session = this.loadInitialSession(targetRoomId);
     
     this.initElements();
     this.initControllers();
     this.initSyncManager();
     this.bindGlobalEvents();
     this.updateStaticI18n();
-
-    // Check if URL specifies a game room or if we should show landing lobby
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasGameParam = urlParams.has('game') || urlParams.has('room') || window.location.hash.length > 1;
 
     // Sync persistent games from server
     ArchiveManager.syncWithServer(() => {
@@ -36,11 +40,49 @@ class IsraeliWhistApp {
 
     if (hasGameParam) {
       this.showGameView();
+      // Fetch authoritative state from server asynchronously via REST
+      this.fetchRoomStateFromServer(targetRoomId);
     } else {
       this.showLandingView();
     }
 
-    this.session.subscribe(() => {
+    this.bindSessionListeners(this.session);
+  }
+
+  loadInitialSession(targetRoomId) {
+    if (targetRoomId) {
+      const recent = ArchiveManager.getRecentGames();
+      const match = recent.find(g => g.roomId === targetRoomId || g.id === targetRoomId);
+      if (match && match.fullState) {
+        return new GameSession(match.fullState);
+      }
+    }
+    return GameSession.loadFromStorage();
+  }
+
+  async fetchRoomStateFromServer(roomId) {
+    if (!roomId) return;
+    try {
+      const loc = window.location;
+      let apiUrl = `/whist/api/session/${roomId}`;
+      if (loc.pathname === '/' || !loc.pathname.startsWith('/whist')) {
+        apiUrl = `/api/session/${roomId}`;
+      }
+      const res = await fetch(apiUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.session) {
+          this.applyRemoteState(data.session);
+        }
+      }
+    } catch (e) {
+      console.warn('REST session fetch failed, relying on WebSocket:', e);
+    }
+  }
+
+  bindSessionListeners(session) {
+    if (!session) return;
+    session.subscribe(() => {
       this.roundView.updateSession(this.session);
       this.scoreboard.updateSession(this.session);
       this.chartView.updateSession(this.session);
@@ -205,7 +247,6 @@ class IsraeliWhistApp {
     this.roundView.updateSession(this.session);
     this.scoreboard.updateSession(this.session);
     this.chartView.updateSession(this.session);
-    this.archiveCurrentGame();
   }
 
   joinRoomByCode(code) {
@@ -214,6 +255,7 @@ class IsraeliWhistApp {
       this.syncManager.joinRoom(code);
     }
     this.showGameView();
+    this.fetchRoomStateFromServer(code);
   }
 
   archiveCurrentGame() {
@@ -256,17 +298,7 @@ class IsraeliWhistApp {
     this.chartView.updateSession(this.session);
     this.archiveCurrentGame();
 
-    this.session.subscribe(() => {
-      this.roundView.updateSession(this.session);
-      this.scoreboard.updateSession(this.session);
-      this.chartView.updateSession(this.session);
-
-      if (this.syncManager) {
-        this.syncManager.broadcastLocalState();
-      }
-
-      this.archiveCurrentGame();
-    });
+    this.bindSessionListeners(this.session);
   }
 
   setSession(newSession) {
@@ -281,17 +313,7 @@ class IsraeliWhistApp {
       this.syncManager.broadcastLocalState();
     }
 
-    this.session.subscribe(() => {
-      this.roundView.updateSession(this.session);
-      this.scoreboard.updateSession(this.session);
-      this.chartView.updateSession(this.session);
-
-      if (this.syncManager) {
-        this.syncManager.broadcastLocalState();
-      }
-
-      this.archiveCurrentGame();
-    });
+    this.bindSessionListeners(this.session);
   }
 
   resumeGameFromArchive(gameSummary) {
@@ -305,18 +327,7 @@ class IsraeliWhistApp {
     }
 
     this.showGameView();
-
-    this.session.subscribe(() => {
-      this.roundView.updateSession(this.session);
-      this.scoreboard.updateSession(this.session);
-      this.chartView.updateSession(this.session);
-
-      if (this.syncManager) {
-        this.syncManager.broadcastLocalState();
-      }
-
-      this.archiveCurrentGame();
-    });
+    this.bindSessionListeners(this.session);
   }
 
   bindGlobalEvents() {

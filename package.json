@@ -4,7 +4,7 @@
   "description": "Exact Bidding Score Engine & Companion for Israeli Whist (וויסט ישראלי)",
   "type": "module",
   "scripts": {
-    "test": "node test-engine.js && node test-full-game.js",
+    "test": "node test-engine.js && node test-full-game.js && node test-sync-protection.js",
     "serve": "npx serve src -p 3000"
   },
   "keywords": [
