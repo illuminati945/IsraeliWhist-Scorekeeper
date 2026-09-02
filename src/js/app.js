@@ -189,6 +189,12 @@ class IsraeliWhistApp {
       },
       (playerIdx) => {
         this.dialogs.showReorganizeSeatingModal(playerIdx);
+      },
+      (roundIdx) => {
+        this.dialogs.showEditDealModal(roundIdx);
+      },
+      () => {
+        this.dialogs.showBaselineModal();
       }
     );
 

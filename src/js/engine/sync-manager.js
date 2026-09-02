@@ -147,6 +147,7 @@ export class SyncManager {
     if (!this.app || !this.app.session) return false;
     const s = this.app.session;
     if (s.completedRounds && s.completedRounds.length > 0) return true;
+    if (s.initialScores && s.initialScores.some(sc => sc !== 0)) return true;
     const isDefault = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
     const hasCustomNames = (s.players || []).some((p, i) => !isDefault(p.name, i));
     if (hasCustomNames) return true;
@@ -205,6 +206,7 @@ export class SyncManager {
       currentDealerIndex: this.app.session.currentDealerIndex,
       roundNumber: this.app.session.roundNumber,
       completedRounds: this.app.session.completedRounds,
+      initialScores: this.app.session.initialScores,
       activeRound: this.app.session.activeRound,
       status: this.app.session.status
     };

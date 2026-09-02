@@ -54,12 +54,14 @@ export function isStateRegression(existing, incoming) {
     return true;
   }
 
-  // 2. Player names protection: if existing has custom names, do not allow default names to overwrite
+  // 2. Player names & baseline protection: if existing has custom names or baseline scores, do not allow default blank to overwrite
   const isDefaultName = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
   const existingHasCustomNames = (existing.players || []).some((p, i) => !isDefaultName(p.name, i));
   const incomingHasOnlyDefault = (incoming.players || []).every((p, i) => isDefaultName(p.name, i));
+  const existingHasBaseline = (existing.initialScores || []).some(s => s !== 0);
+  const incomingHasOnlyZeroBaseline = (incoming.initialScores || []).every(s => s === 0);
 
-  if (existingHasCustomNames && incomingHasOnlyDefault) {
+  if ((existingHasCustomNames || existingHasBaseline) && incomingHasOnlyDefault && incomingHasOnlyZeroBaseline && incomingRounds === 0) {
     return true;
   }
 
@@ -84,7 +86,7 @@ const memorySessions = new Map();
 function createGameSummary(roomId, session) {
   if (!session) return null;
   const players = (session.players || []).map((p, idx) => {
-    let score = 0;
+    let score = (session.initialScores && typeof session.initialScores[idx] === 'number') ? session.initialScores[idx] : 0;
     if (session.completedRounds && session.completedRounds.length > 0) {
       const lastRound = session.completedRounds[session.completedRounds.length - 1];
       if (lastRound.cumulativeScores && typeof lastRound.cumulativeScores[idx] === 'number') {

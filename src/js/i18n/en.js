@@ -138,6 +138,21 @@ export const EN = {
   delete: 'Delete',
   currentGame: 'Current Game',
   
+  // History Edit & Baseline
+  editDeal: 'Edit Deal',
+  editDealTitle: 'Edit Deal #{num}',
+  editDealSub: 'Modify bids, tricks, and dealer. All subsequent totals will recalculate automatically.',
+  saveDeal: 'Save & Recalculate ✓',
+  baselineScores: 'Baseline / Starting Scores',
+  baselineDesc: 'Set custom starting scores to continue a game recorded elsewhere.',
+  setBaseline: 'Set Baseline',
+  baselineRow: 'Baseline',
+  saveBaseline: 'Save Baseline ✓',
+  invalidTricksSum: 'Sum of tricks must equal 13 (currently {sum})',
+  hookWarning: 'Total bids cannot equal 13 (Hook rule)',
+  deleteDeal: 'Delete Deal',
+  deleteDealConfirm: 'Are you sure you want to delete Deal #{num}? All subsequent totals will recalculate.',
+
   // Language Switch
   switchLang: 'עברית'
 };

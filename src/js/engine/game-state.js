@@ -24,6 +24,7 @@ export class GameSession {
     this.currentDealerIndex = options.currentDealerIndex ?? 0;
     this.roundNumber = options.roundNumber || 1;
     this.completedRounds = options.completedRounds || [];
+    this.initialScores = Array.isArray(options.initialScores) ? options.initialScores.map(s => parseInt(s, 10) || 0) : [0, 0, 0, 0];
     
     this.activeRound = options.activeRound || this.initDraftRound();
     this.status = options.status || 'IN_PROGRESS';
@@ -277,13 +278,109 @@ export class GameSession {
   }
 
   getCumulativeScores() {
-    const totals = [0, 0, 0, 0];
+    const totals = [...this.initialScores];
     for (const round of this.completedRounds) {
       for (let i = 0; i < 4; i++) {
-        totals[i] += round.scores[i] || 0;
+        totals[i] += (round.scores && typeof round.scores[i] === 'number') ? round.scores[i] : 0;
       }
     }
     return totals;
+  }
+
+  setInitialScores(scores) {
+    if (Array.isArray(scores) && scores.length === 4) {
+      this.initialScores = scores.map(s => parseInt(s, 10) || 0);
+      this.recalculateAllScores();
+    }
+  }
+
+  recalculateAllScores() {
+    let currentRunning = [...this.initialScores];
+    for (let r = 0; r < this.completedRounds.length; r++) {
+      const round = this.completedRounds[r];
+      const isPas = round.trump && round.trump.isPasRound;
+      const isTrumpMaker = (pIdx) => !round.simplified && round.trump && round.trump.winnerIndex === pIdx;
+      const totalBets = (round.bets || []).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+
+      const roundResults = [];
+      for (let i = 0; i < 4; i++) {
+        const bid = (round.bets && typeof round.bets[i] === 'number') ? round.bets[i] : 0;
+        const tricks = (round.tricks && typeof round.tricks[i] === 'number') ? round.tricks[i] : 0;
+        const calc = calculatePlayerScore(
+          bid,
+          tricks,
+          isTrumpMaker(i),
+          isPas,
+          this.rules,
+          totalBets
+        );
+        roundResults.push({
+          playerIndex: i,
+          bid,
+          tricks,
+          score: calc.score,
+          made: calc.made,
+          explanation: calc.explanation
+        });
+      }
+
+      round.results = roundResults;
+      round.scores = roundResults.map(res => res.score);
+      round.roundTotalBets = totalBets;
+      currentRunning = currentRunning.map((tot, i) => tot + round.scores[i]);
+      round.cumulativeScores = [...currentRunning];
+    }
+
+    this.checkGameEnd();
+    this.notify();
+  }
+
+  editCompletedRound(roundIndex, updatedData = {}) {
+    if (roundIndex < 0 || roundIndex >= this.completedRounds.length) {
+      throw new Error(`Invalid round index: ${roundIndex}`);
+    }
+
+    const round = this.completedRounds[roundIndex];
+
+    if (Array.isArray(updatedData.bets)) {
+      round.bets = updatedData.bets.map(b => parseInt(b, 10) || 0);
+      round.roundTotalBets = round.bets.reduce((a, b) => a + b, 0);
+    }
+
+    if (Array.isArray(updatedData.tricks)) {
+      round.tricks = updatedData.tricks.map(t => parseInt(t, 10) || 0);
+      const trickSum = round.tricks.reduce((a, b) => a + b, 0);
+      if (trickSum !== 13) {
+        throw new Error(`Total tricks must equal 13 (sum is ${trickSum})`);
+      }
+    }
+
+    if (updatedData.dealerIndex !== undefined && updatedData.dealerIndex >= 0 && updatedData.dealerIndex < 4) {
+      round.dealerIndex = updatedData.dealerIndex;
+      round.leadBidderIndex = (round.dealerIndex + 1) % 4;
+    }
+
+    if (updatedData.trump) {
+      round.trump = { ...round.trump, ...updatedData.trump };
+    }
+
+    this.recalculateAllScores();
+    return round;
+  }
+
+  deleteCompletedRound(roundIndex) {
+    if (roundIndex < 0 || roundIndex >= this.completedRounds.length) {
+      throw new Error(`Invalid round index: ${roundIndex}`);
+    }
+    this.completedRounds.splice(roundIndex, 1);
+    this.completedRounds.forEach((r, idx) => {
+      r.roundNumber = idx + 1;
+    });
+    this.roundNumber = this.completedRounds.length + 1;
+    if (this.activeRound) {
+      this.activeRound.roundNumber = this.roundNumber;
+    }
+    this.recalculateAllScores();
   }
 
   getRankings() {
@@ -394,6 +491,11 @@ export class GameSession {
       }
     }
 
+    if (Array.isArray(this.initialScores) && this.initialScores.length === 4) {
+      const oldInit = [...this.initialScores];
+      this.initialScores = newOrderIndices.map(oldIdx => oldInit[oldIdx]);
+    }
+
     this.notify();
   }
 
@@ -404,6 +506,12 @@ export class GameSession {
     const tempPlayer = this.players[idxA];
     this.players[idxA] = this.players[idxB];
     this.players[idxB] = tempPlayer;
+
+    if (Array.isArray(this.initialScores) && this.initialScores.length === 4) {
+      const tempInit = this.initialScores[idxA];
+      this.initialScores[idxA] = this.initialScores[idxB];
+      this.initialScores[idxB] = tempInit;
+    }
 
     // 2. Remap function
     const remapIdx = (idx) => {
@@ -553,6 +661,7 @@ export class GameSession {
         currentDealerIndex: this.currentDealerIndex,
         roundNumber: this.roundNumber,
         completedRounds: this.completedRounds,
+        initialScores: this.initialScores,
         activeRound: this.activeRound,
         status: this.status
       });
@@ -598,6 +707,7 @@ export class GameSession {
         maxRounds: this.maxRounds,
         simplifiedMode: this.simplifiedMode,
         players: this.players,
+        initialScores: this.initialScores,
         completedRounds: this.completedRounds,
         scores: this.getCumulativeScores(),
         rankings: this.getRankings()

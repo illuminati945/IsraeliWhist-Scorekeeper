@@ -81,12 +81,13 @@ export class ArchiveManager {
     const completedCount = session.completedRounds ? session.completedRounds.length : 0;
     const isDefault = (name, idx) => !name || name === `Player ${idx + 1}` || name === `שחקן ${idx + 1}`;
     const hasCustomNames = (session.players || []).some((p, i) => !isDefault(p.name, i));
+    const hasInitialScores = session.initialScores && session.initialScores.some(s => s !== 0);
     const hasActiveRoundData = session.activeRound && (
       (session.activeRound.bets && session.activeRound.bets.some(b => b !== null)) ||
       (session.activeRound.tricks && session.activeRound.tricks.some(t => t !== null))
     );
 
-    if (completedCount === 0 && !hasCustomNames && !hasActiveRoundData) {
+    if (completedCount === 0 && !hasCustomNames && !hasActiveRoundData && !hasInitialScores) {
       return;
     }
 
@@ -123,6 +124,7 @@ export class ArchiveManager {
           currentDealerIndex: session.currentDealerIndex,
           roundNumber: session.roundNumber,
           completedRounds: session.completedRounds,
+          initialScores: session.initialScores,
           activeRound: session.activeRound,
           status: session.status
         }

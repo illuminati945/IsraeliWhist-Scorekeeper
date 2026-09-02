@@ -138,6 +138,21 @@ export const HE = {
   delete: 'מחק',
   currentGame: 'משחק פעיל',
   
+  // History Edit & Baseline
+  editDeal: 'עריכת סיבוב',
+  editDealTitle: 'עריכת סיבוב #{num}',
+  editDealSub: 'עריכת הכרזות, לקיחות ומחלק. כל התוצאות והסיבובים הבאים יחושבו מחדש אוטומטית.',
+  saveDeal: 'שמור וחשב מחדש ✓',
+  baselineScores: 'ניקוד התחלתי / פתיחה',
+  baselineDesc: 'הגדרת ניקוד התחלתי למשחק שנרשם במקום אחר וממשיך כאן.',
+  setBaseline: 'ניקוד פתיחה',
+  baselineRow: 'ניקוד פתיחה',
+  saveBaseline: 'שמור ניקוד פתיחה ✓',
+  invalidTricksSum: 'סך הלקיחות חייב להיות בדיוק 13 (כרגע {sum})',
+  hookWarning: 'סך כל ההכרזות אינו יכול להיות 13 (חוק ההוק)',
+  deleteDeal: 'מחק סיבוב',
+  deleteDealConfirm: 'האם למחוק את סיבוב #{num}? כל התוצאות הבאות יחושבו מחדש.',
+
   // Language Switch
   switchLang: 'English'
 };

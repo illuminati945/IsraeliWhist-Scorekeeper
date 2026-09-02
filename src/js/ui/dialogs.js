@@ -1,7 +1,7 @@
 /**
  * Modals & Dialogs (Menu, Reorganize Seating, Saved Games Archive, Edit Settings/Names, Share, New Game, Rules, Stats, Export) with i18n
  */
-import { RULE_PRESETS } from '../engine/whist-rules.js';
+import { RULE_PRESETS, calculatePlayerScore } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
 import { GameSession } from '../engine/game-state.js';
 import { ArchiveManager } from '../engine/archive-manager.js';
@@ -40,6 +40,16 @@ export class Dialogs {
           <button class="menu-item-btn" id="menu-opt-home-lobby">
             <span>${t.returnToLobby}</span>
             <span>→</span>
+          </button>
+
+          <button class="menu-item-btn" id="menu-opt-baseline" style="background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35);">
+            <div>
+              <div style="font-weight: 700; color: #fde68a;">🎯 ${t.baselineScores}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                ${t.baselineDesc}
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">Set →</span>
           </button>
 
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
@@ -108,6 +118,11 @@ export class Dialogs {
     modal.querySelector('#menu-opt-home-lobby').addEventListener('click', () => {
       closeModal();
       this.app.showLandingView();
+    });
+
+    modal.querySelector('#menu-opt-baseline').addEventListener('click', () => {
+      closeModal();
+      this.showBaselineModal();
     });
 
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {
@@ -594,6 +609,24 @@ export class Dialogs {
           `).join('')}
         </div>
 
+        <div style="margin-bottom: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
+              🎯 ${t.baselineScores}
+            </div>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">${isHe ? 'ניקוד פתיחה (אופציונלי)' : 'Starting scores (optional)'}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
+            ${session.players.map((p, idx) => `
+              <div style="display: flex; align-items: center; gap: 0.3rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                <span class="player-dot" style="background: ${p.color};"></span>
+                <span style="font-size: 0.75rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>
+                <input type="number" class="input-field new-game-baseline-input" data-p-idx="${idx}" value="0" style="width: 65px; margin-bottom: 0; padding: 4px; text-align: center; font-size: 0.8rem; font-family: monospace;" />
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
         <div style="margin-bottom: 0.85rem; padding: 0.65rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
           <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
             <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px;">
@@ -663,6 +696,12 @@ export class Dialogs {
         name: nameInputs[idx].value.trim() || p.name
       }));
 
+      const baselineInputs = modal.querySelectorAll('.new-game-baseline-input');
+      const initialScores = [];
+      baselineInputs.forEach(inp => {
+        initialScores.push(parseInt(inp.value, 10) || 0);
+      });
+
       let maxRounds = null;
       let targetPoints = null;
       if (targetVal === '13_ROUNDS') maxRounds = 13;
@@ -675,7 +714,8 @@ export class Dialogs {
         rules: { ...RULE_PRESETS[ruleKey] },
         maxRounds,
         targetPoints,
-        simplifiedMode: isSimplified
+        simplifiedMode: isSimplified,
+        initialScores
       });
 
       closeModal();
@@ -797,5 +837,270 @@ export class Dialogs {
       navigator.clipboard.writeText(jsonStr);
       alert(t.copied || 'JSON copied to clipboard.');
     });
+  }
+
+  showBaselineModal() {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
+    const session = this.app.session;
+    const init = session.initialScores || [0, 0, 0, 0];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 400px;">
+        <div class="modal-head">
+          <h3 style="font-size: 1.05rem; font-weight: 700;">🎯 ${t.baselineScores}</h3>
+          <button class="btn-pill modal-close">✕</button>
+        </div>
+
+        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4;">
+          ${t.baselineDesc}
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.25rem;">
+          ${session.players.map((p, idx) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="player-dot" style="background: ${p.color};"></span>
+                <span style="font-weight: 700; font-size: 0.9rem;">${p.name}</span>
+              </div>
+              <input type="number" class="input-field baseline-score-input" data-p-idx="${idx}" value="${init[idx] || 0}" style="width: 90px; text-align: center; margin-bottom: 0; font-weight: 700; font-size: 0.95rem; font-family: monospace;" />
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="display: flex; gap: 0.4rem;">
+          <button class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+          <button class="btn-block" id="btn-save-baseline" style="flex: 1;">${t.saveBaseline}</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const closeModal = () => modal.remove();
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelector('#btn-save-baseline').addEventListener('click', () => {
+      const inputs = modal.querySelectorAll('.baseline-score-input');
+      const scores = [];
+      inputs.forEach(inp => {
+        scores.push(parseInt(inp.value, 10) || 0);
+      });
+      session.setInitialScores(scores);
+      closeModal();
+    });
+  }
+
+  showEditDealModal(roundIndex) {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
+    const session = this.app.session;
+    if (roundIndex < 0 || roundIndex >= session.completedRounds.length) return;
+
+    const round = session.completedRounds[roundIndex];
+    let currentBets = [...round.bets];
+    let currentTricks = [...round.tricks];
+    let currentDealer = round.dealerIndex;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+
+    const getCalcSummary = () => {
+      const sumTricks = currentTricks.reduce((a, b) => a + (parseInt(b, 10) || 0), 0);
+      const sumBets = currentBets.reduce((a, b) => a + (parseInt(b, 10) || 0), 0);
+      const isPas = round.trump && round.trump.isPasRound;
+      const isTrumpMaker = (pIdx) => !round.simplified && round.trump && round.trump.winnerIndex === pIdx;
+
+      const playerScores = [];
+      for (let i = 0; i < 4; i++) {
+        const bid = parseInt(currentBets[i], 10) || 0;
+        const tricks = parseInt(currentTricks[i], 10) || 0;
+        const res = calculatePlayerScore(bid, tricks, isTrumpMaker(i), isPas, session.rules, sumBets);
+        playerScores.push(res);
+      }
+
+      return { sumTricks, sumBets, playerScores };
+    };
+
+    const updatePreview = () => {
+      const { sumTricks, sumBets, playerScores } = getCalcSummary();
+      const trickSumBadge = modal.querySelector('#edit-tricks-sum-badge');
+      const betsSumBadge = modal.querySelector('#edit-bets-sum-badge');
+      const hookWarningBox = modal.querySelector('#edit-hook-warning');
+      const btnSave = modal.querySelector('#btn-save-edit-deal');
+
+      if (trickSumBadge) {
+        trickSumBadge.textContent = `${isHe ? 'סך לקיחות' : 'Tricks'}: ${sumTricks}/13`;
+        if (sumTricks === 13) {
+          trickSumBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+          trickSumBadge.style.color = '#a7f3d0';
+          trickSumBadge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        } else {
+          trickSumBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+          trickSumBadge.style.color = '#fca5a5';
+          trickSumBadge.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        }
+      }
+
+      if (betsSumBadge) {
+        betsSumBadge.textContent = `${isHe ? 'סך הכרזות' : 'Bids'}: ${sumBets}`;
+      }
+
+      if (hookWarningBox) {
+        if (sumBets === 13 && session.rules.enforceHookRule) {
+          hookWarningBox.style.display = 'block';
+        } else {
+          hookWarningBox.style.display = 'none';
+        }
+      }
+
+      playerScores.forEach((res, pIdx) => {
+        const badge = modal.querySelector(`.edit-p-score-${pIdx}`);
+        if (badge) {
+          const scoreDelta = res.score >= 0 ? `+${res.score}` : `${res.score}`;
+          badge.textContent = scoreDelta;
+          badge.style.color = res.made ? 'var(--success)' : 'var(--danger)';
+        }
+      });
+
+      if (btnSave) {
+        const canSave = (sumTricks === 13);
+        btnSave.disabled = !canSave;
+        btnSave.style.opacity = canSave ? '1' : '0.4';
+        btnSave.style.cursor = canSave ? 'pointer' : 'not-allowed';
+      }
+    };
+
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 440px;">
+        <div class="modal-head">
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700;">
+              ${t.editDealTitle.replace('{num}', round.roundNumber)}
+            </h3>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+              ${t.editDealSub}
+            </div>
+          </div>
+          <button class="btn-pill modal-close">✕</button>
+        </div>
+
+        <div style="margin: 0.75rem 0 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-secondary);">
+            🃏 ${t.currentDealer}:
+          </label>
+          <select id="edit-deal-dealer" class="select-field" style="width: auto; margin-bottom: 0; padding: 4px 8px; font-size: 0.82rem;">
+            ${session.players.map((p, idx) => `
+              <option value="${idx}" ${idx === currentDealer ? 'selected' : ''}>${p.name}</option>
+            `).join('')}
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 0.85rem;">
+          <div id="edit-tricks-sum-badge" style="flex: 1; padding: 6px; text-align: center; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; border: 1px solid;"></div>
+          <div id="edit-bets-sum-badge" style="flex: 1; padding: 6px; text-align: center; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700; background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border-subtle);"></div>
+        </div>
+
+        <div id="edit-hook-warning" style="display: none; margin-bottom: 0.85rem; padding: 6px 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); font-size: 0.75rem; color: #fde68a;">
+          ⚠️ ${t.hookWarning}
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
+          ${session.players.map((p, idx) => `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <div style="display: flex; align-items: center; gap: 6px; min-width: 85px; flex: 1;">
+                <span class="player-dot" style="background: ${p.color};"></span>
+                <span style="font-size: 0.85rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">B:</span>
+                  <input type="number" min="0" max="13" class="input-field edit-deal-bid" data-p-idx="${idx}" value="${currentBets[idx]}" style="width: 48px; margin-bottom: 0; padding: 4px; text-align: center; font-size: 0.85rem; font-weight: 700;" />
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">T:</span>
+                  <input type="number" min="0" max="13" class="input-field edit-deal-trick" data-p-idx="${idx}" value="${currentTricks[idx]}" style="width: 48px; margin-bottom: 0; padding: 4px; text-align: center; font-size: 0.85rem; font-weight: 700;" />
+                </div>
+
+                <div class="edit-p-score-${idx} signed-score" dir="ltr" style="min-width: 45px; text-align: center; font-size: 0.85rem; font-weight: 800; direction: ltr; unicode-bidi: isolate;">
+                  —
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <button class="btn-pill" id="btn-delete-deal" style="color: var(--danger); font-size: 0.75rem; height: 38px; padding: 0 10px;">
+            🗑️ ${t.deleteDeal}
+          </button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-outline modal-close" style="height: 38px; padding: 0 12px;">${t.cancel}</button>
+            <button class="btn-block" id="btn-save-edit-deal" style="height: 38px; padding: 0 16px;">${t.saveDeal}</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    const closeModal = () => modal.remove();
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelectorAll('.edit-deal-bid').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const pIdx = parseInt(e.target.dataset.pIdx, 10);
+        let val = parseInt(e.target.value, 10);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 13) val = 13;
+        currentBets[pIdx] = val;
+        updatePreview();
+      });
+    });
+
+    modal.querySelectorAll('.edit-deal-trick').forEach(inp => {
+      inp.addEventListener('input', (e) => {
+        const pIdx = parseInt(e.target.dataset.pIdx, 10);
+        let val = parseInt(e.target.value, 10);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 13) val = 13;
+        currentTricks[pIdx] = val;
+        updatePreview();
+      });
+    });
+
+    const dealerSelect = modal.querySelector('#edit-deal-dealer');
+    if (dealerSelect) {
+      dealerSelect.addEventListener('change', (e) => {
+        currentDealer = parseInt(e.target.value, 10);
+      });
+    }
+
+    modal.querySelector('#btn-save-edit-deal').addEventListener('click', () => {
+      const { sumTricks } = getCalcSummary();
+      if (sumTricks !== 13) {
+        alert(t.invalidTricksSum.replace('{sum}', sumTricks));
+        return;
+      }
+      session.editCompletedRound(roundIndex, {
+        bets: currentBets,
+        tricks: currentTricks,
+        dealerIndex: currentDealer
+      });
+      closeModal();
+    });
+
+    modal.querySelector('#btn-delete-deal').addEventListener('click', () => {
+      if (confirm(t.deleteDealConfirm.replace('{num}', round.roundNumber))) {
+        session.deleteCompletedRound(roundIndex);
+        closeModal();
+      }
+    });
+
+    updatePreview();
   }
 }

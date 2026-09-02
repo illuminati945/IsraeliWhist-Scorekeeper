@@ -5,13 +5,15 @@
 import { SUITS } from '../engine/whist-rules.js';
 
 export class Scoreboard {
-  constructor(session, leaderboardContainer, historyContainer, i18n, onUndo, onReorganizeSeating) {
+  constructor(session, leaderboardContainer, historyContainer, i18n, onUndo, onReorganizeSeating, onEditDeal, onSetBaseline) {
     this.session = session;
     this.leaderboardContainer = leaderboardContainer;
     this.historyContainer = historyContainer;
     this.i18n = i18n;
     this.onUndo = onUndo;
     this.onReorganizeSeating = onReorganizeSeating;
+    this.onEditDeal = onEditDeal;
+    this.onSetBaseline = onSetBaseline;
     this.isJiggleMode = false;
     this.isDragging = false;
 
@@ -367,31 +369,47 @@ export class Scoreboard {
     if (!this.historyContainer) return;
     const t = this.i18n;
     const rounds = this.session.completedRounds;
+    const hasBaseline = this.session.initialScores && this.session.initialScores.some(s => s !== 0);
 
     if (rounds.length === 0) {
       this.historyContainer.innerHTML = `
         <div class="card" style="text-align: center; padding: 2rem; color: var(--text-muted);">
           <div style="font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">${t.noDeals}</div>
-          <div style="font-size: 0.85rem;">${t.noDealsSub}</div>
+          <div style="font-size: 0.85rem; margin-bottom: 1rem;">${t.noDealsSub}</div>
+          <button class="btn-pill" id="btn-set-baseline-empty" style="font-size: 0.8rem; height: 32px; padding: 0 14px; margin: 0 auto;">
+            🎯 ${t.setBaseline}
+          </button>
         </div>
       `;
+
+      const btnEmpty = this.historyContainer.querySelector('#btn-set-baseline-empty');
+      if (btnEmpty) {
+        btnEmpty.addEventListener('click', () => {
+          if (this.onSetBaseline) this.onSetBaseline();
+        });
+      }
       return;
     }
 
     let html = `
       <div class="card">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 8px;">
           <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${t.historyTitle} (${rounds.length} ${t.deals})</h3>
-          <button class="btn-pill" id="btn-undo-round" style="font-size: 0.72rem; color: var(--danger); height: 28px;">
-            ${t.undoLastDeal}
-          </button>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn-pill" id="btn-set-baseline" style="font-size: 0.72rem; height: 28px;">
+              🎯 ${t.setBaseline}
+            </button>
+            <button class="btn-pill" id="btn-undo-round" style="font-size: 0.72rem; color: var(--danger); height: 28px;">
+              ${t.undoLastDeal}
+            </button>
+          </div>
         </div>
 
         <div class="table-wrap">
           <table class="table-custom">
             <thead>
               <tr>
-                <th style="min-width: 60px;">${t.deal}</th>
+                <th style="min-width: 65px;">${t.deal}</th>
                 <th style="min-width: 95px;">${t.dealer}</th>
                 ${this.session.players.map(p => `
                   <th style="min-width: 85px;">
@@ -408,7 +426,12 @@ export class Scoreboard {
                 const dealer = this.session.players[r.dealerIndex];
                 return `
                   <tr>
-                    <td style="font-weight: 700;">#${r.roundNumber}</td>
+                    <td style="font-weight: 700;">
+                      <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span>#${r.roundNumber}</span>
+                        <button class="btn-pill btn-edit-deal" data-round-idx="${rIdx}" title="${t.editDeal}" style="padding: 1px 5px; font-size: 0.68rem; height: 22px; cursor: pointer;">✏️</button>
+                      </div>
+                    </td>
                     <td>
                       <div style="display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;">
                         <span class="player-dot" style="background: ${dealer.color};"></span>
@@ -439,6 +462,32 @@ export class Scoreboard {
                   </tr>
                 `;
               }).reverse().join('')}
+
+              ${hasBaseline ? `
+                <tr style="background: rgba(255,255,255,0.03); border-top: 1px dashed var(--border-color);">
+                  <td style="font-weight: 700; color: var(--accent-primary);">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span>#0</span>
+                      <button class="btn-pill btn-edit-baseline" title="${t.setBaseline}" style="padding: 1px 5px; font-size: 0.68rem; height: 22px; cursor: pointer;">✏️</button>
+                    </div>
+                  </td>
+                  <td style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">${t.baselineRow}</td>
+                  ${this.session.players.map((p, pIdx) => {
+                    const initScore = (this.session.initialScores && this.session.initialScores[pIdx]) || 0;
+                    const signed = initScore >= 0 ? `+${initScore}` : `${initScore}`;
+                    return `
+                      <td>
+                        <div class="score-delta signed-score" dir="ltr" style="font-weight: 700; direction: ltr; unicode-bidi: isolate; color: var(--text-primary);">
+                          ${signed}
+                        </div>
+                        <div class="score-cum signed-score" dir="ltr" style="font-size: 0.68rem; direction: ltr; unicode-bidi: isolate; color: var(--text-muted);">
+                          (${signed})
+                        </div>
+                      </td>
+                    `;
+                  }).join('')}
+                </tr>
+              ` : ''}
             </tbody>
           </table>
         </div>
@@ -455,5 +504,28 @@ export class Scoreboard {
         }
       });
     }
+
+    const btnBaseline = this.historyContainer.querySelector('#btn-set-baseline');
+    if (btnBaseline) {
+      btnBaseline.addEventListener('click', () => {
+        if (this.onSetBaseline) this.onSetBaseline();
+      });
+    }
+
+    const btnEditBaseline = this.historyContainer.querySelector('.btn-edit-baseline');
+    if (btnEditBaseline) {
+      btnEditBaseline.addEventListener('click', () => {
+        if (this.onSetBaseline) this.onSetBaseline();
+      });
+    }
+
+    this.historyContainer.querySelectorAll('.btn-edit-deal').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const rIdx = parseInt(btn.dataset.roundIdx, 10);
+        if (!isNaN(rIdx) && this.onEditDeal) {
+          this.onEditDeal(rIdx);
+        }
+      });
+    });
   }
 }

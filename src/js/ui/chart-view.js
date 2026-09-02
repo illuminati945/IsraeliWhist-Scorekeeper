@@ -33,8 +33,8 @@ export class ChartView {
     const numPoints = roundLabels.length;
 
     const series = players.map((p, pIdx) => {
-      let cum = 0;
-      const pts = [0];
+      let cum = (this.session.initialScores && this.session.initialScores[pIdx]) || 0;
+      const pts = [cum];
       rounds.forEach(r => {
         const res = r.results.find(res => res.playerIndex === pIdx);
         cum += res ? res.score : 0;
