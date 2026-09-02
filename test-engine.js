@@ -16,9 +16,13 @@ function assert(condition, message) {
 console.log('--- Testing Israeli Whist Rules Engine ---');
 
 // Test 1: Standard Exact Made Formula: 10 + Bid^2
-// Bid 0 -> +50
-const s0 = calculatePlayerScore(0, 0, false, false, RULE_PRESETS.STANDARD, 14);
-assert(s0.score === 50 && s0.made === true, 'Bid 0 Made = +50 pts');
+// Bid 0 Made when Down (sum bets <= 13) -> +50
+const s0_down = calculatePlayerScore(0, 0, false, false, RULE_PRESETS.STANDARD, 12);
+assert(s0_down.score === 50 && s0_down.made === true, 'Bid 0 Made when Down = +50 pts');
+
+// Bid 0 Made when Up (sum bets > 13) -> +30
+const s0_up = calculatePlayerScore(0, 0, false, false, RULE_PRESETS.STANDARD, 14);
+assert(s0_up.score === 30 && s0_up.made === true, 'Bid 0 Made when Up = +30 pts');
 
 // Bid 1 -> 10 + 1^2 = 11
 const s1 = calculatePlayerScore(1, 1, false, false, RULE_PRESETS.STANDARD, 12);
@@ -45,9 +49,17 @@ assert(m4_2.score === -20 && m4_2.made === false, 'Bid 4, Took 2 = -20 pts (-10 
 const m2_5 = calculatePlayerScore(2, 5, false, false, RULE_PRESETS.STANDARD, 14);
 assert(m2_5.score === -30 && m2_5.made === false, 'Bid 2, Took 5 = -30 pts (-10 * 3)');
 
-// Bid 0, Took 1 -> Pass failed -> -50
+// Bid 0, Took 1 -> Pass failed (1 trick) -> -50
 const m0_1 = calculatePlayerScore(0, 1, false, false, RULE_PRESETS.STANDARD, 14);
 assert(m0_1.score === -50 && m0_1.made === false, 'Bid 0, Took 1 = -50 pts');
+
+// Bid 0, Took 2 -> Pass failed (2 tricks) -> -40 (-50 + 10)
+const m0_2 = calculatePlayerScore(0, 2, false, false, RULE_PRESETS.STANDARD, 14);
+assert(m0_2.score === -40 && m0_2.made === false, 'Bid 0, Took 2 = -40 pts (-50 + 10)');
+
+// Bid 0, Took 3 -> Pass failed (3 tricks) -> -30 (-50 + 20)
+const m0_3 = calculatePlayerScore(0, 3, false, false, RULE_PRESETS.STANDARD, 14);
+assert(m0_3.score === -30 && m0_3.made === false, 'Bid 0, Took 3 = -30 pts (-50 + 20)');
 
 // Test 3: Pas Round
 // Pas round, took 0 -> +50 bonus
