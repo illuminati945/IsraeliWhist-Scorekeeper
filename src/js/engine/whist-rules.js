@@ -7,8 +7,8 @@ export const RULE_PRESETS = {
     id: 'STANDARD',
     nameEn: 'Standard Israeli Whist (Quadratic)',
     nameHe: 'Standard Israeli Whist',
-    descriptionEn: 'Exact Made: +10 + Bid² | Miss: -10 × diff | Pass (0): +50 down / +30 up, -50 + 10/trick | Hook Rule: On',
-    descriptionHe: 'מדויק: 10 + הכרזה² | החטאה: 10- לכל הפרש | פאס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת | חוק ההוק',
+    descriptionEn: 'Exact Made: +10 + Bid² | Miss: -10 × diff | Zero: +50 down / +30 up, -50 + 10/trick | Hook Rule: On',
+    descriptionHe: 'מדויק: 10 + הכרזה² | החטאה: 10- לכל הפרש | אפס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת | חוק ההוק',
     bidMadeFormula: 'QUADRATIC',
     missPenaltyRate: 10,
     useProgressivePenalty: false,
@@ -26,8 +26,8 @@ export const RULE_PRESETS = {
     id: 'PROGRESSIVE',
     nameEn: 'Progressive Penalty (Tournament)',
     nameHe: 'Progressive Penalty (Tournament)',
-    descriptionEn: 'Exact Made: +10 + Bid² | Miss: -5/-10/-15/-20 per trick by bid | Pass: +50 down / +30 up, -50 + 10/trick',
-    descriptionHe: 'מדויק: 10 + הכרזה² | החטאה פרוגרסיבית לפי הכרזה | פאס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת',
+    descriptionEn: 'Exact Made: +10 + Bid² | Miss: -5/-10/-15/-20 per trick by bid | Zero: +50 down / +30 up, -50 + 10/trick',
+    descriptionHe: 'מדויק: 10 + הכרזה² | החטאה פרוגרסיבית לפי הכרזה | אפס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת',
     bidMadeFormula: 'QUADRATIC',
     missPenaltyRate: 10,
     useProgressivePenalty: true,
@@ -46,8 +46,8 @@ export const RULE_PRESETS = {
     id: 'CLASSIC_LINEAR',
     nameEn: 'Classic Linear (10 + 10xBid)',
     nameHe: 'Classic Linear (10 + 10xBid)',
-    descriptionEn: 'Exact Made: +10 + (Bid × 10) | Miss: -10 × diff | Pass: +50 down / +30 up, -50 + 10/trick',
-    descriptionHe: 'מדויק: 10 + (10 × הכרזה) | החטאה: 10- לכל הפרש | פאס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת',
+    descriptionEn: 'Exact Made: +10 + (Bid × 10) | Miss: -10 × diff | Zero: +50 down / +30 up, -50 + 10/trick',
+    descriptionHe: 'מדויק: 10 + (10 × הכרזה) | החטאה: 10- לכל הפרש | אפס: 50+ בחסר / 30+ ביתר, 50- ו-10+ לכל לקיחה נוספת',
     bidMadeFormula: 'LINEAR_10',
     missPenaltyRate: 10,
     useProgressivePenalty: false,
@@ -103,7 +103,7 @@ export function calculatePlayerScore(bid, tricks, isTrumpMaker = false, isPasRou
         score: points,
         made: true,
         delta: 0,
-        explanation: `Pass (0) made (${modeText}): +${points} pts`
+        explanation: `Bid 0 made (${modeText}): +${points} pts`
       };
     } else {
       let points = 0;
@@ -133,8 +133,8 @@ export function calculatePlayerScore(bid, tricks, isTrumpMaker = false, isPasRou
     // 1 trick: -50; each subsequent trick: +10 pts (e.g. 2 tricks = -40, 3 tricks = -30)
     const penalty = -basePenalty + (tricks - 1) * bonusPerTrick;
     const explanation = tricks === 1
-      ? `Pass (0) missed (1 trick): -${basePenalty} pts`
-      : `Pass (0) missed (${tricks} tricks): -${basePenalty} + ${(tricks - 1) * bonusPerTrick} = ${penalty >= 0 ? '+' : ''}${penalty} pts`;
+      ? `Bid 0 missed (1 trick): -${basePenalty} pts`
+      : `Bid 0 missed (${tricks} tricks): -${basePenalty} + ${(tricks - 1) * bonusPerTrick} = ${penalty >= 0 ? '+' : ''}${penalty} pts`;
 
     return {
       score: penalty,

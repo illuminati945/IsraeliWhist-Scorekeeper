@@ -129,7 +129,8 @@ export const HE = {
   playerAccuracy: 'דיוק שחקנים',
   made: 'פגיעות מדויקות',
   avgTricksPerDeal: 'ממוצע לקיחות לסיבוב',
-  passSuccess: 'פאסים מוצלחים',
+  zeroSuccess: 'הכרזות 0 מוצלחות',
+  passSuccess: 'הכרזות 0 מוצלחות',
   
   // Saved Games Dialog
   noSavedGames: 'אין עדיין משחקים שמורים',

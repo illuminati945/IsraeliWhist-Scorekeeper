@@ -13,8 +13,8 @@ export function calculateGameStatistics(session) {
     let totalBidsCount = 0;
     let totalBidAmount = 0;
     let totalTricksWon = 0;
-    let passAttempts = 0;
-    let passSuccess = 0;
+    let zeroAttempts = 0;
+    let zeroSuccess = 0;
     let trumpMakerCount = 0;
     let trumpMakerSuccess = 0;
     let highestSingleRound = -Infinity;
@@ -39,8 +39,8 @@ export function calculateGameStatistics(session) {
         }
 
         if (res.bid === 0) {
-          passAttempts++;
-          if (res.made) passSuccess++;
+          zeroAttempts++;
+          if (res.made) zeroSuccess++;
         }
 
         if (round.trump.winnerIndex === pIdx) {
@@ -56,7 +56,7 @@ export function calculateGameStatistics(session) {
     const hitRate = totalBidsCount > 0 ? (madeBidsCount / totalBidsCount) * 100 : 0;
     const avgTricksPerRound = numRounds > 0 ? (totalTricksWon / numRounds) : 0;
     const avgBidPerRound = totalBidsCount > 0 ? (totalBidAmount / totalBidsCount) : 0;
-    const passRate = passAttempts > 0 ? (passSuccess / passAttempts) * 100 : 0;
+    const zeroRate = zeroAttempts > 0 ? (zeroSuccess / zeroAttempts) * 100 : 0;
     const trumpRate = trumpMakerCount > 0 ? (trumpMakerSuccess / trumpMakerCount) * 100 : 0;
 
     return {
@@ -69,9 +69,12 @@ export function calculateGameStatistics(session) {
       totalTricksWon,
       avgTricksPerRound: Math.round(avgTricksPerRound * 10) / 10,
       avgBidPerRound: Math.round(avgBidPerRound * 10) / 10,
-      passAttempts,
-      passSuccess,
-      passRate: Math.round(passRate * 10) / 10,
+      zeroAttempts,
+      zeroSuccess,
+      zeroRate: Math.round(zeroRate * 10) / 10,
+      passAttempts: zeroAttempts,
+      passSuccess: zeroSuccess,
+      passRate: Math.round(zeroRate * 10) / 10,
       trumpMakerCount,
       trumpMakerSuccess,
       trumpRate: Math.round(trumpRate * 10) / 10,
@@ -104,6 +107,7 @@ export function calculateGameStatistics(session) {
     pasRoundsCount,
     mostAccuratePlayer: [...playerStats].sort((a, b) => b.hitRate - a.hitRate)[0],
     mostAggressiveBidder: [...playerStats].sort((a, b) => b.avgBidPerRound - a.avgBidPerRound)[0],
-    masterOfPass: [...playerStats].sort((a, b) => b.passSuccess - a.passSuccess)[0]
+    masterOfZero: [...playerStats].sort((a, b) => b.zeroSuccess - a.zeroSuccess)[0],
+    masterOfPass: [...playerStats].sort((a, b) => b.zeroSuccess - a.zeroSuccess)[0]
   };
 }

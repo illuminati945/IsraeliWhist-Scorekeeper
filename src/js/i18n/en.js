@@ -129,7 +129,8 @@ export const EN = {
   playerAccuracy: 'Player Accuracy',
   made: 'Made',
   avgTricksPerDeal: 'Avg Tricks',
-  passSuccess: 'Pass',
+  zeroSuccess: 'Zero',
+  passSuccess: 'Zero',
   
   // Saved Games Dialog
   noSavedGames: 'No Saved Games Yet',

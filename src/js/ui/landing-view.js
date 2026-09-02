@@ -95,9 +95,9 @@ export class LandingView {
             <p style="margin-bottom: 0.5rem;"><strong>1. חישוב הניקוד הרגיל:</strong></p>
             <ul style="padding-right: 1.2rem; margin-bottom: 0.75rem;">
               <li>עמידה בחוזה (מעל 0): <strong>10 + הכרזה²</strong> נקודות (לדוגמה: הכרזה 4 שעמדה = +26).</li>
-              <li>פאס מוצלח (הכרזה 0): <strong>+50</strong> נקודות.</li>
+              <li>עמידה בהכרזה 0: <strong>50+</strong> נקודות בחסר (פחות מ-13) או <strong>30+</strong> נקודות ביתר (מעל 13).</li>
               <li>נפילה מחוזה: <strong>10- נקודות</strong> על כל לקיחה של פספוס.</li>
-              <li>נפילה מפאס (לקח $T > 0$): <strong>-50 - 10 × (T - 1)</strong> נקודות.</li>
+              <li>נפילה מהכרזה 0 (לקח $T > 0$): <strong>-50</strong> נקודות ו-<strong>10+</strong> נקודות על כל לקיחה שנלקחה (לדוגמה: 2 לקיחות = 40-).</li>
             </ul>
 
             <p style="margin-bottom: 0.5rem;"><strong>2. חוק ההוק (חוק המחלק):</strong></p>
@@ -113,9 +113,9 @@ export class LandingView {
             <p style="margin-bottom: 0.5rem;"><strong>1. Standard Scoring:</strong></p>
             <ul style="padding-left: 1.2rem; margin-bottom: 0.75rem;">
               <li>Exact Bid ($B > 0$): <strong>+10 + B²</strong> points (e.g. Bid 4 made = +26).</li>
-              <li>Exact Pass ($B = 0$): <strong>+50</strong> points.</li>
+              <li>Exact Zero ($B = 0$): <strong>+50</strong> points when Down ($< 13$) or <strong>+30</strong> points when Up ($> 13$).</li>
               <li>Missed Bid: <strong>-10 × |Actual - Bid|</strong> points.</li>
-              <li>Failed Pass ($B = 0$, took $T > 0$): <strong>-50 - 10 × (T - 1)</strong> points.</li>
+              <li>Failed Zero ($B = 0$, took $T > 0$): <strong>-50</strong> points + <strong>10</strong> points per trick taken (e.g. 2 tricks = -40).</li>
             </ul>
 
             <p style="margin-bottom: 0.5rem;"><strong>2. The Hook Rule:</strong></p>
