@@ -77,6 +77,11 @@ This document serves as the persistent memory and operational guide for the Isra
   * Dismissed by tapping outside cards.
 * **Menu Organization Button**:
   * The separate "Organize Seating" button was removed from the drawer menu per user request (reordering is performed directly via cards).
+* **Landscape Mode & Short Viewport Architecture**:
+  * Safe-area insets (`--safe-left` & `--safe-right`) prevent notches and cutouts from clipping the navbar, container, and modals.
+  * Leaderboard grid uses explicit `grid-template-areas: "p0 p1 p2 p3"` for 4-column layout and `"p0 p1" "p3 p2"` in portrait/circular table modal.
+  * Active round inputs (`.round-inputs-grid`) arrange players into a 2x2 grid in landscape, displaying all 4 players and action buttons on screen without vertical scrolling.
+  * Modals adapt to 2-column grids and wide layouts in landscape with sticky table headers for history.
 
 ---
 
