@@ -189,7 +189,7 @@ export class Dialogs {
               TABLE<br>↻
             </div>
 
-            <div class="leaderboard-grid" style="margin-bottom: 0;">
+            <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${session.players.map((p, idx) => {
                 const isSel = selectedIdx === idx;
                 const isDeal = isDealer(idx);
@@ -401,7 +401,7 @@ export class Dialogs {
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
           ${t.playerNames}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
+        <div class="modal-players-grid" style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span class="player-dot" style="background: ${p.color};"></span>
@@ -525,32 +525,36 @@ export class Dialogs {
           <button class="btn-pill modal-close">✕</button>
         </div>
 
-        <div style="text-align: center; margin: 0.5rem 0 1rem;">
-          <div style="background: white; padding: 10px; border-radius: var(--radius-md); display: inline-block;">
-            <img src="${qrUrl}" alt="Game QR Code" width="150" height="150" style="display: block;" />
+        <div class="share-modal-layout">
+          <div class="share-qr-col" style="text-align: center; margin: 0.5rem 0 1rem;">
+            <div style="background: white; padding: 10px; border-radius: var(--radius-md); display: inline-block;">
+              <img src="${qrUrl}" alt="Game QR Code" width="150" height="150" style="display: block;" />
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">
+              ${t.scanQr}
+            </div>
           </div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.4rem;">
-            ${t.scanQr}
-          </div>
-        </div>
 
-        <div style="margin-bottom: 0.85rem;">
-          <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.3rem;">
-            ${t.shareUrlLabel}
-          </label>
-          <div style="display: flex; gap: 0.4rem;">
-            <input type="text" class="input-field" id="txt-share-url" value="${shareUrl}" readonly style="margin-bottom: 0; font-family: monospace; font-size: 0.78rem;" />
-            <button class="btn-pill btn-share" id="btn-copy-url" style="height: 42px; padding: 0 12px;">${t.copy}</button>
-          </div>
-        </div>
+          <div class="share-info-col" style="flex: 1;">
+            <div style="margin-bottom: 0.85rem;">
+              <label style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; display: block; margin-bottom: 0.3rem;">
+                ${t.shareUrlLabel}
+              </label>
+              <div style="display: flex; gap: 0.4rem;">
+                <input type="text" class="input-field" id="txt-share-url" value="${shareUrl}" readonly style="margin-bottom: 0; font-family: monospace; font-size: 0.78rem;" />
+                <button class="btn-pill btn-share" id="btn-copy-url" style="height: 42px; padding: 0 12px;">${t.copy}</button>
+              </div>
+            </div>
 
-        <div style="display: flex; gap: 0.4rem; margin-top: 1rem;">
-          ${navigator.share ? `
-            <button class="btn-block" id="btn-native-share" style="flex: 1; background: #2563eb;">
-              ${t.shareMobile}
-            </button>
-          ` : ''}
-          <button class="btn-outline modal-close" style="flex: 1;">${t.close}</button>
+            <div style="display: flex; gap: 0.4rem; margin-top: 1rem;">
+              ${navigator.share ? `
+                <button class="btn-block" id="btn-native-share" style="flex: 1; background: #2563eb;">
+                  ${t.shareMobile}
+                </button>
+              ` : ''}
+              <button class="btn-outline modal-close" style="flex: 1;">${t.close}</button>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -600,7 +604,7 @@ export class Dialogs {
         <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
           ${t.playerNames}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.85rem;">
+        <div class="modal-players-grid" style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.85rem;">
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; gap: 0.4rem;">
               <span class="player-dot" style="background: ${p.color};"></span>
@@ -755,7 +759,7 @@ export class Dialogs {
           ${t.playerAccuracy}
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
+        <div class="stats-players-grid" style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 1rem;">
           ${stats.playerStats.map(ps => `
             <div style="background: rgba(0,0,0,0.2); padding: 0.6rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.2rem;">
@@ -858,7 +862,7 @@ export class Dialogs {
           ${t.baselineDesc}
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.25rem;">
+        <div class="baseline-inputs-grid" style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.25rem;">
           ${session.players.map((p, idx) => `
             <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
               <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -973,7 +977,7 @@ export class Dialogs {
     };
 
     modal.innerHTML = `
-      <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-box modal-box-wide">
         <div class="modal-head">
           <div>
             <h3 style="font-size: 1.05rem; font-weight: 700;">
@@ -1006,9 +1010,9 @@ export class Dialogs {
           ⚠️ ${t.hookWarning}
         </div>
 
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
+        <div class="edit-deal-players-grid" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem;">
           ${session.players.map((p, idx) => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <div class="edit-deal-player-row" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
               <div style="display: flex; align-items: center; gap: 6px; min-width: 85px; flex: 1;">
                 <span class="player-dot" style="background: ${p.color};"></span>
                 <span style="font-size: 0.85rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>

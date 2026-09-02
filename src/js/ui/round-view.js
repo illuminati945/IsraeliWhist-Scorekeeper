@@ -84,51 +84,48 @@ export class RoundView {
           <span>${t.lead}: <strong>${leadBidder.name}</strong></span>
         </div>
 
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          ${t.auctionWinner}
-        </div>
-
-        <div class="trump-grid-2x2">
-          ${this.session.players.map((p, idx) => `
-            <button class="btn-outline trump-player-btn ${round.trump.winnerIndex === idx ? 'active' : ''}" 
-                    data-player-idx="${idx}"
-                    style="${round.trump.winnerIndex === idx ? 'border-color: var(--accent-primary); background: var(--accent-primary); color: white;' : ''}">
-              <span class="player-dot" style="background: ${p.color};"></span>
-              <span>${p.name}</span>
-            </button>
-          `).join('')}
-        </div>
-
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          ${t.denomination}
-        </div>
-
-        <div class="suits-row">
-          ${SUITS.map(s => `
-            <div class="suit-option ${round.trump.suitId === s.id && !round.trump.isPasRound ? 'active' : ''}" data-suit-id="${s.id}">
-              <span class="suit-symbol" style="color: ${round.trump.suitId === s.id ? '#ffffff' : s.color}">${s.symbol}</span>
-              <span class="suit-label">${isHe ? s.nameHe : s.nameEn}</span>
+        <div class="trump-stage-layout">
+          <div class="trump-stage-col">
+            <div class="stage-section-title">${t.auctionWinner}</div>
+            <div class="trump-grid-2x2">
+              ${this.session.players.map((p, idx) => `
+                <button class="btn-outline trump-player-btn ${round.trump.winnerIndex === idx ? 'active' : ''}" 
+                        data-player-idx="${idx}"
+                        style="${round.trump.winnerIndex === idx ? 'border-color: var(--accent-primary); background: var(--accent-primary); color: white;' : ''}">
+                  <span class="player-dot" style="background: ${p.color};"></span>
+                  <span>${p.name}</span>
+                </button>
+              `).join('')}
             </div>
-          `).join('')}
-        </div>
 
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
-          ${t.winningTarget}
-        </div>
+            <div class="pas-round-box" style="margin-bottom: 0.85rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                <input type="checkbox" id="chk-pas-round" ${round.trump.isPasRound ? 'checked' : ''} style="width: 18px; height: 18px;">
+                <span style="font-size: 0.85rem; font-weight: 600;">${t.pasRound}</span>
+              </label>
+            </div>
+          </div>
 
-        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.3rem; margin-bottom: 1rem;">
-          ${[5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => `
-            <button class="chip ${round.trump.bidAmount === n && !round.trump.isPasRound ? 'active' : ''} trump-target-chip" data-amount="${n}">
-              ${n}
-            </button>
-          `).join('')}
-        </div>
+          <div class="trump-stage-col">
+            <div class="stage-section-title">${t.denomination}</div>
+            <div class="suits-row">
+              ${SUITS.map(s => `
+                <div class="suit-option ${round.trump.suitId === s.id && !round.trump.isPasRound ? 'active' : ''}" data-suit-id="${s.id}">
+                  <span class="suit-symbol" style="color: ${round.trump.suitId === s.id ? '#ffffff' : s.color}">${s.symbol}</span>
+                  <span class="suit-label">${isHe ? s.nameHe : s.nameEn}</span>
+                </div>
+              `).join('')}
+            </div>
 
-        <div style="margin-bottom: 1rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
-            <input type="checkbox" id="chk-pas-round" ${round.trump.isPasRound ? 'checked' : ''} style="width: 18px; height: 18px;">
-            <span style="font-size: 0.85rem; font-weight: 600;">${t.pasRound}</span>
-          </label>
+            <div class="stage-section-title">${t.winningTarget}</div>
+            <div class="trump-targets-grid">
+              ${[5, 6, 7, 8, 9, 10, 11, 12, 13].map(n => `
+                <button class="chip ${round.trump.bidAmount === n && !round.trump.isPasRound ? 'active' : ''} trump-target-chip" data-amount="${n}">
+                  ${n}
+                </button>
+              `).join('')}
+            </div>
+          </div>
         </div>
 
         <button class="btn-block" id="btn-confirm-trump" ${round.trump.winnerIndex === null && !round.trump.isPasRound ? 'disabled' : ''}>
@@ -184,42 +181,44 @@ export class RoundView {
         </div>
 
         <!-- Player Input Cards -->
-        ${this.session.players.map((p, idx) => {
-          const isDealer = (idx === round.dealerIndex);
-          const isLastBidder = (!isSimplified && idx === lastBidderIdx);
-          const isTrumpMaker = (!isSimplified && idx === round.trump.winnerIndex);
-          const currentBet = round.bets[idx];
-          const isForbiddenChip = (!isSimplified && isLastBidder && forbidden !== null);
+        <div class="round-inputs-grid">
+          ${this.session.players.map((p, idx) => {
+            const isDealer = (idx === round.dealerIndex);
+            const isLastBidder = (!isSimplified && idx === lastBidderIdx);
+            const isTrumpMaker = (!isSimplified && idx === round.trump.winnerIndex);
+            const currentBet = round.bets[idx];
+            const isForbiddenChip = (!isSimplified && isLastBidder && forbidden !== null);
 
-          return `
-            <div class="input-row ${isDealer ? 'dealer-row' : ''}">
-              <div class="input-row-header">
-                <div class="input-row-name">
-                  <span class="player-dot" style="background: ${p.color};"></span>
-                  <span>${p.name}</span>
-                  ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${t.trumpMaker.toUpperCase()}</span>` : ''}
-                  ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">${t.lastBidder.toUpperCase()}</span>` : ''}
-                  ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">${t.dealer.toUpperCase()}</span>` : ''}
+            return `
+              <div class="input-row ${isDealer ? 'dealer-row' : ''}" data-player-idx="${idx}">
+                <div class="input-row-header">
+                  <div class="input-row-name">
+                    <span class="player-dot" style="background: ${p.color};"></span>
+                    <span>${p.name}</span>
+                    ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${t.trumpMaker.toUpperCase()}</span>` : ''}
+                    ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">${t.lastBidder.toUpperCase()}</span>` : ''}
+                    ${isDealer && !isTrumpMaker && !isLastBidder ? `<span class="tag-dealer" style="position:static;">${t.dealer.toUpperCase()}</span>` : ''}
+                  </div>
+                  
+                  <div class="stepper">
+                    <button class="stepper-btn btn-bet-dec" data-player-idx="${idx}" ${currentBet === null || currentBet <= 0 ? 'disabled' : ''}>−</button>
+                    <span class="stepper-val">${currentBet !== null ? currentBet : '—'}</span>
+                    <button class="stepper-btn btn-bet-inc" data-player-idx="${idx}" ${currentBet >= 13 ? 'disabled' : ''}>+</button>
+                  </div>
                 </div>
-                
-                <div class="stepper">
-                  <button class="stepper-btn btn-bet-dec" data-player-idx="${idx}" ${currentBet === null || currentBet <= 0 ? 'disabled' : ''}>−</button>
-                  <span class="stepper-val">${currentBet !== null ? currentBet : '—'}</span>
-                  <button class="stepper-btn btn-bet-inc" data-player-idx="${idx}" ${currentBet >= 13 ? 'disabled' : ''}>+</button>
+
+                <div class="chips-row">
+                  ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
+                    <button class="chip ${currentBet === n ? 'active' : ''} ${isForbiddenChip && forbidden === n ? 'forbidden' : ''}" 
+                            data-player-idx="${idx}" data-amount="${n}">
+                      ${n === 0 ? '0' : n}
+                    </button>
+                  `).join('')}
                 </div>
               </div>
-
-              <div class="chips-row">
-                ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                  <button class="chip ${currentBet === n ? 'active' : ''} ${isForbiddenChip && forbidden === n ? 'forbidden' : ''}" 
-                          data-player-idx="${idx}" data-amount="${n}">
-                    ${n === 0 ? '0' : n}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        }).join('')}
+            `;
+          }).join('')}
+        </div>
 
         <button class="btn-block" id="btn-proceed-to-tricks" ${!hook.isValid || !allFilled ? 'disabled' : ''} style="margin-top: 0.5rem;">
           ${t.enterTricksBtn}
@@ -246,41 +245,43 @@ export class RoundView {
           </button>
         </div>
 
-        ${this.session.players.map((p, idx) => {
-          const bet = round.bets[idx];
-          const actual = tricks[idx];
-          const isMatch = (actual !== null && bet !== null && actual === bet);
+        <div class="round-inputs-grid">
+          ${this.session.players.map((p, idx) => {
+            const bet = round.bets[idx];
+            const actual = tricks[idx];
+            const isMatch = (actual !== null && bet !== null && actual === bet);
 
-          return `
-            <div class="input-row" style="${isMatch ? 'border-color: rgba(16, 185, 129, 0.4);' : ''}">
-              <div class="input-row-header">
-                <div class="input-row-name">
-                  <span class="player-dot" style="background: ${p.color};"></span>
-                  <span>${p.name}</span>
-                  <span class="input-row-sub">
-                    (${t.bid || 'Bid'}: <strong>${bet !== null ? bet : '—'}</strong>)
-                  </span>
-                  ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">${t.exact}</span>` : ''}
+            return `
+              <div class="input-row" data-player-idx="${idx}" style="${isMatch ? 'border-color: rgba(16, 185, 129, 0.4);' : ''}">
+                <div class="input-row-header">
+                  <div class="input-row-name">
+                    <span class="player-dot" style="background: ${p.color};"></span>
+                    <span>${p.name}</span>
+                    <span class="input-row-sub">
+                      (${t.bid || 'Bid'}: <strong>${bet !== null ? bet : '—'}</strong>)
+                    </span>
+                    ${isMatch ? `<span style="color: var(--success); font-size: 0.72rem; font-weight: 700; margin-left: 2px;">${t.exact}</span>` : ''}
+                  </div>
+
+                  <div class="stepper">
+                    <button class="stepper-btn btn-trick-dec" data-player-idx="${idx}" ${actual === null || actual <= 0 ? 'disabled' : ''}>−</button>
+                    <span class="stepper-val">${actual !== null ? actual : '—'}</span>
+                    <button class="stepper-btn btn-trick-inc" data-player-idx="${idx}" ${actual >= 13 ? 'disabled' : ''}>+</button>
+                  </div>
                 </div>
 
-                <div class="stepper">
-                  <button class="stepper-btn btn-trick-dec" data-player-idx="${idx}" ${actual === null || actual <= 0 ? 'disabled' : ''}>−</button>
-                  <span class="stepper-val">${actual !== null ? actual : '—'}</span>
-                  <button class="stepper-btn btn-trick-inc" data-player-idx="${idx}" ${actual >= 13 ? 'disabled' : ''}>+</button>
+                <div class="chips-row">
+                  ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
+                    <button class="chip ${actual === n ? 'active' : ''}" 
+                            data-trick-player-idx="${idx}" data-amount="${n}">
+                      ${n}
+                    </button>
+                  `).join('')}
                 </div>
               </div>
-
-              <div class="chips-row">
-                ${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(n => `
-                  <button class="chip ${actual === n ? 'active' : ''}" 
-                          data-trick-player-idx="${idx}" data-amount="${n}">
-                    ${n}
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        }).join('')}
+            `;
+          }).join('')}
+        </div>
 
         ${isValidSum ? this.renderScorePreview(round) : ''}
 
@@ -306,28 +307,30 @@ export class RoundView {
         <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
           ${t.roundScoreCalc}
         </div>
-        ${this.session.players.map((p, idx) => {
-          const calc = calculatePlayerScore(
-            round.bets[idx] || 0,
-            round.tricks[idx] || 0,
-            idx === (round.trump ? round.trump.winnerIndex : null),
-            isPas,
-            this.session.rules,
-            totalBets
-          );
+        <div class="breakdown-items-grid">
+          ${this.session.players.map((p, idx) => {
+            const calc = calculatePlayerScore(
+              round.bets[idx] || 0,
+              round.tricks[idx] || 0,
+              idx === (round.trump ? round.trump.winnerIndex : null),
+              isPas,
+              this.session.rules,
+              totalBets
+            );
 
-          return `
-            <div class="breakdown-item">
-              <div>
-                <div style="font-size: 0.82rem; font-weight: 700;">${p.name}</div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary);">${calc.explanation}</div>
+            return `
+              <div class="breakdown-item">
+                <div>
+                  <div style="font-size: 0.82rem; font-weight: 700;">${p.name}</div>
+                  <div style="font-size: 0.72rem; color: var(--text-secondary);">${calc.explanation}</div>
+                </div>
+                <span class="score-badge signed-score ${calc.score >= 0 ? 'plus' : 'minus'}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
+                  ${calc.score >= 0 ? `+${calc.score}` : calc.score}
+                </span>
               </div>
-              <span class="score-badge signed-score ${calc.score >= 0 ? 'plus' : 'minus'}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">
-                ${calc.score >= 0 ? `+${calc.score}` : calc.score}
-              </span>
-            </div>
-          `;
-        }).join('')}
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
   }
