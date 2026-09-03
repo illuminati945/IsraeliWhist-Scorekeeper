@@ -372,6 +372,10 @@ class IsraeliWhistApp {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.app = new IsraeliWhistApp();
+  });
+} else {
   window.app = new IsraeliWhistApp();
-});
+}

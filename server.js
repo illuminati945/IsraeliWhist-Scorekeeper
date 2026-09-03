@@ -356,16 +356,21 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // Check client ETag for instant 304 Not Modified
+  // Check client ETag for instant 304 Not Modified (only for static assets, never stale HTML or sw.js)
   const clientEtag = req.headers['if-none-match'];
+  const isSw = reqPath.endsWith('sw.js');
   const hasVersionParam = parsedUrl.search && parsedUrl.search.includes('v=');
-  const cacheControl = isHtml
-    ? 'public, max-age=0, must-revalidate'
-    : (hasVersionParam
-      ? 'public, max-age=31536000, immutable'
-      : 'public, max-age=86400, stale-while-revalidate=604800');
+  
+  let cacheControl;
+  if (isHtml || isSw) {
+    cacheControl = 'no-cache, no-store, must-revalidate';
+  } else if (hasVersionParam) {
+    cacheControl = 'public, max-age=31536000, immutable';
+  } else {
+    cacheControl = 'public, max-age=86400, stale-while-revalidate=604800';
+  }
 
-  if (clientEtag && clientEtag === asset.etag) {
+  if (!isHtml && !isSw && clientEtag && clientEtag === asset.etag) {
     res.writeHead(304, {
       'ETag': asset.etag,
       'Last-Modified': asset.mtimeUtc,

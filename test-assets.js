@@ -22,24 +22,21 @@ const cssContent = fs.readFileSync('src/css/styles.min.css', 'utf8');
 const gzippedCss = zlib.gzipSync(cssContent);
 console.log(`✓ PASS: styles.min.css generated (${(cssContent.length / 1024).toFixed(1)} KB, ${(gzippedCss.length / 1024).toFixed(1)} KB gzipped)`);
 
-// 3. Verify Service Worker
+// 3. Verify Service Worker Clean Uninstaller
 if (!fs.existsSync('src/sw.js')) {
   throw new Error('src/sw.js is missing!');
 }
 const swContent = fs.readFileSync('src/sw.js', 'utf8');
-if (!swContent.includes('israeli-whist-v8') || !swContent.includes('caches.match')) {
-  throw new Error('src/sw.js missing expected cache logic');
+if (!swContent.includes('unregister')) {
+  throw new Error('src/sw.js missing unregister logic');
 }
-console.log('✓ PASS: Service Worker sw.js exists with Stale-While-Revalidate caching');
+console.log('✓ PASS: Service Worker sw.js cleanly unregisters and clears stale caches');
 
-// 4. Verify index.html loads bundle and registers sw
+// 4. Verify index.html loads bundle and handles SW cleanup
 const htmlContent = fs.readFileSync('src/index.html', 'utf8');
-if (!htmlContent.includes('styles.min.css') || !htmlContent.includes('app.bundle.js')) {
-  throw new Error('src/index.html must reference styles.min.css and app.bundle.js');
+if (!htmlContent.includes('styles.min.css?v=9') || !htmlContent.includes('app.bundle.js?v=9')) {
+  throw new Error('src/index.html must reference styles.min.css?v=9 and app.bundle.js?v=9');
 }
-if (!htmlContent.includes('serviceWorker.register')) {
-  throw new Error('src/index.html must register service worker');
-}
-console.log('✓ PASS: index.html correctly loads production bundle, minified CSS & registers SW');
+console.log('✓ PASS: index.html correctly loads v=9 production bundle and minified CSS');
 
 console.log('Results: 4 asset verification tests passed.');

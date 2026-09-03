@@ -10,8 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Whist Score">
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.min.css?v=8">
-  <link rel="preload" href="js/app.bundle.js?v=8" as="script" crossorigin>
+  <link rel="stylesheet" href="css/styles.min.css?v=9">
+  <link rel="preload" href="js/app.bundle.js?v=9" as="script" crossorigin>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♠</text></svg>">
 </head>
 <body>
@@ -67,12 +67,12 @@
 
   </main>
 
-  <script type="module" src="js/app.bundle.js?v=8"></script>
+  <script type="module" src="js/app.bundle.js?v=9"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-      });
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
+      }).catch(() => {});
     }
   </script>
 </body>
