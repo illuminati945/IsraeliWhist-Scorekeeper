@@ -1,6 +1,8 @@
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 
@@ -19,6 +21,39 @@ if (!fs.existsSync(BACKUPS_DIR)) {
   fs.mkdirSync(BACKUPS_DIR, { recursive: true });
 }
 
+// In-memory static files cache with pre-compressed gzip and ETag
+const staticAssetCache = new Map();
+
+function getCachedStaticAsset(filePath) {
+  try {
+    const stats = fs.statSync(filePath);
+    const mtimeMs = stats.mtimeMs;
+    const cached = staticAssetCache.get(filePath);
+    if (cached && cached.mtimeMs === mtimeMs) {
+      return cached;
+    }
+
+    const raw = fs.readFileSync(filePath);
+    const gzip = zlib.gzipSync(raw, { level: 9 });
+    const etag = `"${crypto.createHash('md5').update(raw).digest('hex')}"`;
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    const asset = {
+      raw,
+      gzip,
+      etag,
+      mtimeMs,
+      mtimeUtc: stats.mtime.toUTCString(),
+      contentType
+    };
+    staticAssetCache.set(filePath, asset);
+    return asset;
+  } catch (e) {
+    return null;
+  }
+}
+
 // MIME types for static assets
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -28,7 +63,8 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon'
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8'
 };
 
 // Generate human-friendly 6-character room codes (e.g. W-7429)
@@ -125,8 +161,19 @@ function createGameSummary(roomId, session) {
   };
 }
 
+// In-memory cache for recent games list
+let cachedRecentGames = null;
+
+function invalidateRecentGamesCache() {
+  cachedRecentGames = null;
+}
+
 // Helper to get persistent recent games (top 10)
 function getRecentGames() {
+  if (cachedRecentGames) {
+    return cachedRecentGames;
+  }
+
   const summaries = [];
   try {
     const files = fs.readdirSync(SESSIONS_DIR);
@@ -152,7 +199,8 @@ function getRecentGames() {
 
   // Sort by updatedAt descending
   summaries.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  return summaries.slice(0, 10);
+  cachedRecentGames = summaries.slice(0, 10);
+  return cachedRecentGames;
 }
 
 // Helper to load session
@@ -177,6 +225,7 @@ function loadSession(roomId) {
 function saveSession(roomId, state) {
   state.updatedAt = new Date().toISOString();
   memorySessions.set(roomId, state);
+  invalidateRecentGamesCache();
   const filePath = path.join(SESSIONS_DIR, `${roomId}.json`);
 
   // Maintain automatic rolling backup of previous valid state
@@ -199,6 +248,7 @@ function saveSession(roomId, state) {
 // Helper to delete session
 function deleteSession(roomId) {
   memorySessions.delete(roomId);
+  invalidateRecentGamesCache();
   const filePath = path.join(SESSIONS_DIR, `${roomId}.json`);
   if (fs.existsSync(filePath)) {
     try {
@@ -290,34 +340,62 @@ const server = http.createServer((req, res) => {
     reqPath = '/index.html';
   }
 
-  const filePath = path.join(PUBLIC_DIR, reqPath);
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+  let filePath = path.join(PUBLIC_DIR, reqPath);
+  let isHtml = reqPath === '/index.html' || reqPath.endsWith('.html');
+  let asset = getCachedStaticAsset(filePath);
 
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      if (err.code === 'ENOENT') {
-        fs.readFile(path.join(PUBLIC_DIR, 'index.html'), (err2, fallback) => {
-          if (err2) {
-            res.writeHead(404, { 'Content-Type': 'text/plain' });
-            res.end('404 Not Found');
-          } else {
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-            res.end(fallback);
-          }
-        });
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('500 Internal Server Error');
-      }
-    } else {
-      res.writeHead(200, { 
-        'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*'
-      });
-      res.end(content);
+  if (!asset) {
+    // Fallback to index.html for SPA routing if file does not exist
+    filePath = path.join(PUBLIC_DIR, 'index.html');
+    isHtml = true;
+    asset = getCachedStaticAsset(filePath);
+    if (!asset) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('404 Not Found');
+      return;
     }
-  });
+  }
+
+  // Check client ETag for instant 304 Not Modified
+  const clientEtag = req.headers['if-none-match'];
+  const hasVersionParam = parsedUrl.search && parsedUrl.search.includes('v=');
+  const cacheControl = isHtml
+    ? 'public, max-age=0, must-revalidate'
+    : (hasVersionParam
+      ? 'public, max-age=31536000, immutable'
+      : 'public, max-age=86400, stale-while-revalidate=604800');
+
+  if (clientEtag && clientEtag === asset.etag) {
+    res.writeHead(304, {
+      'ETag': asset.etag,
+      'Last-Modified': asset.mtimeUtc,
+      'Cache-Control': cacheControl,
+      'Access-Control-Allow-Origin': '*'
+    });
+    res.end();
+    return;
+  }
+
+  const acceptEncoding = req.headers['accept-encoding'] || '';
+  const canGzip = acceptEncoding.includes('gzip') && asset.gzip && asset.gzip.length < asset.raw.length;
+  const body = canGzip ? asset.gzip : asset.raw;
+
+  const headers = {
+    'Content-Type': asset.contentType,
+    'ETag': asset.etag,
+    'Last-Modified': asset.mtimeUtc,
+    'Cache-Control': cacheControl,
+    'Access-Control-Allow-Origin': '*',
+    'Vary': 'Accept-Encoding',
+    'Content-Length': body.length
+  };
+
+  if (canGzip) {
+    headers['Content-Encoding'] = 'gzip';
+  }
+
+  res.writeHead(200, headers);
+  res.end(body);
 });
 
 // WebSocket Real-Time Synchronization Server

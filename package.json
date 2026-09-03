@@ -4,7 +4,8 @@
   "description": "Exact Bidding Score Engine & Companion for Israeli Whist (וויסט ישראלי)",
   "type": "module",
   "scripts": {
-    "test": "node test-engine.js && node test-full-game.js && node test-sync-protection.js && node test-history-edit-baseline.js",
+    "build": "esbuild src/js/app.js --bundle --minify --format=esm --outfile=src/js/app.bundle.js && esbuild src/css/styles.css --minify --outfile=src/css/styles.min.css",
+    "test": "npm run build && node test-assets.js && node test-engine.js && node test-full-game.js && node test-sync-protection.js && node test-history-edit-baseline.js",
     "serve": "npx serve src -p 3000"
   },
   "keywords": [
@@ -18,5 +19,8 @@
   "license": "MIT",
   "dependencies": {
     "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }

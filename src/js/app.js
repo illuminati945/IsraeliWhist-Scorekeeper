@@ -228,10 +228,6 @@ class IsraeliWhistApp {
     if (this.landingContainer) this.landingContainer.style.display = 'block';
     if (this.gameContainer) this.gameContainer.style.display = 'none';
 
-    ArchiveManager.syncWithServer(() => {
-      this.landingView.render();
-    });
-
     this.landingView.render();
     
     // Clear URL param while in lobby

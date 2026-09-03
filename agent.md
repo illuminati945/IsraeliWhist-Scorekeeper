@@ -85,7 +85,27 @@ This document serves as the persistent memory and operational guide for the Isra
 
 ---
 
-## 5. 🌿 Repository Architecture & Operations
+## 5. ⚡ Instant Loading & Performance Architecture
+
+* **Production Bundling & Minification**:
+  * Bundles all ES modules into a single `src/js/app.bundle.js` (29.7 KB gzipped) and `src/css/styles.min.css` (4.4 KB gzipped) using `esbuild`.
+  * Eliminates the 16-request ES module waterfall completely; entire application payload is under **35 KB**.
+  * Rebuild command: `npm run build` (takes ~15ms).
+* **In-Memory Static Caching & Pre-Gzip (`server.js`)**:
+  * Static files are cached in RAM with pre-compressed gzip buffers and MD5 `ETag`s.
+  * Sends `Cache-Control: public, max-age=31536000, immutable` for versioned assets (`?v=8`).
+  * Instant HTTP `304 Not Modified` on unchanged resources without disk I/O.
+* **In-Memory Recent Games Cache (`server.js`)**:
+  * Caches `recentGames` list in memory and invalidates on session save/delete, removing synchronous 30+ file disk reads on page loads.
+* **PWA Service Worker (`src/sw.js`)**:
+  * Stale-While-Revalidate strategy serves app shell and assets in **0ms (instantly)** on return visits.
+  * Full offline support and background revalidation.
+* **Nginx HTTP/2 Compression**:
+  * Global `gzip_proxied any;` and `gzip_types` enabled in `/etc/nginx/nginx.conf`.
+
+---
+
+## 6. 🌿 Repository Architecture & Operations
 
 * **Working Branches**:
   * `main`: Production releases and documentation.
@@ -103,14 +123,14 @@ This document serves as the persistent memory and operational guide for the Isra
   * Status command: `sudo systemctl status israeli-whist.service`
 * **Test Suite**:
   * Command: `npm test`
-  * 50 unit and integration tests covering rules engine, hook rule, session anti-regression, history editing, baseline scores, and 0 scoring formulas.
+  * 54 unit, integration, and asset tests covering production bundle, rules engine, hook rule, session anti-regression, history editing, baseline scores, and 0 scoring formulas.
 * **Live Deployment**:
   * HTTPS: `https://i945.duckdns.org/whist/`
   * HTTP: `http://i945.duckdns.org/whist/` (Port 3000 reverse-proxied via Nginx)
 
 ---
 
-## 6. 📁 Key Source Files Map
+## 7. 📁 Key Source Files Map
 
 | File | Purpose |
 | :--- | :--- |
