@@ -171,20 +171,23 @@ This document serves as the persistent memory and operational guide for the Isra
   - `zeroHits`: Successful zero (0) bids achieved.
   - `lastPlayed`: ISO timestamp of recent activity.
 
-### B. Easy Picking for New Games (`showNewGameModal`)
-* **Interactive 4-Seat Layout**:
-  - 4 physical seat cards representing Seat 1 through Seat 4.
-  - Displays Dealer tag on Seat 1, clickable avatar selector button, player name input, and baseline score.
-  - Active seat is highlighted with an indigo glow (`.is-active-seat`).
-* **Quick Picker Chips Carousel**:
-  - Horizontally scrollable roster chips at the top of the modal.
-  - Tapping any profile chip immediately populates the active seat with that player's name, avatar, and color, and **automatically advances** focus to the next unassigned seat slot.
-  - Allows selecting all 4 players in under 3 seconds without typing.
-* **⚡ "Use Last Lineup" Shortcut**:
-  - Re-populates the exact 4-seat arrangement from the previous match in one tap.
-* **Inline Profile Creation & Management**:
-  - "+ New Player" button opens `showCreateEditProfileModal()` and instantly selects the created player into the active seat.
-  - Gear icon (`⚙️`) opens the full roster manager.
+### B. Circular Table Seating UI & Easy Picking for New Games (`showNewGameModal`)
+* **Zero Horizontal Scroll Architecture**:
+  - Eliminates horizontal overflow by reusing the responsive circular 2x2 table seating UI (`.seating-modal-grid`).
+  - Wrapped roster chips container (`.roster-chips-wrap`) with flex wrapping and vertical scrolling instead of horizontal carousel scrolling.
+* **Placeholder Seats**:
+  - When no players have been chosen yet, all 4 seat cards render clean placeholder slots (`+ Choose Player` / `+ בחר שחקן`) with dashed outlines and `+` avatars.
+  - Active target seat is highlighted in indigo (`.is-active-target`), indicating where the next chosen player will sit.
+* **Moving Players Around by Default (NO Jiggle Mode)**:
+  - Tapping any filled seat selects it for swapping (highlighted with a glowing golden border: `.is-swap-selected`).
+  - Tapping any second seat immediately swaps the two players between those seats with zero delay and NO jiggle mode!
+  - 1-tap table rotation controls (`↺ Rotate CCW` and `↻ Rotate CW`) directly shift all 4 players clockwise or counter-clockwise around the table.
+  - Tapping the `✕` on any seat clears that player back to an empty placeholder.
+* **⚡ "Use Last Lineup" & Fast Assignment**:
+  - Restores the exact 4-player arrangement from the previous match in one tap.
+  - Tapping an unassigned profile chip in the roster assigns them to the target seat and auto-advances to the next empty seat slot.
+  - "Clear All" (`🗑️`) button resets all 4 seats back to placeholders.
+  - Inline profile creation button opens `showCreateEditProfileModal()` and places the new player into the active seat.
 
 ### C. Dedicated Roster & Career Statistics Modal (`showProfilesModal`)
 * Accessible from:

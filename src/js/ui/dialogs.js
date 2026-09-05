@@ -606,40 +606,23 @@ export class Dialogs {
 
     // Load saved profiles
     let profiles = ProfileManager.getProfiles();
-
-    // Prepare 4 seat slots. Check if a last lineup was recorded, otherwise current session players
     const lastLineup = ProfileManager.getLastLineup();
-    let seatPlayers = session.players.map((p, idx) => {
-      const matchedProf = ProfileManager.getProfileByName(p.name);
-      return {
-        name: p.name || (isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`),
-        color: p.color || COLOR_OPTIONS[idx % COLOR_OPTIONS.length],
-        avatar: p.avatar || matchedProf?.avatar || AVATAR_OPTIONS[idx % AVATAR_OPTIONS.length],
-        baselineScore: session.initialScores ? (session.initialScores[idx] || 0) : 0
-      };
-    });
 
-    // If last lineup had 4 players and session is brand new, prefill from last lineup
-    if (lastLineup && lastLineup.length === 4 && (!session.completedRounds || session.completedRounds.length === 0)) {
-      lastLineup.forEach((lp, idx) => {
-        if (seatPlayers[idx] && lp.name) {
-          seatPlayers[idx].name = lp.name;
-          seatPlayers[idx].color = lp.color || seatPlayers[idx].color;
-          seatPlayers[idx].avatar = lp.avatar || seatPlayers[idx].avatar;
-        }
-      });
-    }
+    // Start with 4 placeholder seats (null) if no players were chosen yet!
+    let seatPlayers = [null, null, null, null];
 
-    let activeSeatIdx = 0;
+    let activeTargetSeatIdx = 0; // Where next chosen player lands
+    let selectedSwapIdx = null;  // For 1-tap seat swapping with NO jiggle
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
 
     const renderModalContent = () => {
       profiles = ProfileManager.getProfiles();
-      
+      const filledCount = seatPlayers.filter(s => s && s.name).length;
+
       modal.innerHTML = `
-        <div class="modal-box modal-new-game" style="max-width: 520px;">
+        <div class="modal-box modal-new-game">
           <div class="modal-head">
             <div style="display: flex; align-items: center; gap: 0.5rem;">
               <h3 style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em;">🎲 ${t.newGameTitle}</h3>
@@ -647,13 +630,79 @@ export class Dialogs {
             <button class="btn-pill modal-close">✕</button>
           </div>
 
-          <!-- Quick Picker Roster Section -->
-          <div class="quick-picker-card">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
-              <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+          <!-- Circular Seating Table 2x2 Grid (Reused Seating UI) -->
+          <div class="table-seating-container">
+            <div class="table-center-emblem">
+              ${isHe ? 'שולחן<br>↻' : 'TABLE<br>↻'}
+            </div>
+
+            <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
+              ${[0, 1, 2, 3].map(idx => {
+                const player = seatPlayers[idx];
+                const isFilled = !!(player && player.name);
+                const isDealer = (idx === 0);
+                const isSwapSel = (selectedSwapIdx === idx);
+                const isActiveTarget = (activeTargetSeatIdx === idx);
+
+                let cardClass = 'player-card seat-card-interactive';
+                if (!isFilled) cardClass += ' is-placeholder';
+                else cardClass += ' is-filled';
+                if (isSwapSel) cardClass += ' is-swap-selected';
+                else if (isActiveTarget) cardClass += ' is-active-target';
+
+                return `
+                  <div class="${cardClass}" data-player-idx="${idx}" data-seat-idx="${idx}" title="${isFilled ? (isHe ? 'לחץ להחלפת מקום' : 'Tap to swap seat') : (isHe ? 'לחץ לבחירת שחקן' : 'Tap to assign player')}">
+                    <div class="seat-top-row">
+                      <span>${t.seatNumber} #${idx + 1}</span>
+                      ${isDealer ? `<span class="tag-dealer" style="position: static;">${t.dealer.toUpperCase()}</span>` : ''}
+                      ${isFilled ? `<button type="button" class="btn-clear-seat" data-seat-idx="${idx}" title="${t.clearSeat}">✕</button>` : ''}
+                    </div>
+
+                    <div style="margin: 2px 0;">
+                      ${isFilled ? `
+                        <div class="seat-avatar-bubble" style="border-color: ${player.color}; background: ${player.color}24;">
+                          ${player.avatar}
+                        </div>
+                      ` : `
+                        <div class="seat-avatar-placeholder">
+                          +
+                        </div>
+                      `}
+                    </div>
+
+                    <div class="seat-player-name">
+                      ${isFilled ? player.name : t.emptySeatPlaceholder}
+                    </div>
+
+                    <div class="seat-action-hint" style="color: ${isSwapSel ? '#fde68a' : isFilled ? 'var(--accent-primary)' : 'var(--text-muted)'};">
+                      ${isSwapSel ? '✓ ' + (isHe ? 'נבחר להחלפה' : 'Selected') :
+                        isFilled ? (isHe ? 'לחץ להחלפה' : 'Tap to swap') :
+                        isActiveTarget ? (isHe ? 'יעד לבחירה' : 'Target seat') :
+                        (isHe ? 'לחץ לבחירה' : 'Tap to pick')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- 1-Tap Table Rotation Controls (Move them around with NO jiggle) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin: 0.4rem 0 0.65rem;">
+            <button type="button" class="btn-outline" id="btn-new-game-rot-ccw" style="font-size: 0.78rem; min-height: 34px; padding: 4px 8px;">
+              ↺ ${t.rotateCounterClockwise}
+            </button>
+            <button type="button" class="btn-outline" id="btn-new-game-rot-cw" style="font-size: 0.78rem; min-height: 34px; padding: 4px 8px;">
+              ↻ ${t.rotateClockwise}
+            </button>
+          </div>
+
+          <!-- Quick Picker Roster Section (Wrapped, fits mobile perfectly) -->
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.65rem 0.75rem; margin-bottom: 0.75rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem;">
+              <span style="font-size: 0.74rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
                 👥 ${t.quickPick}
-              </div>
-              <div style="display: flex; align-items: center; gap: 0.35rem;">
+              </span>
+              <div style="display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
                 ${lastLineup ? `
                   <button type="button" class="btn-pill btn-quick-action" id="btn-use-last-lineup" title="${t.useLastLineup}">
                     ${t.useLastLineup}
@@ -662,21 +711,25 @@ export class Dialogs {
                 <button type="button" class="btn-pill btn-quick-action" id="btn-add-profile-from-new" title="${t.addProfile}">
                   ${t.addProfile}
                 </button>
+                <button type="button" class="btn-pill btn-quick-action" id="btn-clear-all-seats" title="${t.clearAllSeats}">
+                  🗑️ ${t.clearAllSeats}
+                </button>
                 <button type="button" class="btn-pill btn-quick-action" id="btn-manage-profiles-from-new" title="${t.playerProfiles}">
                   ⚙️
                 </button>
               </div>
             </div>
 
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+            <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.4rem;">
               ${t.quickPickSub}
             </div>
 
-            <!-- Profile Chips Carousel / Flex -->
-            <div class="profile-chips-carousel" id="profile-chips-container">
+            <!-- Wrapped Roster Chips (NO horizontal scrolling overflow) -->
+            <div class="roster-chips-wrap" id="roster-chips-container">
               ${profiles.map(prof => {
-                const assignedSeatIdx = seatPlayers.findIndex(s => s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
+                const assignedSeatIdx = seatPlayers.findIndex(s => s && s.name && s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
                 const isAssigned = assignedSeatIdx >= 0;
+
                 return `
                   <button type="button" class="profile-chip ${isAssigned ? 'is-assigned' : ''}" data-prof-id="${prof.id}">
                     <span class="chip-avatar" style="border-color: ${prof.color}; background: ${prof.color}22;">${prof.avatar}</span>
@@ -688,62 +741,23 @@ export class Dialogs {
             </div>
           </div>
 
-          <!-- 4 Interactive Seat Cards Grid -->
-          <div style="display: flex; align-items: center; justify-content: space-between; margin: 0.85rem 0 0.45rem;">
-            <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
-              🪑 ${t.playerNames} (4 ${isHe ? 'שחקנים' : 'Seats'})
-            </div>
-            <span style="font-size: 0.7rem; color: #a5b4fc;">
-              ${isHe ? `נבחר כיסא: ${activeSeatIdx + 1}` : `Active: Seat ${activeSeatIdx + 1}`}
-            </span>
-          </div>
-
-          <div class="new-game-seats-grid">
-            ${seatPlayers.map((seat, idx) => {
-              const isActive = (idx === activeSeatIdx);
-              const seatLabel = isHe ? `כיסא ${idx + 1}` : `Seat ${idx + 1}`;
-              const isDealer = (idx === 0);
-
-              return `
-                <div class="seat-card ${isActive ? 'is-active-seat' : ''}" data-seat-idx="${idx}">
-                  <div class="seat-card-header">
-                    <span class="seat-label">${seatLabel}</span>
-                    ${isDealer ? `<span class="seat-dealer-tag">${t.dealer.toUpperCase()}</span>` : ''}
-                  </div>
-
-                  <div class="seat-card-body">
-                    <button type="button" class="seat-avatar-btn" data-seat-idx="${idx}" title="${t.chooseAvatar}" style="border-color: ${seat.color}; background: ${seat.color}26;">
-                      ${seat.avatar}
-                    </button>
-                    <input type="text" class="seat-name-input" data-seat-idx="${idx}" value="${seat.name}" placeholder="${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`}" />
-                  </div>
-
-                  <div class="seat-card-footer">
-                    <span style="font-size: 0.68rem; color: var(--text-muted);">${t.baselineRow}:</span>
-                    <input type="number" class="seat-baseline-input" data-seat-idx="${idx}" value="${seat.baselineScore}" />
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-
           <!-- Mode & Match Options -->
-          <div class="new-game-options-box" style="margin-top: 0.85rem; padding: 0.65rem 0.85rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div class="new-game-options-box" style="margin-bottom: 0.65rem; padding: 0.6rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
             <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer;">
               <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-primary);">
               <div>
-                <div style="font-size: 0.85rem; font-weight: 700; color: white;">${t.simplified}</div>
-                <div style="font-size: 0.72rem; color: var(--text-secondary);">${isHe ? 'הכרזות ולקיחות ישירות (ללא מכרז שליט)' : 'Direct Bids & Tricks (Skip trump & suit auction)'}</div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: white;">${t.simplified}</div>
+                <div style="font-size: 0.7rem; color: var(--text-secondary);">${isHe ? 'הכרזות ולקיחות ישירות (ללא מכרז שליט)' : 'Direct Bids & Tricks (Skip trump & suit auction)'}</div>
               </div>
             </label>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.65rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
             <div>
-              <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem;">
+              <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.2rem;">
                 ${t.scoringRules}
               </label>
-              <select class="select-field" id="new-game-rule-select" style="margin-bottom: 0; padding: 6px 10px; font-size: 0.8rem;">
+              <select class="select-field" id="new-game-rule-select" style="margin-bottom: 0; padding: 5px 8px; font-size: 0.78rem; min-height: 36px;">
                 ${Object.values(RULE_PRESETS).map(r => `
                   <option value="${r.id}">${isHe ? r.nameHe : r.nameEn}</option>
                 `).join('')}
@@ -751,10 +765,10 @@ export class Dialogs {
             </div>
 
             <div>
-              <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem;">
+              <label style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.2rem;">
                 ${t.gameLimit}
               </label>
-              <select class="select-field" id="new-game-target-select" style="margin-bottom: 0; padding: 6px 10px; font-size: 0.8rem;">
+              <select class="select-field" id="new-game-target-select" style="margin-bottom: 0; padding: 5px 8px; font-size: 0.78rem; min-height: 36px;">
                 <option value="UNLIMITED">${t.freePlay}</option>
                 <option value="13_ROUNDS">${t.deals13}</option>
                 <option value="16_ROUNDS">${t.deals16}</option>
@@ -765,16 +779,16 @@ export class Dialogs {
           </div>
 
           <!-- Dialog Actions -->
-          <div style="display: flex; gap: 0.45rem; margin-top: 1rem;">
+          <div style="display: flex; gap: 0.45rem;">
             <button type="button" class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
-            <button type="button" class="btn-block btn-hero-start" id="btn-start-new-game" style="flex: 2; font-size: 0.95rem;">
-              ${t.startGame} →
+            <button type="button" class="btn-block btn-hero-start" id="btn-start-new-game" style="flex: 2; font-size: 0.95rem; ${filledCount < 4 ? 'opacity: 0.6;' : ''}">
+              ${t.startGame} (${filledCount}/4) →
             </button>
           </div>
 
           ${recentGames.length > 0 ? `
-            <div style="margin-top: 0.85rem; padding-top: 0.65rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-              <button type="button" class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0; padding: 4px 12px;">
+            <div style="margin-top: 0.75rem; padding-top: 0.6rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+              <button type="button" class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0; padding: 3px 10px;">
                 ${t.orResume} (${recentGames.length}) →
               </button>
             </div>
@@ -789,89 +803,147 @@ export class Dialogs {
       const closeModal = () => modal.remove();
       modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
 
-      // Seat Card Selection & Inputs
-      modal.querySelectorAll('.seat-card').forEach(card => {
+      // Seat Card Clicks: Swap or Target focus with NO jiggle!
+      modal.querySelectorAll('.seat-card-interactive').forEach(card => {
         card.addEventListener('click', (e) => {
-          // If clicking input or avatar button, don't re-render entirely
-          if (e.target.closest('.seat-name-input') || e.target.closest('.seat-baseline-input') || e.target.closest('.seat-avatar-btn')) {
-            return;
-          }
+          if (e.target.closest('.btn-clear-seat')) return;
+
           const idx = parseInt(card.dataset.seatIdx, 10);
-          activeSeatIdx = idx;
+          const hasPlayer = !!(seatPlayers[idx] && seatPlayers[idx].name);
+
+          if (selectedSwapIdx === null) {
+            if (hasPlayer) {
+              selectedSwapIdx = idx;
+              activeTargetSeatIdx = idx;
+            } else {
+              activeTargetSeatIdx = idx;
+            }
+            renderModalContent();
+          } else if (selectedSwapIdx === idx) {
+            selectedSwapIdx = null;
+            renderModalContent();
+          } else {
+            // Swap selectedSwapIdx with idx
+            const temp = seatPlayers[selectedSwapIdx];
+            seatPlayers[selectedSwapIdx] = seatPlayers[idx];
+            seatPlayers[idx] = temp;
+            selectedSwapIdx = null;
+            activeTargetSeatIdx = idx;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(15); } catch(e) {}
+            }
+            renderModalContent();
+          }
+        });
+      });
+
+      // Clear single seat
+      modal.querySelectorAll('.btn-clear-seat').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.seatIdx, 10);
+          seatPlayers[idx] = null;
+          activeTargetSeatIdx = idx;
+          selectedSwapIdx = null;
           renderModalContent();
         });
       });
 
-      // Name inputs
-      modal.querySelectorAll('.seat-name-input').forEach(inp => {
-        inp.addEventListener('focus', () => {
-          activeSeatIdx = parseInt(inp.dataset.seatIdx, 10);
-          modal.querySelectorAll('.seat-card').forEach((c, i) => c.classList.toggle('is-active-seat', i === activeSeatIdx));
+      // Table Rotation Buttons (No jiggle)
+      const btnCw = modal.querySelector('#btn-new-game-rot-cw');
+      if (btnCw) {
+        btnCw.addEventListener('click', () => {
+          seatPlayers = [seatPlayers[3], seatPlayers[0], seatPlayers[1], seatPlayers[2]];
+          selectedSwapIdx = null;
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch(e) {}
+          }
+          renderModalContent();
         });
-        inp.addEventListener('input', () => {
-          const idx = parseInt(inp.dataset.seatIdx, 10);
-          seatPlayers[idx].name = inp.value;
-        });
-      });
+      }
 
-      // Baseline score inputs
-      modal.querySelectorAll('.seat-baseline-input').forEach(inp => {
-        inp.addEventListener('input', () => {
-          const idx = parseInt(inp.dataset.seatIdx, 10);
-          seatPlayers[idx].baselineScore = parseInt(inp.value, 10) || 0;
+      const btnCcw = modal.querySelector('#btn-new-game-rot-ccw');
+      if (btnCcw) {
+        btnCcw.addEventListener('click', () => {
+          seatPlayers = [seatPlayers[1], seatPlayers[2], seatPlayers[3], seatPlayers[0]];
+          selectedSwapIdx = null;
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(15); } catch(e) {}
+          }
+          renderModalContent();
         });
-      });
+      }
 
-      // Avatar button click -> open emoji/avatar quick selector
-      modal.querySelectorAll('.seat-avatar-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const idx = parseInt(btn.dataset.seatIdx, 10);
-          activeSeatIdx = idx;
-          this.showAvatarPickerModal((chosenAvatar, chosenColor) => {
-            if (chosenAvatar) seatPlayers[idx].avatar = chosenAvatar;
-            if (chosenColor) seatPlayers[idx].color = chosenColor;
-            renderModalContent();
-          }, seatPlayers[idx].avatar, seatPlayers[idx].color);
-        });
-      });
-
-      // Profile chips click -> assign to active seat and auto-advance
+      // Profile chips click: Assign to activeTargetSeatIdx and auto-advance
       modal.querySelectorAll('.profile-chip').forEach(chip => {
         chip.addEventListener('click', () => {
           const profId = chip.dataset.profId;
           const prof = ProfileManager.getProfile(profId);
           if (!prof) return;
 
-          seatPlayers[activeSeatIdx].name = prof.name;
-          seatPlayers[activeSeatIdx].color = prof.color;
-          seatPlayers[activeSeatIdx].avatar = prof.avatar;
-
-          // Auto-advance activeSeatIdx to next unassigned or next seat
-          const nextUnassigned = seatPlayers.findIndex((s, i) => i > activeSeatIdx && (!s.name || s.name.startsWith('Player ') || s.name.startsWith('שחקן ')));
-          if (nextUnassigned >= 0) {
-            activeSeatIdx = nextUnassigned;
-          } else {
-            activeSeatIdx = (activeSeatIdx + 1) % 4;
+          // Check if already assigned
+          const alreadySeatIdx = seatPlayers.findIndex(s => s && s.name && s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
+          if (alreadySeatIdx >= 0) {
+            selectedSwapIdx = alreadySeatIdx;
+            activeTargetSeatIdx = alreadySeatIdx;
+            renderModalContent();
+            return;
           }
 
+          // Target seat index
+          let targetIdx = activeTargetSeatIdx;
+          if (seatPlayers[targetIdx] && seatPlayers[targetIdx].name) {
+            const firstEmpty = seatPlayers.findIndex(s => !s || !s.name);
+            if (firstEmpty >= 0) targetIdx = firstEmpty;
+          }
+
+          seatPlayers[targetIdx] = {
+            name: prof.name,
+            color: prof.color,
+            avatar: prof.avatar,
+            baselineScore: 0
+          };
+
+          // Auto-advance activeTargetSeatIdx to next empty seat
+          const nextEmpty = seatPlayers.findIndex((s, i) => !s || !s.name);
+          if (nextEmpty >= 0) {
+            activeTargetSeatIdx = nextEmpty;
+          } else {
+            activeTargetSeatIdx = (targetIdx + 1) % 4;
+          }
+          selectedSwapIdx = null;
+
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate(12); } catch(e) {}
+          }
           renderModalContent();
         });
       });
+
+      // Clear all seats
+      const btnClearAll = modal.querySelector('#btn-clear-all-seats');
+      if (btnClearAll) {
+        btnClearAll.addEventListener('click', () => {
+          seatPlayers = [null, null, null, null];
+          activeTargetSeatIdx = 0;
+          selectedSwapIdx = null;
+          renderModalContent();
+        });
+      }
 
       // Use Last Lineup button
       const btnLastLineup = modal.querySelector('#btn-use-last-lineup');
       if (btnLastLineup) {
         btnLastLineup.addEventListener('click', () => {
           const lu = ProfileManager.getLastLineup();
-          if (lu && Array.isArray(lu)) {
-            lu.forEach((p, i) => {
-              if (seatPlayers[i] && p.name) {
-                seatPlayers[i].name = p.name;
-                seatPlayers[i].color = p.color || seatPlayers[i].color;
-                seatPlayers[i].avatar = p.avatar || seatPlayers[i].avatar;
-              }
-            });
+          if (lu && Array.isArray(lu) && lu.length === 4) {
+            seatPlayers = lu.map((p, idx) => ({
+              name: p.name,
+              avatar: p.avatar || AVATAR_OPTIONS[idx % AVATAR_OPTIONS.length],
+              color: p.color || COLOR_OPTIONS[idx % COLOR_OPTIONS.length],
+              baselineScore: 0
+            }));
+            selectedSwapIdx = null;
             renderModalContent();
           }
         });
@@ -883,10 +955,20 @@ export class Dialogs {
         btnAddProf.addEventListener('click', () => {
           this.showCreateEditProfileModal(null, (newProf) => {
             if (newProf) {
-              seatPlayers[activeSeatIdx].name = newProf.name;
-              seatPlayers[activeSeatIdx].color = newProf.color;
-              seatPlayers[activeSeatIdx].avatar = newProf.avatar;
-              activeSeatIdx = (activeSeatIdx + 1) % 4;
+              let targetIdx = activeTargetSeatIdx;
+              if (seatPlayers[targetIdx] && seatPlayers[targetIdx].name) {
+                const firstEmpty = seatPlayers.findIndex(s => !s || !s.name);
+                if (firstEmpty >= 0) targetIdx = firstEmpty;
+              }
+              seatPlayers[targetIdx] = {
+                name: newProf.name,
+                color: newProf.color,
+                avatar: newProf.avatar,
+                baselineScore: 0
+              };
+              const nextEmpty = seatPlayers.findIndex((s, i) => !s || !s.name);
+              if (nextEmpty >= 0) activeTargetSeatIdx = nextEmpty;
+              else activeTargetSeatIdx = (targetIdx + 1) % 4;
               renderModalContent();
             }
           });
@@ -914,14 +996,25 @@ export class Dialogs {
 
       // Start Game submission
       modal.querySelector('#btn-start-new-game').addEventListener('click', () => {
+        const filledCount = seatPlayers.filter(s => s && s.name).length;
+        if (filledCount < 4) {
+          const firstEmpty = seatPlayers.findIndex(s => !s || !s.name);
+          if (firstEmpty >= 0) {
+            activeTargetSeatIdx = firstEmpty;
+            renderModalContent();
+          }
+          alert(t.mustChoose4Players);
+          return;
+        }
+
         const isSimplified = modal.querySelector('#chk-new-game-simplified').checked;
         const ruleKey = modal.querySelector('#new-game-rule-select').value;
         const targetVal = modal.querySelector('#new-game-target-select').value;
 
         const newPlayers = seatPlayers.map((s, idx) => ({
           id: `p${idx}`,
-          name: s.name.trim() || (isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`),
-          color: s.color,
+          name: s.name.trim(),
+          color: s.color || COLOR_OPTIONS[idx % COLOR_OPTIONS.length],
           avatar: s.avatar || AVATAR_OPTIONS[idx % AVATAR_OPTIONS.length]
         }));
 

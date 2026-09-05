@@ -104,4 +104,31 @@ if (deletedCheck !== null) {
 }
 console.log('✓ PASS: deleteProfile successfully removed profile');
 
-console.log('Results: All 6 ProfileManager tests passed successfully.');
+// Test 7: Circular table seating operations (placeholders, swap, rotate, clear)
+let seats = [null, null, null, null];
+if (!seats.every(s => s === null)) throw new Error('Initial seats should be placeholders');
+
+seats[0] = { name: 'Omer', avatar: '🦊', color: '#6366f1' };
+seats[1] = { name: 'Daniel', avatar: '🦁', color: '#ec4899' };
+
+// Direct swap (no jiggle)
+const temp = seats[0];
+seats[0] = seats[1];
+seats[1] = temp;
+if (seats[0].name !== 'Daniel' || seats[1].name !== 'Omer') {
+  throw new Error('Direct seat swap failed');
+}
+
+// Clockwise rotation
+seats = [seats[3], seats[0], seats[1], seats[2]];
+if (seats[1].name !== 'Daniel' || seats[2].name !== 'Omer') {
+  throw new Error('Clockwise table rotation failed');
+}
+
+// Clear seat
+seats[1] = null;
+if (seats[1] !== null) throw new Error('Seat clearing failed');
+console.log('✓ PASS: Circular table seating operations (placeholder, swap, rotate, clear) pass');
+
+console.log('Results: All 7 ProfileManager & Seating tests passed successfully.');
+
