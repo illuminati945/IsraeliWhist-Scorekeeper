@@ -50,19 +50,32 @@
 
 ---
 
-## 🚀 Installation & Usage
+## 🚀 Environments & Live Deployment
 
-### 1. Web / Table-Side Mobile Play
-Simply open `src/index.html` in any browser or install it as a PWA on iOS Safari / Android Chrome ("Add to Home Screen").
+| Environment | Purpose | Branch | Port | Live Access URL |
+| :--- | :--- | :--- | :--- | :--- |
+| 🟢 **Production (Prod)** | Latest stable release for actual gameplay | `main` | `3000` | [https://i945.duckdns.org/whist/](https://i945.duckdns.org/whist/) |
+| 🟠 **Development (Dev)** | Active sandbox for testing features & changes | `dev` | `3001` | [https://i945.duckdns.org/whist-dev/](https://i945.duckdns.org/whist-dev/) |
 
-### 2. LiveContainer / SideStore (iOS)
-1. Tap [**Open in LiveContainer**](https://altdirect.app/?url=https%3A%2F%2Fraw.githubusercontent.com%2Filluminati945%2FIsraeliWhist-Scorekeeper%2Fmain%2FIsraeliWhist.json&r=livecontainer).
-2. Or download the latest `.ipa` from [GitHub Releases](https://github.com/illuminati945/IsraeliWhist-Scorekeeper/releases).
+- **Data Isolation**: Dev and Prod maintain completely segregated databases (`data/sessions/`), ensuring experimental rounds or test rooms never interfere with ongoing games.
+- **Visual Indicator**: The Dev environment features an amber `DEV` badge in the header.
 
 ---
 
-## 🛠️ CI/CD & Development Rules
+## 📦 GitHub Releases & Development Lifecycle
 
-- **Branch Lockstep Rule**: Always commit and push changes in lockstep to `main` and `enhanced`.
-- **Discord Live Watcher**: Run `python3 scripts/discord_watcher.py <RUN_ID>` to track compilation in real-time.
-- **SideStore Manifest Sync**: Run `build-ipa.yml` to automatically update `IsraeliWhist.json` with the exact asset size and download URL.
+1. **Developing & Testing Features**:
+   - Work on the `dev` branch in `/home/ubuntu/israeli-whist-scorekeeper-dev`.
+   - Deploy & restart dev anytime:
+     ```bash
+     npm run deploy:dev
+     ```
+   - Test live at `https://i945.duckdns.org/whist-dev/`.
+
+2. **Publishing a New Release**:
+   - Run the automated release command with the target version:
+     ```bash
+     npm run release <version>  # Example: npm run release 1.0.1
+     ```
+   - This executes tests, rebuilds production bundles, tags the commit, creates the GitHub Release on [illuminati945/IsraeliWhist-Scorekeeper](https://github.com/illuminati945/IsraeliWhist-Scorekeeper/releases), and syncs the dev branch.
+

@@ -105,28 +105,38 @@ This document serves as the persistent memory and operational guide for the Isra
 
 ---
 
-## 6. 🌿 Repository Architecture & Operations
+## 6. 🌿 Dual-Environment Architecture & GitHub Releases
 
-* **Working Branches**:
-  * `main`: Production releases and documentation.
-  * `enhanced`: Active development and CI build target.
-  * **Always commit and push to both `main` and `enhanced` in lockstep**:
-    ```bash
-    git add .
-    git commit -m "<message>"
-    git checkout enhanced && git merge main
-    git checkout main
-    ```
-* **Systemd Service**:
-  * Service name: `israeli-whist.service`
-  * Restart command: `sudo systemctl restart israeli-whist.service`
-  * Status command: `sudo systemctl status israeli-whist.service`
-* **Test Suite**:
-  * Command: `npm test`
-  * 54 unit, integration, and asset tests covering production bundle, rules engine, hook rule, session anti-regression, history editing, baseline scores, and 0 scoring formulas.
-* **Live Deployment**:
-  * HTTPS: `https://i945.duckdns.org/whist/`
-  * HTTP: `http://i945.duckdns.org/whist/` (Port 3000 reverse-proxied via Nginx)
+* **Environments Map**:
+  | Environment | Path | Git Branch | Port | Systemd Service | Live URL | Storage Isolation |
+  | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+  | **Production (PROD)** | `/home/ubuntu/israeli-whist-scorekeeper` | `main` | `3000` | `israeli-whist.service` | `https://i945.duckdns.org/whist/` | Dedicated `/data/` |
+  | **Development (DEV)** | `/home/ubuntu/israeli-whist-scorekeeper-dev` | `dev` | `3001` | `israeli-whist-dev.service` | `https://i945.duckdns.org/whist-dev/` | Dedicated `/data/` |
+
+* **Development Workflow**:
+  1. Make and test changes in the Dev environment (`/home/ubuntu/israeli-whist-scorekeeper-dev` on branch `dev`).
+  2. Test in the browser at `https://i945.duckdns.org/whist-dev/` (features an amber `DEV` header badge).
+  3. Deploy dev updates anytime with:
+     ```bash
+     npm run deploy:dev
+     ```
+  4. Ensure all unit and asset tests pass (`npm test`).
+  5. When ready for stable release, promote and publish to GitHub with one command:
+     ```bash
+     npm run release <new_version>   # e.g. npm run release 1.0.1
+     ```
+     This automatically runs the test suite, bumps version in `package.json` and manifests, bundles assets, creates and pushes git tags, creates the GitHub Release on `illuminati945/IsraeliWhist-Scorekeeper`, syncs `dev`, and updates prod.
+
+* **GitHub Environment & Releases**:
+  - Remote Repository: `https://github.com/illuminati945/IsraeliWhist-Scorekeeper`
+  - GitHub Environments: `production` (tracks `main`) and `development` (tracks `dev`).
+  - GitHub Releases: `https://github.com/illuminati945/IsraeliWhist-Scorekeeper/releases`
+  - Workflow Automation: `.github/workflows/release.yml` and `scripts/release.sh`
+
+* **Systemd Services**:
+  - Prod service: `sudo systemctl status israeli-whist.service` / `sudo systemctl restart israeli-whist.service`
+  - Dev service: `sudo systemctl status israeli-whist-dev.service` / `sudo systemctl restart israeli-whist-dev.service`
+
 
 ---
 
