@@ -34,9 +34,15 @@ console.log('✓ PASS: Service Worker sw.js cleanly unregisters and clears stale
 
 // 4. Verify index.html loads bundle and handles SW cleanup
 const htmlContent = fs.readFileSync('src/index.html', 'utf8');
-if (!htmlContent.includes('styles.min.css?v=9') || !htmlContent.includes('app.bundle.js?v=9')) {
-  throw new Error('src/index.html must reference styles.min.css?v=9 and app.bundle.js?v=9');
+const cssMatch = htmlContent.match(/styles\.min\.css\?v=(\d+)/);
+const jsMatch = htmlContent.match(/app\.bundle\.js\?v=(\d+)/);
+if (!cssMatch || !jsMatch || cssMatch[1] !== jsMatch[1]) {
+  throw new Error('src/index.html must reference versioned styles.min.css and app.bundle.js with matching ?v= parameter');
 }
-console.log('✓ PASS: index.html correctly loads v=9 production bundle and minified CSS');
+if (cssMatch[1] !== '12') {
+  throw new Error(`src/index.html version is ${cssMatch[1]}, expected 12`);
+}
+console.log(`✓ PASS: index.html correctly loads v=${cssMatch[1]} production bundle and minified CSS`);
 
 console.log('Results: 4 asset verification tests passed.');
+

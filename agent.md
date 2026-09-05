@@ -96,10 +96,11 @@ This document serves as the persistent memory and operational guide for the Isra
   * Bundles all ES modules into a single `src/js/app.bundle.js` (29.7 KB gzipped) and `src/css/styles.min.css` (4.4 KB gzipped) using `esbuild`.
   * Eliminates the 16-request ES module waterfall completely; entire application payload is under **35 KB**.
   * Rebuild command: `npm run build` (takes ~15ms).
-* **In-Memory Static Caching & Pre-Gzip (`server.js`)**:
+* **In-Memory Static Caching & Cache-Busting Policy (`server.js`)**:
   * Static files are cached in RAM with pre-compressed gzip buffers and MD5 `ETag`s.
-  * Sends `Cache-Control: public, max-age=31536000, immutable` for versioned assets (`?v=8`).
-  * Instant HTTP `304 Not Modified` on unchanged resources without disk I/O.
+  * **Development Environment (`NODE_ENV === 'development'`)**: Sends `Cache-Control: no-cache, no-store, must-revalidate` and bypasses 304 conditional cache so mobile and desktop testers always fetch fresh assets immediately.
+  * **Production Environment**: Sends `Cache-Control: public, max-age=31536000, immutable` for versioned assets (`?v=XX`). Assets are version-bumped on each release (`?v=12`) to prevent stale browser disk caching.
+  * Instant HTTP `304 Not Modified` on unchanged resources without disk I/O in production.
 * **In-Memory Recent Games Cache (`server.js`)**:
   * Caches `recentGames` list in memory and invalidates on session save/delete, removing synchronous 30+ file disk reads on page loads.
 * **PWA Service Worker (`src/sw.js`)**:

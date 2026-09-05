@@ -369,7 +369,8 @@ const server = http.createServer((req, res) => {
   const hasVersionParam = parsedUrl.search && parsedUrl.search.includes('v=');
   
   let cacheControl;
-  if (isHtml || isSw) {
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isHtml || isSw || isDev) {
     cacheControl = 'no-cache, no-store, must-revalidate';
   } else if (hasVersionParam) {
     cacheControl = 'public, max-age=31536000, immutable';
@@ -377,7 +378,7 @@ const server = http.createServer((req, res) => {
     cacheControl = 'public, max-age=86400, stale-while-revalidate=604800';
   }
 
-  if (!isHtml && !isSw && clientEtag && clientEtag === asset.etag) {
+  if (!isHtml && !isSw && !isDev && clientEtag && clientEtag === asset.etag) {
     res.writeHead(304, {
       'ETag': asset.etag,
       'Last-Modified': asset.mtimeUtc,
