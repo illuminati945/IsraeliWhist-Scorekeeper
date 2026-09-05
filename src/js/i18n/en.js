@@ -154,6 +154,35 @@ export const EN = {
   deleteDeal: 'Delete Deal',
   deleteDealConfirm: 'Are you sure you want to delete Deal #{num}? All subsequent totals will recalculate.',
 
+  // Player Profiles & Easy Picking
+  playerProfiles: 'Player Profiles',
+  savedProfiles: 'Saved Profiles',
+  quickPick: 'Quick Pick Players',
+  quickPickSub: 'Tap a seat above, then tap a player profile to assign.',
+  seat1: 'Seat 1',
+  seat2: 'Seat 2',
+  seat3: 'Seat 3',
+  seat4: 'Seat 4',
+  useLastLineup: '⚡ Use Last Lineup',
+  addProfile: '+ New Player',
+  createProfileTitle: 'Create Player Profile',
+  editProfileTitle: 'Edit Player Profile',
+  playerName: 'Player Name',
+  playerNamePlaceholder: 'e.g. Omer',
+  chooseAvatar: 'Choose Avatar',
+  chooseColor: 'Player Color',
+  saveProfileBtn: 'Save Profile ✓',
+  deleteProfileBtn: 'Delete Profile',
+  deleteProfileConfirm: 'Delete profile for {name}?',
+  careerStats: 'Career Statistics',
+  matchesPlayed: 'Matches',
+  winRatio: 'Win Rate',
+  totalPoints: 'Total Points',
+  zeroHitsStats: 'Zero (0) Hits',
+  manageProfilesMenu: '👥 Player Profiles & Roster',
+  manageProfilesDesc: 'Saved players, custom avatars & career stats',
+
   // Language Switch
   switchLang: 'עברית'
 };
+

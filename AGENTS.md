@@ -152,18 +152,75 @@ This document serves as the persistent memory and operational guide for the Isra
 
 ---
 
-## 7. 📁 Key Source Files Map
+## 7. 👥 Player Profiles & Easy Picking UI System
+
+### A. System Overview & Architecture
+* **Engine**: `src/js/engine/profile-manager.js` (`ProfileManager`).
+* **Storage Keys**:
+  - `israeli_whist_profiles_v1`: Persistent roster array of player profiles.
+  - `israeli_whist_last_lineup_v1`: Most recent 4-player lineup.
+* **Profile Data Model**:
+  - `id`: Unique identifier (`prof_<timestamp>_<hash>`).
+  - `name`: Player display name.
+  - `avatar`: Visual emoji icon (e.g. 🦊, 🦁, 👑, 🚀, ⭐, 🎯).
+  - `color`: Distinct player accent color from `COLOR_OPTIONS`.
+  - `gamesPlayed`: Career total matches.
+  - `wins`: Matches won (highest final score).
+  - `totalScore`: Cumulative career score.
+  - `zeroBids`: Career zero (0) bids made.
+  - `zeroHits`: Successful zero (0) bids achieved.
+  - `lastPlayed`: ISO timestamp of recent activity.
+
+### B. Easy Picking for New Games (`showNewGameModal`)
+* **Interactive 4-Seat Layout**:
+  - 4 physical seat cards representing Seat 1 through Seat 4.
+  - Displays Dealer tag on Seat 1, clickable avatar selector button, player name input, and baseline score.
+  - Active seat is highlighted with an indigo glow (`.is-active-seat`).
+* **Quick Picker Chips Carousel**:
+  - Horizontally scrollable roster chips at the top of the modal.
+  - Tapping any profile chip immediately populates the active seat with that player's name, avatar, and color, and **automatically advances** focus to the next unassigned seat slot.
+  - Allows selecting all 4 players in under 3 seconds without typing.
+* **⚡ "Use Last Lineup" Shortcut**:
+  - Re-populates the exact 4-seat arrangement from the previous match in one tap.
+* **Inline Profile Creation & Management**:
+  - "+ New Player" button opens `showCreateEditProfileModal()` and instantly selects the created player into the active seat.
+  - Gear icon (`⚙️`) opens the full roster manager.
+
+### C. Dedicated Roster & Career Statistics Modal (`showProfilesModal`)
+* Accessible from:
+  1. Landing Page Lobby (`👥 Player Profiles & Roster` button).
+  2. Main Drawer Menu (`👤 Player Profiles & Roster`).
+  3. New Game Modal (Quick picker header).
+* Displays player cards with:
+  - Avatar circle with custom colored border and background tint.
+  - Games played badge.
+  - Win rate percentage badge (🏆 X%).
+  - Zero bidding accuracy badge (0️⃣ X%).
+  - Career total points badge (⭐ X).
+* Full CRUD functionality: edit name/avatar/color or delete profiles.
+
+### D. Visual Integration Across Views
+* **Leaderboard (`Scoreboard`)**: Renders `.player-avatar-mini` next to player name on cards and history table headers.
+* **Round View (`RoundView`)**: Renders avatar badge in Trump auction selection, Bets stage steppers, Tricks stage rows, and Score preview cards.
+* **Landing Page (`LandingView`)**: Renders quick interactive roster preview strip with avatars directly under the hero section.
+
+---
+
+## 8. 📁 Key Source Files Map
 
 | File | Purpose |
 | :--- | :--- |
 | `src/js/engine/whist-rules.js` | Core scoring formulas, 0 scoring rules, Hook rule validation, preset definitions |
 | `src/js/engine/game-state.js` | `GameSession`, round transitions, baseline scores, history editing & recalculation |
+| `src/js/engine/profile-manager.js` | `ProfileManager`: Player profiles, roster persistence, career statistics & last lineup |
 | `src/js/engine/sync-manager.js` | WebSocket synchronization with server and anti-wipe guards |
 | `src/js/engine/archive-manager.js` | LocalStorage + REST archive management with blank state protection |
 | `src/js/engine/statistics.js` | Match analytics, accuracy, and zero (0) success rates |
-| `src/js/ui/round-view.js` | Active round bidding and trick entry interface |
-| `src/js/ui/scoreboard.js` | Leaderboard cards, deal history table, edit buttons, baseline row |
-| `src/js/ui/dialogs.js` | Modals: edit deal, baseline scores, new game, player names, settings |
+| `src/js/ui/round-view.js` | Active round bidding and trick entry interface with player avatars |
+| `src/js/ui/scoreboard.js` | Leaderboard cards with avatars, deal history table, edit buttons, baseline row |
+| `src/js/ui/dialogs.js` | Modals: interactive 4-seat new game picker, profile manager, avatar picker, edit deal |
+| `src/js/ui/landing-view.js` | Welcome lobby with player profiles access and quick roster strip |
 | `src/js/ui/chart-view.js` | SVG cumulative score progression chart starting from baseline |
-| `src/js/i18n/he.js` & `en.js` | Hebrew and English localizations |
+| `src/js/i18n/he.js` & `en.js` | Hebrew and English localizations (including profile and picking strings) |
 | `server.js` | Node.js backend: REST API, WebSocket server, backups, anti-regression engine |
+

@@ -92,7 +92,7 @@ export class RoundView {
                 <button class="btn-outline trump-player-btn ${round.trump.winnerIndex === idx ? 'active' : ''}" 
                         data-player-idx="${idx}"
                         style="${round.trump.winnerIndex === idx ? 'border-color: var(--accent-primary); background: var(--accent-primary); color: white;' : ''}">
-                  <span class="player-dot" style="background: ${p.color};"></span>
+                  ${p.avatar ? `<span class="player-avatar-mini" style="border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
                   <span>${p.name}</span>
                 </button>
               `).join('')}
@@ -193,7 +193,7 @@ export class RoundView {
               <div class="input-row ${isDealer ? 'dealer-row' : ''}" data-player-idx="${idx}">
                 <div class="input-row-header">
                   <div class="input-row-name">
-                    <span class="player-dot" style="background: ${p.color};"></span>
+                    ${p.avatar ? `<span class="player-avatar-mini" style="border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
                     <span>${p.name}</span>
                     ${isTrumpMaker ? `<span style="font-size: 0.62rem; background: #fbbf24; color: black; padding: 1px 5px; border-radius: 4px; font-weight: 800;">${t.trumpMaker.toUpperCase()}</span>` : ''}
                     ${isLastBidder ? `<span class="tag-dealer" style="position:static; background: #e11d48;">${t.lastBidder.toUpperCase()}</span>` : ''}
@@ -255,7 +255,7 @@ export class RoundView {
               <div class="input-row" data-player-idx="${idx}" style="${isMatch ? 'border-color: rgba(16, 185, 129, 0.4);' : ''}">
                 <div class="input-row-header">
                   <div class="input-row-name">
-                    <span class="player-dot" style="background: ${p.color};"></span>
+                    ${p.avatar ? `<span class="player-avatar-mini" style="border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
                     <span>${p.name}</span>
                     <span class="input-row-sub">
                       (${t.bid || 'Bid'}: <strong>${bet !== null ? bet : '—'}</strong>)
@@ -321,7 +321,10 @@ export class RoundView {
             return `
               <div class="breakdown-item">
                 <div>
-                  <div style="font-size: 0.82rem; font-weight: 700;">${p.name}</div>
+                  <div style="font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                    ${p.avatar ? `<span class="player-avatar-mini" style="width: 18px; height: 18px; min-width: 18px; font-size: 0.72rem; border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
+                    <span>${p.name}</span>
+                  </div>
                   <div style="font-size: 0.72rem; color: var(--text-secondary);">${calc.explanation}</div>
                 </div>
                 <span class="score-badge signed-score ${calc.score >= 0 ? 'plus' : 'minus'}" dir="ltr" style="direction: ltr; unicode-bidi: isolate;">

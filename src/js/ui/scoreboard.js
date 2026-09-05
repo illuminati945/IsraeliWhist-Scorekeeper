@@ -84,8 +84,8 @@ export class Scoreboard {
               ${isDealer ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
               <div class="player-card-inner">
                 <div class="player-title">
-                  <span class="player-dot" style="background: ${p.color};"></span>
-                  <span>${p.name}</span>
+                  ${p.avatar ? `<span class="player-avatar-mini" style="border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
+                  <span class="player-name-text">${p.name}</span>
                 </div>
                 <div class="player-score signed-score" dir="ltr" style="color: ${score >= 0 ? 'var(--success)' : 'var(--danger)'}; direction: ltr; unicode-bidi: isolate;">
                   ${score >= 0 ? `+${score}` : score}
@@ -413,8 +413,8 @@ export class Scoreboard {
                 <th style="min-width: 95px;">${t.dealer}</th>
                 ${this.session.players.map(p => `
                   <th style="min-width: 85px;">
-                    <div style="display: flex; align-items: center; justify-content: center; gap: 3px;">
-                      <span class="player-dot" style="background: ${p.color};"></span>
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      ${p.avatar ? `<span class="player-avatar-mini" style="width: 18px; height: 18px; min-width: 18px; font-size: 0.72rem; border-color: ${p.color}; background: ${p.color}22;">${p.avatar}</span>` : `<span class="player-dot" style="background: ${p.color};"></span>`}
                       <span>${p.name}</span>
                     </div>
                   </th>
@@ -434,7 +434,7 @@ export class Scoreboard {
                     </td>
                     <td>
                       <div style="display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap;">
-                        <span class="player-dot" style="background: ${dealer.color};"></span>
+                        ${dealer.avatar ? `<span class="player-avatar-mini" style="width: 18px; height: 18px; min-width: 18px; font-size: 0.72rem; border-color: ${dealer.color}; background: ${dealer.color}22;">${dealer.avatar}</span>` : `<span class="player-dot" style="background: ${dealer.color};"></span>`}
                         <span style="font-weight: 600;">${dealer.name}</span>
                       </div>
                     </td>

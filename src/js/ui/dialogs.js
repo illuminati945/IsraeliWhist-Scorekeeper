@@ -5,6 +5,7 @@ import { RULE_PRESETS, calculatePlayerScore } from '../engine/whist-rules.js';
 import { calculateGameStatistics } from '../engine/statistics.js';
 import { GameSession } from '../engine/game-state.js';
 import { ArchiveManager } from '../engine/archive-manager.js';
+import { ProfileManager, AVATAR_OPTIONS, COLOR_OPTIONS } from '../engine/profile-manager.js';
 
 export class Dialogs {
   constructor(app) {
@@ -50,6 +51,16 @@ export class Dialogs {
               </div>
             </div>
             <span style="font-size: 0.8rem; font-weight: 700; color: #f59e0b;">Set →</span>
+          </button>
+
+          <button class="menu-item-btn" id="menu-opt-profiles" style="background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.35);">
+            <div>
+              <div style="font-weight: 700; color: #c4b5fd;">${t.manageProfilesMenu}</div>
+              <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 2px;">
+                ${t.manageProfilesDesc}
+              </div>
+            </div>
+            <span style="font-size: 0.8rem; font-weight: 700; color: #a78bfa;">Open →</span>
           </button>
 
           <button class="menu-item-btn" id="menu-opt-saved-games" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35);">
@@ -123,6 +134,11 @@ export class Dialogs {
     modal.querySelector('#menu-opt-baseline').addEventListener('click', () => {
       closeModal();
       this.showBaselineModal();
+    });
+
+    modal.querySelector('#menu-opt-profiles').addEventListener('click', () => {
+      closeModal();
+      this.showProfilesModal();
     });
 
     modal.querySelector('#menu-opt-saved-games').addEventListener('click', () => {
@@ -588,142 +604,679 @@ export class Dialogs {
     const session = this.app.session;
     const recentGames = ArchiveManager.getRecentGames();
 
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-head">
-          <h3 style="font-size: 1.05rem; font-weight: 700;">${t.newGameTitle}</h3>
-          <button class="btn-pill modal-close">✕</button>
-        </div>
+    // Load saved profiles
+    let profiles = ProfileManager.getProfiles();
 
-        <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.85rem;">
-          ${t.newGameSub}
-        </div>
+    // Prepare 4 seat slots. Check if a last lineup was recorded, otherwise current session players
+    const lastLineup = ProfileManager.getLastLineup();
+    let seatPlayers = session.players.map((p, idx) => {
+      const matchedProf = ProfileManager.getProfileByName(p.name);
+      return {
+        name: p.name || (isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`),
+        color: p.color || COLOR_OPTIONS[idx % COLOR_OPTIONS.length],
+        avatar: p.avatar || matchedProf?.avatar || AVATAR_OPTIONS[idx % AVATAR_OPTIONS.length],
+        baselineScore: session.initialScores ? (session.initialScores[idx] || 0) : 0
+      };
+    });
 
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.4rem;">
-          ${t.playerNames}
-        </div>
-        <div class="modal-players-grid" style="display: flex; flex-direction: column; gap: 0.45rem; margin-bottom: 0.85rem;">
-          ${session.players.map((p, idx) => `
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <span class="player-dot" style="background: ${p.color};"></span>
-              <input type="text" class="input-field player-name-input" data-p-idx="${idx}" value="${p.name}" placeholder="${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`}" style="margin-bottom:0;" />
-            </div>
-          `).join('')}
-        </div>
-
-        <div style="margin-bottom: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">
-              🎯 ${t.baselineScores}
-            </div>
-            <span style="font-size: 0.7rem; color: var(--text-muted);">${isHe ? 'ניקוד פתיחה (אופציונלי)' : 'Starting scores (optional)'}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem;">
-            ${session.players.map((p, idx) => `
-              <div style="display: flex; align-items: center; gap: 0.3rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
-                <span class="player-dot" style="background: ${p.color};"></span>
-                <span style="font-size: 0.75rem; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.name}</span>
-                <input type="number" class="input-field new-game-baseline-input" data-p-idx="${idx}" value="0" style="width: 65px; margin-bottom: 0; padding: 4px; text-align: center; font-size: 0.8rem; font-family: monospace;" />
-              </div>
-            `).join('')}
-          </div>
-        </div>
-
-        <div style="margin-bottom: 0.85rem; padding: 0.65rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
-          <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
-            <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px;">
-            <div>
-              <div style="font-size: 0.85rem; font-weight: 700;">${t.simplified}</div>
-              <div style="font-size: 0.72rem; color: var(--text-secondary);">${isHe ? 'הכרזות ולקיחות ישירות (ללא מכרז שליט)' : 'Direct Bids & Tricks (Skip trump & suit selection)'}</div>
-            </div>
-          </label>
-        </div>
-
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          ${t.scoringRules}
-        </div>
-        <select class="select-field" id="new-game-rule-select">
-          ${Object.values(RULE_PRESETS).map(r => `
-            <option value="${r.id}" ${isHe ? r.nameHe : r.nameEn}
-            </option>
-          `).join('')}
-        </select>
-
-        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
-          ${t.gameLimit}
-        </div>
-        <select class="select-field" id="new-game-target-select">
-          <option value="UNLIMITED">${t.freePlay}</option>
-          <option value="13_ROUNDS">${t.deals13}</option>
-          <option value="16_ROUNDS">${t.deals16}</option>
-          <option value="TARGET_500">${t.target500}</option>
-          <option value="TARGET_1000">${t.target1000}</option>
-        </select>
-
-        <div style="display: flex; gap: 0.4rem; margin-top: 0.85rem;">
-          <button class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
-          <button class="btn-block" id="btn-start-new-game" style="flex: 1;">${t.startGame}</button>
-        </div>
-
-        ${recentGames.length > 0 ? `
-          <div style="margin-top: 1.25rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle); text-align: center;">
-            <button class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.8rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0;">
-              ${t.orResume} (${recentGames.length}) →
-            </button>
-          </div>
-        ` : ''}
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-    const closeModal = () => modal.remove();
-    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
-
-    const btnRecent = modal.querySelector('#btn-open-recent-from-new');
-    if (btnRecent) {
-      btnRecent.addEventListener('click', () => {
-        closeModal();
-        this.showSavedGamesModal();
+    // If last lineup had 4 players and session is brand new, prefill from last lineup
+    if (lastLineup && lastLineup.length === 4 && (!session.completedRounds || session.completedRounds.length === 0)) {
+      lastLineup.forEach((lp, idx) => {
+        if (seatPlayers[idx] && lp.name) {
+          seatPlayers[idx].name = lp.name;
+          seatPlayers[idx].color = lp.color || seatPlayers[idx].color;
+          seatPlayers[idx].avatar = lp.avatar || seatPlayers[idx].avatar;
+        }
       });
     }
 
-    modal.querySelector('#btn-start-new-game').addEventListener('click', () => {
-      const nameInputs = modal.querySelectorAll('.player-name-input');
-      const isSimplified = modal.querySelector('#chk-new-game-simplified').checked;
-      const ruleKey = modal.querySelector('#new-game-rule-select').value;
-      const targetVal = modal.querySelector('#new-game-target-select').value;
+    let activeSeatIdx = 0;
 
-      const newPlayers = session.players.map((p, idx) => ({
-        ...p,
-        name: nameInputs[idx].value.trim() || p.name
-      }));
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
 
-      const baselineInputs = modal.querySelectorAll('.new-game-baseline-input');
-      const initialScores = [];
-      baselineInputs.forEach(inp => {
-        initialScores.push(parseInt(inp.value, 10) || 0);
+    const renderModalContent = () => {
+      profiles = ProfileManager.getProfiles();
+      
+      modal.innerHTML = `
+        <div class="modal-box modal-new-game" style="max-width: 520px;">
+          <div class="modal-head">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em;">🎲 ${t.newGameTitle}</h3>
+            </div>
+            <button class="btn-pill modal-close">✕</button>
+          </div>
+
+          <!-- Quick Picker Roster Section -->
+          <div class="quick-picker-card">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.4rem;">
+              <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                👥 ${t.quickPick}
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.35rem;">
+                ${lastLineup ? `
+                  <button type="button" class="btn-pill btn-quick-action" id="btn-use-last-lineup" title="${t.useLastLineup}">
+                    ${t.useLastLineup}
+                  </button>
+                ` : ''}
+                <button type="button" class="btn-pill btn-quick-action" id="btn-add-profile-from-new" title="${t.addProfile}">
+                  ${t.addProfile}
+                </button>
+                <button type="button" class="btn-pill btn-quick-action" id="btn-manage-profiles-from-new" title="${t.playerProfiles}">
+                  ⚙️
+                </button>
+              </div>
+            </div>
+
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              ${t.quickPickSub}
+            </div>
+
+            <!-- Profile Chips Carousel / Flex -->
+            <div class="profile-chips-carousel" id="profile-chips-container">
+              ${profiles.map(prof => {
+                const assignedSeatIdx = seatPlayers.findIndex(s => s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
+                const isAssigned = assignedSeatIdx >= 0;
+                return `
+                  <button type="button" class="profile-chip ${isAssigned ? 'is-assigned' : ''}" data-prof-id="${prof.id}">
+                    <span class="chip-avatar" style="border-color: ${prof.color}; background: ${prof.color}22;">${prof.avatar}</span>
+                    <span class="chip-name">${prof.name}</span>
+                    ${isAssigned ? `<span class="chip-seat-badge">S${assignedSeatIdx + 1}</span>` : ''}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- 4 Interactive Seat Cards Grid -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin: 0.85rem 0 0.45rem;">
+            <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+              🪑 ${t.playerNames} (4 ${isHe ? 'שחקנים' : 'Seats'})
+            </div>
+            <span style="font-size: 0.7rem; color: #a5b4fc;">
+              ${isHe ? `נבחר כיסא: ${activeSeatIdx + 1}` : `Active: Seat ${activeSeatIdx + 1}`}
+            </span>
+          </div>
+
+          <div class="new-game-seats-grid">
+            ${seatPlayers.map((seat, idx) => {
+              const isActive = (idx === activeSeatIdx);
+              const seatLabel = isHe ? `כיסא ${idx + 1}` : `Seat ${idx + 1}`;
+              const isDealer = (idx === 0);
+
+              return `
+                <div class="seat-card ${isActive ? 'is-active-seat' : ''}" data-seat-idx="${idx}">
+                  <div class="seat-card-header">
+                    <span class="seat-label">${seatLabel}</span>
+                    ${isDealer ? `<span class="seat-dealer-tag">${t.dealer.toUpperCase()}</span>` : ''}
+                  </div>
+
+                  <div class="seat-card-body">
+                    <button type="button" class="seat-avatar-btn" data-seat-idx="${idx}" title="${t.chooseAvatar}" style="border-color: ${seat.color}; background: ${seat.color}26;">
+                      ${seat.avatar}
+                    </button>
+                    <input type="text" class="seat-name-input" data-seat-idx="${idx}" value="${seat.name}" placeholder="${isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`}" />
+                  </div>
+
+                  <div class="seat-card-footer">
+                    <span style="font-size: 0.68rem; color: var(--text-muted);">${t.baselineRow}:</span>
+                    <input type="number" class="seat-baseline-input" data-seat-idx="${idx}" value="${seat.baselineScore}" />
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Mode & Match Options -->
+          <div class="new-game-options-box" style="margin-top: 0.85rem; padding: 0.65rem 0.85rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+            <label style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer;">
+              <input type="checkbox" id="chk-new-game-simplified" ${session.simplifiedMode ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: var(--accent-primary);">
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: white;">${t.simplified}</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);">${isHe ? 'הכרזות ולקיחות ישירות (ללא מכרז שליט)' : 'Direct Bids & Tricks (Skip trump & suit auction)'}</div>
+              </div>
+            </label>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.65rem;">
+            <div>
+              <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem;">
+                ${t.scoringRules}
+              </label>
+              <select class="select-field" id="new-game-rule-select" style="margin-bottom: 0; padding: 6px 10px; font-size: 0.8rem;">
+                ${Object.values(RULE_PRESETS).map(r => `
+                  <option value="${r.id}">${isHe ? r.nameHe : r.nameEn}</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.25rem;">
+                ${t.gameLimit}
+              </label>
+              <select class="select-field" id="new-game-target-select" style="margin-bottom: 0; padding: 6px 10px; font-size: 0.8rem;">
+                <option value="UNLIMITED">${t.freePlay}</option>
+                <option value="13_ROUNDS">${t.deals13}</option>
+                <option value="16_ROUNDS">${t.deals16}</option>
+                <option value="TARGET_500">${t.target500}</option>
+                <option value="TARGET_1000">${t.target1000}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Dialog Actions -->
+          <div style="display: flex; gap: 0.45rem; margin-top: 1rem;">
+            <button type="button" class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+            <button type="button" class="btn-block btn-hero-start" id="btn-start-new-game" style="flex: 2; font-size: 0.95rem;">
+              ${t.startGame} →
+            </button>
+          </div>
+
+          ${recentGames.length > 0 ? `
+            <div style="margin-top: 0.85rem; padding-top: 0.65rem; border-top: 1px solid var(--border-subtle); text-align: center;">
+              <button type="button" class="btn-outline" id="btn-open-recent-from-new" style="font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #a7f3d0; padding: 4px 12px;">
+                ${t.orResume} (${recentGames.length}) →
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      bindNewGameEvents();
+    };
+
+    const bindNewGameEvents = () => {
+      const closeModal = () => modal.remove();
+      modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+      // Seat Card Selection & Inputs
+      modal.querySelectorAll('.seat-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          // If clicking input or avatar button, don't re-render entirely
+          if (e.target.closest('.seat-name-input') || e.target.closest('.seat-baseline-input') || e.target.closest('.seat-avatar-btn')) {
+            return;
+          }
+          const idx = parseInt(card.dataset.seatIdx, 10);
+          activeSeatIdx = idx;
+          renderModalContent();
+        });
       });
 
-      let maxRounds = null;
-      let targetPoints = null;
-      if (targetVal === '13_ROUNDS') maxRounds = 13;
-      else if (targetVal === '16_ROUNDS') maxRounds = 16;
-      else if (targetVal === 'TARGET_500') targetPoints = 500;
-      else if (targetVal === 'TARGET_1000') targetPoints = 1000;
-
-      this.app.startNewGame({
-        players: newPlayers,
-        rules: { ...RULE_PRESETS[ruleKey] },
-        maxRounds,
-        targetPoints,
-        simplifiedMode: isSimplified,
-        initialScores
+      // Name inputs
+      modal.querySelectorAll('.seat-name-input').forEach(inp => {
+        inp.addEventListener('focus', () => {
+          activeSeatIdx = parseInt(inp.dataset.seatIdx, 10);
+          modal.querySelectorAll('.seat-card').forEach((c, i) => c.classList.toggle('is-active-seat', i === activeSeatIdx));
+        });
+        inp.addEventListener('input', () => {
+          const idx = parseInt(inp.dataset.seatIdx, 10);
+          seatPlayers[idx].name = inp.value;
+        });
       });
 
-      closeModal();
+      // Baseline score inputs
+      modal.querySelectorAll('.seat-baseline-input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          const idx = parseInt(inp.dataset.seatIdx, 10);
+          seatPlayers[idx].baselineScore = parseInt(inp.value, 10) || 0;
+        });
+      });
+
+      // Avatar button click -> open emoji/avatar quick selector
+      modal.querySelectorAll('.seat-avatar-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.seatIdx, 10);
+          activeSeatIdx = idx;
+          this.showAvatarPickerModal((chosenAvatar, chosenColor) => {
+            if (chosenAvatar) seatPlayers[idx].avatar = chosenAvatar;
+            if (chosenColor) seatPlayers[idx].color = chosenColor;
+            renderModalContent();
+          }, seatPlayers[idx].avatar, seatPlayers[idx].color);
+        });
+      });
+
+      // Profile chips click -> assign to active seat and auto-advance
+      modal.querySelectorAll('.profile-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const profId = chip.dataset.profId;
+          const prof = ProfileManager.getProfile(profId);
+          if (!prof) return;
+
+          seatPlayers[activeSeatIdx].name = prof.name;
+          seatPlayers[activeSeatIdx].color = prof.color;
+          seatPlayers[activeSeatIdx].avatar = prof.avatar;
+
+          // Auto-advance activeSeatIdx to next unassigned or next seat
+          const nextUnassigned = seatPlayers.findIndex((s, i) => i > activeSeatIdx && (!s.name || s.name.startsWith('Player ') || s.name.startsWith('שחקן ')));
+          if (nextUnassigned >= 0) {
+            activeSeatIdx = nextUnassigned;
+          } else {
+            activeSeatIdx = (activeSeatIdx + 1) % 4;
+          }
+
+          renderModalContent();
+        });
+      });
+
+      // Use Last Lineup button
+      const btnLastLineup = modal.querySelector('#btn-use-last-lineup');
+      if (btnLastLineup) {
+        btnLastLineup.addEventListener('click', () => {
+          const lu = ProfileManager.getLastLineup();
+          if (lu && Array.isArray(lu)) {
+            lu.forEach((p, i) => {
+              if (seatPlayers[i] && p.name) {
+                seatPlayers[i].name = p.name;
+                seatPlayers[i].color = p.color || seatPlayers[i].color;
+                seatPlayers[i].avatar = p.avatar || seatPlayers[i].avatar;
+              }
+            });
+            renderModalContent();
+          }
+        });
+      }
+
+      // Add profile shortcut
+      const btnAddProf = modal.querySelector('#btn-add-profile-from-new');
+      if (btnAddProf) {
+        btnAddProf.addEventListener('click', () => {
+          this.showCreateEditProfileModal(null, (newProf) => {
+            if (newProf) {
+              seatPlayers[activeSeatIdx].name = newProf.name;
+              seatPlayers[activeSeatIdx].color = newProf.color;
+              seatPlayers[activeSeatIdx].avatar = newProf.avatar;
+              activeSeatIdx = (activeSeatIdx + 1) % 4;
+              renderModalContent();
+            }
+          });
+        });
+      }
+
+      // Manage profiles shortcut
+      const btnManageProf = modal.querySelector('#btn-manage-profiles-from-new');
+      if (btnManageProf) {
+        btnManageProf.addEventListener('click', () => {
+          this.showProfilesModal(() => {
+            renderModalContent();
+          });
+        });
+      }
+
+      // Resume from recent games button
+      const btnRecent = modal.querySelector('#btn-open-recent-from-new');
+      if (btnRecent) {
+        btnRecent.addEventListener('click', () => {
+          closeModal();
+          this.showSavedGamesModal();
+        });
+      }
+
+      // Start Game submission
+      modal.querySelector('#btn-start-new-game').addEventListener('click', () => {
+        const isSimplified = modal.querySelector('#chk-new-game-simplified').checked;
+        const ruleKey = modal.querySelector('#new-game-rule-select').value;
+        const targetVal = modal.querySelector('#new-game-target-select').value;
+
+        const newPlayers = seatPlayers.map((s, idx) => ({
+          id: `p${idx}`,
+          name: s.name.trim() || (isHe ? `שחקן ${idx + 1}` : `Player ${idx + 1}`),
+          color: s.color,
+          avatar: s.avatar || AVATAR_OPTIONS[idx % AVATAR_OPTIONS.length]
+        }));
+
+        const initialScores = seatPlayers.map(s => parseInt(s.baselineScore, 10) || 0);
+
+        // Auto-register/update player profiles in ProfileManager
+        newPlayers.forEach(p => {
+          ProfileManager.saveProfile({
+            name: p.name,
+            color: p.color,
+            avatar: p.avatar
+          });
+        });
+        ProfileManager.saveLastLineup(newPlayers);
+
+        let maxRounds = null;
+        let targetPoints = null;
+        if (targetVal === '13_ROUNDS') maxRounds = 13;
+        else if (targetVal === '16_ROUNDS') maxRounds = 16;
+        else if (targetVal === 'TARGET_500') targetPoints = 500;
+        else if (targetVal === 'TARGET_1000') targetPoints = 1000;
+
+        this.app.startNewGame({
+          players: newPlayers,
+          rules: { ...RULE_PRESETS[ruleKey] },
+          maxRounds,
+          targetPoints,
+          simplifiedMode: isSimplified,
+          initialScores
+        });
+
+        closeModal();
+      });
+    };
+
+    renderModalContent();
+    document.body.appendChild(modal);
+  }
+
+  /**
+   * Dedicated Player Profiles & Career Roster Manager Modal
+   */
+  showProfilesModal(onCloseCallback = null) {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+
+    const render = () => {
+      const profiles = ProfileManager.getProfiles();
+
+      modal.innerHTML = `
+        <div class="modal-box" style="max-width: 500px;">
+          <div class="modal-head">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <h3 style="font-size: 1.15rem; font-weight: 800;">👥 ${t.playerProfiles}</h3>
+            </div>
+            <button class="btn-pill modal-close">✕</button>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem;">
+            <span style="font-size: 0.78rem; color: var(--text-secondary);">
+              ${profiles.length} ${t.savedProfiles}
+            </span>
+            <button type="button" class="btn-pill btn-share" id="btn-add-profile-main" style="height: 32px; font-size: 0.8rem; padding: 0 12px;">
+              ${t.addProfile}
+            </button>
+          </div>
+
+          <div class="profiles-list-container" style="display: flex; flex-direction: column; gap: 0.55rem; max-height: 52vh; overflow-y: auto; padding-right: 2px;">
+            ${profiles.map(prof => {
+              const winRate = prof.gamesPlayed > 0 ? Math.round((prof.wins / prof.gamesPlayed) * 100) : 0;
+              const zeroRate = prof.zeroBids > 0 ? Math.round((prof.zeroHits / prof.zeroBids) * 100) : 0;
+              const avgScore = prof.gamesPlayed > 0 ? Math.round(prof.totalScore / prof.gamesPlayed) : 0;
+
+              return `
+                <div class="profile-card-row" data-prof-id="${prof.id}">
+                  <div style="display: flex; align-items: center; gap: 0.65rem; flex: 1; min-width: 0;">
+                    <div class="profile-avatar-circle" style="border-color: ${prof.color}; background: ${prof.color}22;">
+                      ${prof.avatar}
+                    </div>
+                    <div style="min-width: 0; flex: 1;">
+                      <div style="font-weight: 800; font-size: 0.92rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${prof.name}
+                      </div>
+                      <div class="profile-stats-badges">
+                        <span class="stat-badge" title="${t.matchesPlayed}">${prof.gamesPlayed || 0} ${t.matchesPlayed}</span>
+                        <span class="stat-badge highlight" title="${t.winRatio}">🏆 ${winRate}%</span>
+                        ${prof.zeroBids > 0 ? `
+                          <span class="stat-badge" title="${t.zeroHitsStats}">0️⃣ ${zeroRate}%</span>
+                        ` : ''}
+                        <span class="stat-badge" title="${t.totalPoints}">⭐ ${prof.totalScore || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                    <button type="button" class="btn-pill btn-edit-prof" data-prof-id="${prof.id}" title="${t.editTitle}" style="height: 28px; padding: 0 8px; font-size: 0.72rem;">
+                      ✏️
+                    </button>
+                    <button type="button" class="btn-pill btn-delete-prof" data-prof-id="${prof.id}" title="${t.deleteProfileBtn}" style="height: 28px; padding: 0 8px; font-size: 0.72rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <button type="button" class="btn-block modal-close" style="margin-top: 1rem;">
+            ${t.close}
+          </button>
+        </div>
+      `;
+
+      bindEvents();
+    };
+
+    const bindEvents = () => {
+      const closeModal = () => {
+        modal.remove();
+        if (onCloseCallback) onCloseCallback();
+      };
+      modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+      // Add profile
+      const btnAdd = modal.querySelector('#btn-add-profile-main');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+          this.showCreateEditProfileModal(null, () => render());
+        });
+      }
+
+      // Edit profile
+      modal.querySelectorAll('.btn-edit-prof').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prof = ProfileManager.getProfile(btn.dataset.profId);
+          if (prof) {
+            this.showCreateEditProfileModal(prof, () => render());
+          }
+        });
+      });
+
+      // Delete profile
+      modal.querySelectorAll('.btn-delete-prof').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const prof = ProfileManager.getProfile(btn.dataset.profId);
+          if (prof && confirm(t.deleteProfileConfirm.replace('{name}', prof.name))) {
+            ProfileManager.deleteProfile(prof.id);
+            render();
+          }
+        });
+      });
+    };
+
+    render();
+    document.body.appendChild(modal);
+  }
+
+  /**
+   * Modal to Create or Edit a Player Profile
+   */
+  showCreateEditProfileModal(profileToEdit = null, onSaved = null) {
+    const t = this.app.i18n;
+    const isHe = t.lang === 'he';
+    const isEdit = !!profileToEdit;
+
+    let selectedAvatar = profileToEdit ? profileToEdit.avatar : AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)];
+    let selectedColor = profileToEdit ? profileToEdit.color : COLOR_OPTIONS[Math.floor(Math.random() * COLOR_OPTIONS.length)];
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '300'; // Higher than parents if called from new game
+
+    const render = () => {
+      modal.innerHTML = `
+        <div class="modal-box" style="max-width: 420px;">
+          <div class="modal-head">
+            <h3 style="font-size: 1.05rem; font-weight: 800;">
+              ${isEdit ? t.editProfileTitle : t.createProfileTitle}
+            </h3>
+            <button class="btn-pill modal-close">✕</button>
+          </div>
+
+          <!-- Avatar Preview with selected color -->
+          <div style="display: flex; justify-content: center; margin: 0.85rem 0;">
+            <div class="profile-avatar-preview" style="border-color: ${selectedColor}; background: ${selectedColor}22;">
+              ${selectedAvatar}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 0.85rem;">
+            <label style="display: block; font-size: 0.74rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+              ${t.playerName}
+            </label>
+            <input type="text" class="input-field" id="prof-modal-name" value="${profileToEdit ? profileToEdit.name : ''}" placeholder="${t.playerNamePlaceholder}" maxlength="24" autofocus style="margin-bottom: 0;" />
+          </div>
+
+          <!-- Avatar Grid -->
+          <div style="margin-bottom: 0.85rem;">
+            <label style="display: block; font-size: 0.74rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+              ${t.chooseAvatar}
+            </label>
+            <div class="emoji-picker-grid">
+              ${AVATAR_OPTIONS.map(em => `
+                <button type="button" class="emoji-option-btn ${em === selectedAvatar ? 'is-selected' : ''}" data-avatar="${em}">
+                  ${em}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Color Swatches -->
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.74rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
+              ${t.chooseColor}
+            </label>
+            <div class="color-picker-swatches">
+              ${COLOR_OPTIONS.map(c => `
+                <button type="button" class="color-swatch-btn ${c === selectedColor ? 'is-selected' : ''}" data-color="${c}" style="background: ${c};"></button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.4rem; margin-top: 1rem;">
+            <button type="button" class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+            <button type="button" class="btn-block" id="btn-save-prof-confirm" style="flex: 2;">${t.saveProfileBtn}</button>
+          </div>
+        </div>
+      `;
+
+      bind();
+    };
+
+    const bind = () => {
+      const closeModal = () => modal.remove();
+      modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+      // Avatar selection
+      modal.querySelectorAll('.emoji-option-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          selectedAvatar = b.dataset.avatar;
+          render();
+        });
+      });
+
+      // Color selection
+      modal.querySelectorAll('.color-swatch-btn').forEach(b => {
+        b.addEventListener('click', () => {
+          selectedColor = b.dataset.color;
+          render();
+        });
+      });
+
+      // Save
+      modal.querySelector('#btn-save-prof-confirm').addEventListener('click', () => {
+        const nameVal = modal.querySelector('#prof-modal-name').value.trim();
+        if (!nameVal) {
+          modal.querySelector('#prof-modal-name').focus();
+          return;
+        }
+
+        const saved = ProfileManager.saveProfile({
+          id: profileToEdit?.id,
+          name: nameVal,
+          avatar: selectedAvatar,
+          color: selectedColor
+        });
+
+        closeModal();
+        if (onSaved) onSaved(saved);
+      });
+    };
+
+    render();
+    document.body.appendChild(modal);
+  }
+
+  /**
+   * Quick Avatar & Color Picker popover for seat cards
+   */
+  showAvatarPickerModal(onChosen, currentAvatar = '🦊', currentColor = '#6366f1') {
+    const t = this.app.i18n;
+    let selAvatar = currentAvatar;
+    let selColor = currentColor;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '350';
+
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 380px;">
+        <div class="modal-head">
+          <h3 style="font-size: 1rem; font-weight: 800;">${t.chooseAvatar} & ${t.chooseColor}</h3>
+          <button class="btn-pill modal-close">✕</button>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin: 0.75rem 0;">
+          <div id="quick-avatar-preview" class="profile-avatar-preview" style="border-color: ${selColor}; background: ${selColor}22;">
+            ${selAvatar}
+          </div>
+        </div>
+
+        <div class="emoji-picker-grid" style="margin-bottom: 0.85rem;">
+          ${AVATAR_OPTIONS.map(em => `
+            <button type="button" class="emoji-option-btn ${em === selAvatar ? 'is-selected' : ''}" data-avatar="${em}">
+              ${em}
+            </button>
+          `).join('')}
+        </div>
+
+        <div class="color-picker-swatches" style="margin-bottom: 1rem;">
+          ${COLOR_OPTIONS.map(c => `
+            <button type="button" class="color-swatch-btn ${c === selColor ? 'is-selected' : ''}" data-color="${c}" style="background: ${c};"></button>
+          `).join('')}
+        </div>
+
+        <div style="display: flex; gap: 0.4rem;">
+          <button type="button" class="btn-outline modal-close" style="flex: 1;">${t.cancel}</button>
+          <button type="button" class="btn-block" id="btn-quick-avatar-apply" style="flex: 2;">${t.done}</button>
+        </div>
+      </div>
+    `;
+
+    const closeModal = () => modal.remove();
+    modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
+
+    modal.querySelectorAll('.emoji-option-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        selAvatar = b.dataset.avatar;
+        modal.querySelectorAll('.emoji-option-btn').forEach(x => x.classList.toggle('is-selected', x === b));
+        const prev = modal.querySelector('#quick-avatar-preview');
+        if (prev) prev.textContent = selAvatar;
+      });
     });
+
+    modal.querySelectorAll('.color-swatch-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        selColor = b.dataset.color;
+        modal.querySelectorAll('.color-swatch-btn').forEach(x => x.classList.toggle('is-selected', x === b));
+        const prev = modal.querySelector('#quick-avatar-preview');
+        if (prev) {
+          prev.style.borderColor = selColor;
+          prev.style.background = `${selColor}22`;
+        }
+      });
+    });
+
+    modal.querySelector('#btn-quick-avatar-apply').addEventListener('click', () => {
+      closeModal();
+      if (onChosen) onChosen(selAvatar, selColor);
+    });
+
+    document.body.appendChild(modal);
   }
 
   showStatsModal() {

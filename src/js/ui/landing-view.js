@@ -2,6 +2,7 @@
  * Israeli Whist - Mobile-First Landing Page / Lobby with i18n
  */
 import { ArchiveManager } from '../engine/archive-manager.js';
+import { ProfileManager } from '../engine/profile-manager.js';
 
 export class LandingView {
   constructor(app, container) {
@@ -14,6 +15,7 @@ export class LandingView {
     const t = this.app.i18n;
     const isHe = t.lang === 'he';
     const recentGames = ArchiveManager.getRecentGames();
+    const profiles = ProfileManager.getProfiles();
 
     let html = `
       <div class="landing-hero">
@@ -25,16 +27,37 @@ export class LandingView {
 
         <div class="landing-actions">
           <button class="btn-block btn-hero-start" id="landing-btn-new-game">
-            ${t.startNewMatch}
+            🎲 ${t.startNewMatch}
+          </button>
+
+          <button class="btn-outline" id="landing-btn-profiles" style="margin-top: 0.5rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; border-color: rgba(99, 102, 241, 0.4); color: #c7d2fe; height: 40px; font-size: 0.85rem;">
+            👥 ${t.playerProfiles}
           </button>
           
-          <div class="join-box">
+          <div class="join-box" style="margin-top: 0.5rem;">
             <input type="text" class="input-field join-input" id="landing-txt-room" placeholder="${t.roomCodePlaceholder}" maxlength="12" />
             <button class="btn-pill btn-share" id="landing-btn-join" style="height: 42px; padding: 0 16px; font-size: 0.85rem;">
               ${t.joinRoom}
             </button>
           </div>
         </div>
+
+        ${profiles.length > 0 ? `
+          <div style="margin-top: 0.85rem; padding: 0.55rem 0.75rem; background: rgba(0,0,0,0.25); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.45rem; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0;">
+              ${profiles.slice(0, 6).map(p => `
+                <span style="display: inline-flex; align-items: center; gap: 3px; font-size: 0.76rem; background: rgba(255,255,255,0.06); padding: 3px 7px; border-radius: var(--radius-full); white-space: nowrap;">
+                  <span>${p.avatar}</span>
+                  <span style="font-weight: 600; color: var(--text-primary);">${p.name}</span>
+                </span>
+              `).join('')}
+              ${profiles.length > 6 ? `<span style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">+${profiles.length - 6}</span>` : ''}
+            </div>
+            <button class="btn-pill" id="landing-btn-quick-manage-profiles" title="${t.playerProfiles}" style="font-size: 0.72rem; height: 26px; padding: 0 8px; flex-shrink: 0;">
+              ⚙️
+            </button>
+          </div>
+        ` : ''}
       </div>
 
       <!-- Recent Saved Games Section -->
@@ -141,6 +164,20 @@ export class LandingView {
     if (btnNew) {
       btnNew.addEventListener('click', () => {
         this.app.dialogs.showNewGameModal();
+      });
+    }
+
+    const btnProfiles = this.container.querySelector('#landing-btn-profiles');
+    if (btnProfiles) {
+      btnProfiles.addEventListener('click', () => {
+        this.app.dialogs.showProfilesModal(() => this.render());
+      });
+    }
+
+    const btnQuickProfiles = this.container.querySelector('#landing-btn-quick-manage-profiles');
+    if (btnQuickProfiles) {
+      btnQuickProfiles.addEventListener('click', () => {
+        this.app.dialogs.showProfilesModal(() => this.render());
       });
     }
 

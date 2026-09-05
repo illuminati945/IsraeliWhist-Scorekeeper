@@ -154,6 +154,35 @@ export const HE = {
   deleteDeal: 'מחק סיבוב',
   deleteDealConfirm: 'האם למחוק את סיבוב #{num}? כל התוצאות הבאות יחושבו מחדש.',
 
+  // Player Profiles & Easy Picking
+  playerProfiles: 'פרופילי שחקנים',
+  savedProfiles: 'שחקנים שמורים',
+  quickPick: 'בחירה מהירה של שחקנים',
+  quickPickSub: 'לחץ על כיסא למעלה ואז בחר שחקן שמור מהרשימה.',
+  seat1: 'כיסא 1',
+  seat2: 'כיסא 2',
+  seat3: 'כיסא 3',
+  seat4: 'כיסא 4',
+  useLastLineup: '⚡ הרכב משחק קודם',
+  addProfile: '+ שחקן חדש',
+  createProfileTitle: 'יצירת פרופיל שחקן',
+  editProfileTitle: 'עריכת פרופיל שחקן',
+  playerName: 'שם השחקן',
+  playerNamePlaceholder: 'לדוגמה: עומר',
+  chooseAvatar: 'בחר אווטאר / אימוג׳י',
+  chooseColor: 'צבע שחקן',
+  saveProfileBtn: 'שמור פרופיל ✓',
+  deleteProfileBtn: 'מחק פרופיל',
+  deleteProfileConfirm: 'האם למחוק את הפרופיל של {name}?',
+  careerStats: 'סטטיסטיקת קריירה',
+  matchesPlayed: 'משחקים',
+  winRatio: 'אחוז ניצחונות',
+  totalPoints: 'סך נקודות',
+  zeroHitsStats: 'הצלחה באפס (0)',
+  manageProfilesMenu: '👥 פרופילי שחקנים ונבחרת',
+  manageProfilesDesc: 'שחקנים שמורים, אווטארים וסטטיסטיקת קריירה',
+
   // Language Switch
   switchLang: 'English'
 };
+

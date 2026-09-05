@@ -4,6 +4,7 @@
 import { GameSession } from './engine/game-state.js';
 import { SyncManager } from './engine/sync-manager.js';
 import { ArchiveManager } from './engine/archive-manager.js';
+import { ProfileManager } from './engine/profile-manager.js';
 import { LandingView } from './ui/landing-view.js';
 import { RoundView } from './ui/round-view.js';
 import { Scoreboard } from './ui/scoreboard.js';
@@ -178,6 +179,9 @@ class IsraeliWhistApp {
       this.roundContainer, 
       this.i18n,
       () => {
+        if (this.session.status === 'FINISHED') {
+          ProfileManager.recordGameCompletion(this.session);
+        }
         this.scoreboard.render();
         this.chartView.render();
       }
@@ -275,8 +279,11 @@ class IsraeliWhistApp {
   }
 
   startNewGame(options = {}) {
-    // 1. Archive current active game before switching
+    // 1. Archive current active game & update career stats if rounds were played
     if (this.session) {
+      if (this.session.completedRounds && this.session.completedRounds.length > 0) {
+        ProfileManager.recordGameCompletion(this.session);
+      }
       this.archiveCurrentGame();
     }
 
