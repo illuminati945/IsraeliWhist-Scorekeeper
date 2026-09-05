@@ -2,7 +2,12 @@
 
 This document serves as the persistent memory and operational guide for the Israeli Whist Scorekeeper project. It documents core rules, architecture, user directives, critical bug fixes, and maintenance procedures so any agent can immediately resume work without losing context.
 
+> 📌 **MANDATORY INSTRUCTION: CONTINUOUS DOCUMENTATION UPDATES**
+> Any agent working on this repository **MUST ALWAYS** proactively update both `AGENTS.md` and `agent.md` with every new instruction, user directive, architectural decision, and feature change.
+> Both files must remain 100% in sync at all times. Never leave newly requested workflows, rules, or environment changes undocumented.
+
 ---
+
 
 ## 1. 🎴 Core Game Rules & Scoring Engine
 
@@ -136,6 +141,13 @@ This document serves as the persistent memory and operational guide for the Isra
 * **Systemd Services**:
   - Prod service: `sudo systemctl status israeli-whist.service` / `sudo systemctl restart israeli-whist.service`
   - Dev service: `sudo systemctl status israeli-whist-dev.service` / `sudo systemctl restart israeli-whist-dev.service`
+
+* **Strict Policy: No "Enhanced" Concept in Israeli Whist**:
+  - **CRITICAL USER DIRECTIVE**: The whole "Enhanced" concept (including `enhanced` branches, `IsraeliWhistEnhanced.json`, and `-Enhanced.ipa` suffixes) was only relevant for the separate **Nuvio** application.
+  - **DO NOT** use or introduce `enhanced` in this codebase.
+  - Branches are strictly `main` (production) and `dev` (development).
+  - SideStore source manifest is strictly `IsraeliWhist.json` and builds produce `IsraeliWhist-v<VERSION>.ipa`.
+
 
 
 ---

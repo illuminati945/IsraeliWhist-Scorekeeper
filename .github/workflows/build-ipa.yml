@@ -3,14 +3,6 @@ name: Build IPA (iOS & LiveContainer)
 on:
   workflow_dispatch:
     inputs:
-      mode:
-        description: 'Build mode'
-        required: true
-        type: choice
-        options:
-          - enhanced
-          - standard
-        default: enhanced
       description:
         description: 'Run description'
         required: false
@@ -38,9 +30,8 @@ jobs:
       - name: Run Engine Tests
         run: node test-engine.js
 
-      - name: Set artifact suffix & Version
+      - name: Set Version
         run: |
-          echo "BUILD_SUFFIX=Enhanced" >> $GITHUB_ENV
           VERSION="1.0.0"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
@@ -51,7 +42,7 @@ jobs:
           # Copy app bundle into Payload directory
           cp -r src build/Payload/IsraeliWhist.app 2>/dev/null || mkdir -p build/Payload/IsraeliWhist.app
           cd build
-          IPA_NAME="IsraeliWhist-v${VERSION}-${BUILD_SUFFIX}.ipa"
+          IPA_NAME="IsraeliWhist-v${VERSION}.ipa"
           zip -q -r "$IPA_NAME" Payload
           echo "IPA_NAME=$IPA_NAME" >> $GITHUB_ENV
           echo "ipa_path=build/${IPA_NAME}" >> $GITHUB_OUTPUT
@@ -60,7 +51,7 @@ jobs:
       - name: Upload iOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: IsraeliWhist-iOS-${{ env.BUILD_SUFFIX }}
+          name: IsraeliWhist-iOS
           path: build/${{ env.IPA_NAME }}
 
       - name: Publish Release to GitHub
@@ -85,48 +76,44 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.package.outputs.version }}
           IPA_NAME: ${{ env.IPA_NAME }}
-          BUILD_SUFFIX: ${{ env.BUILD_SUFFIX }}
         run: |
           python3 - << 'PYEOF'
           import json, os, datetime
 
           version = os.environ.get('VERSION', '1.0.0')
-          ipa_name = os.environ.get('IPA_NAME', 'IsraeliWhist-v1.0.0-Enhanced.ipa')
-          suffix = os.environ.get('BUILD_SUFFIX', 'Enhanced')
+          ipa_name = os.environ.get('IPA_NAME', 'IsraeliWhist-v1.0.0.ipa')
           repo = os.environ.get('GITHUB_REPOSITORY', 'illuminati945/IsraeliWhist-Scorekeeper')
 
           json_file = "IsraeliWhist.json"
-          enhanced_file = "IsraeliWhistEnhanced.json"
           ipa_path = f"build/{ipa_name}"
           size = os.path.getsize(ipa_path) if os.path.exists(ipa_path) else 18500000
 
           download_url = f"https://github.com/{repo}/releases/download/v{version}/{ipa_name}"
           now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-          for target in [json_file, enhanced_file]:
-              if os.path.exists(target):
-                  with open(target, 'r', encoding='utf-8') as f:
-                      data = json.load(f)
-                  if data.get("apps") and len(data["apps"]) > 0:
-                      app = data["apps"][0]
-                      ver_entry = {
-                          "version": version,
-                          "buildVersion": "1",
-                          "date": now_iso,
-                          "localizedDescription": f"# 🃏 Israeli Whist {suffix} v{version}\n\n- Exact bidding scoring engine (+10 + Bid² / progressive penalty / Pass bonus 50)\n- Real-time Dealer Hook Rule indicator and forbidden bet detection\n- Live round progression and interactive trick allocation\n- Hebrew RTL and English bilingual interface\n- SideStore, LiveContainer & AltStore full compatibility",
-                          "downloadURL": download_url,
-                          "size": size,
-                          "minOSVersion": "16.0"
-                      }
-                      app["versions"] = [ver_entry]
-                  with open(target, 'w', encoding='utf-8') as f:
-                      json.dump(data, f, indent=2)
-                  print(f"Updated {target} with size {size}")
+          if os.path.exists(json_file):
+              with open(json_file, 'r', encoding='utf-8') as f:
+                  data = json.load(f)
+              if data.get("apps") and len(data["apps"]) > 0:
+                  app = data["apps"][0]
+                  ver_entry = {
+                      "version": version,
+                      "buildVersion": "1",
+                      "date": now_iso,
+                      "localizedDescription": f"# 🃏 Israeli Whist v{version}\n\n- Exact bidding scoring engine (+10 + Bid² / progressive penalty / Pass bonus 50)\n- Real-time Dealer Hook Rule indicator and forbidden bet detection\n- Live round progression and interactive trick allocation\n- Hebrew RTL and English bilingual interface\n- SideStore, LiveContainer & AltStore full compatibility",
+                      "downloadURL": download_url,
+                      "size": size,
+                      "minOSVersion": "16.0"
+                  }
+                  app["versions"] = [ver_entry]
+              with open(json_file, 'w', encoding='utf-8') as f:
+                  json.dump(data, f, indent=2)
+              print(f"Updated {json_file} with size {size}")
           PYEOF
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add IsraeliWhist.json IsraeliWhistEnhanced.json
+          git add IsraeliWhist.json
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update SideStore metadata for v${VERSION} [skip ci]" && git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && git push origin "${GITHUB_REF_NAME}")
 
       - name: Send Discord Release Notification

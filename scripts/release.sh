@@ -31,14 +31,14 @@ fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 node -e "
 const fs = require('fs');
 const nowIso = new Date().toISOString();
-for (const file of ['IsraeliWhist.json', 'IsraeliWhistEnhanced.json']) {
+for (const file of ['IsraeliWhist.json']) {
   if (fs.existsSync(file)) {
     const data = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (data.apps && data.apps[0]) {
       const app = data.apps[0];
       app.version = '$VERSION';
       app.versionDate = nowIso;
-      app.downloadURL = 'https://github.com/$REPO/releases/download/$TAG/IsraeliWhist-$TAG-Enhanced.ipa';
+      app.downloadURL = 'https://github.com/$REPO/releases/download/$TAG/IsraeliWhist-$TAG.ipa';
       if (app.versions && app.versions[0]) {
         app.versions[0].version = '$VERSION';
         app.versions[0].date = nowIso;
