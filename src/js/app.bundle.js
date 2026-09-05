@@ -589,10 +589,6 @@ var U={STANDARD:{id:"STANDARD",nameEn:"Standard Israeli Whist (Quadratic)",nameH
 
           <!-- Circular Seating Table 2x2 Grid -->
           <div class="table-seating-container">
-            <div class="table-center-emblem">
-              \u2660 \u2665<br>\u2666 \u2663
-            </div>
-
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${i.players.map((r,o)=>{let d=l(o);return`
                   <div class="player-card seat-swap-card ${d?"is-dealer":""}" 
@@ -798,10 +794,6 @@ var U={STANDARD:{id:"STANDARD",nameEn:"Standard Israeli Whist (Quadratic)",nameH
 
           <!-- Circular Seating Table 2x2 Grid with Drag & Drop Physics -->
           <div class="table-seating-container">
-            <div class="table-center-emblem">
-              \u2660 \u2665<br>\u2666 \u2663
-            </div>
-
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${[0,1,2,3].map(u=>{let p=l[u],b=!!(p&&p.name),S=u===0,v=r===u,h="player-card seat-card-interactive";return b?h+=" is-filled":h+=" is-placeholder",v&&(h+=" is-active-target"),`
                   <div class="${h}" data-player-idx="${u}" data-seat-idx="${u}" title="${b?e.dragToSwapSeats:s?"\u05DC\u05D7\u05E5 \u05DC\u05D1\u05D7\u05D9\u05E8\u05EA \u05E9\u05D7\u05E7\u05DF":"Tap to assign player"}">

@@ -185,8 +185,7 @@ This document serves as the persistent memory and operational guide for the Isra
   * **Damped Physics Tilt**: Tilt angle dynamically responds to horizontal drag velocity (`Math.max(-10, Math.min(10, vx * 0.45))`) with smooth spring interpolation in a RAF loop.
   * **Live Real-Time Displacement**: Hovering over another seat smoothly shifts that seat card into the source card's slot in real-time, giving instant physical preview of the swap.
   * **FLIP Snapping Drop**: Releasing over a target seat triggers a smooth FLIP drop transition (`is-dropping`, `translate3d(...) scale(1.0)`), haptic feedback, and updates the lineup.
-  * **Roster Chip Drag-to-Seat**: Dragging an unassigned player chip from below directly onto any seat drops the player into that seat with a floating ghost pill and target seat illumination.
-  * **Rotation Removed**: Table rotation buttons removed per user preference; center table emblem displays classic Whist suits (`♠ ♥ ♦ ♣`).
+  * **Rotation & Center Circle Removed**: Table rotation buttons and the center circular emblem (`.table-center-emblem`) were completely removed per user directives to keep the 2x2 circular seating layout completely clean, open, and unobstructed during drag-and-drop.
   * Tapping the `✕` on any seat clears that player back to an empty placeholder.
 * **⚡ "Use Last Lineup" & Fast Assignment**:
   * Restores the exact 4-player arrangement from the previous match in one tap.

@@ -557,10 +557,6 @@ export class Dialogs {
 
           <!-- Circular Seating Table 2x2 Grid -->
           <div class="table-seating-container">
-            <div class="table-center-emblem">
-              ♠ ♥<br>♦ ♣
-            </div>
-
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${session.players.map((p, idx) => {
                 const isDeal = isDealer(idx);
@@ -947,10 +943,6 @@ export class Dialogs {
 
           <!-- Circular Seating Table 2x2 Grid with Drag & Drop Physics -->
           <div class="table-seating-container">
-            <div class="table-center-emblem">
-              ♠ ♥<br>♦ ♣
-            </div>
-
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${[0, 1, 2, 3].map(idx => {
                 const player = seatPlayers[idx];
