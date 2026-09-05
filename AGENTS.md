@@ -179,16 +179,20 @@ This document serves as the persistent memory and operational guide for the Isra
 * **Placeholder Seats**:
   - When no players have been chosen yet, all 4 seat cards render clean placeholder slots (`+ Choose Player` / `+ בחר שחקן`) with dashed outlines and `+` avatars.
   - Active target seat is highlighted in indigo (`.is-active-target`), indicating where the next chosen player will sit.
-* **Moving Players Around by Default (NO Jiggle Mode)**:
-  - Tapping any filled seat selects it for swapping (highlighted with a glowing golden border: `.is-swap-selected`).
-  - Tapping any second seat immediately swaps the two players between those seats with zero delay and NO jiggle mode!
-  - 1-tap table rotation controls (`↺ Rotate CCW` and `↻ Rotate CW`) directly shift all 4 players clockwise or counter-clockwise around the table.
-  - Tapping the `✕` on any seat clears that player back to an empty placeholder.
+* **Natural Drag & Drop Physics (Direct Swapping & Displacement)**:
+  * **User Directive**: Discarded "select and switch" two-tap mode and rotation buttons in favor of natural drag-and-drop physics.
+  * Grabbing any seat card and moving > 5px immediately lifts it into drag mode (`is-lifted`, `scale(1.12)`, dynamic z-index 500, deep shadow).
+  * **Damped Physics Tilt**: Tilt angle dynamically responds to horizontal drag velocity (`Math.max(-10, Math.min(10, vx * 0.45))`) with smooth spring interpolation in a RAF loop.
+  * **Live Real-Time Displacement**: Hovering over another seat smoothly shifts that seat card into the source card's slot in real-time, giving instant physical preview of the swap.
+  * **FLIP Snapping Drop**: Releasing over a target seat triggers a smooth FLIP drop transition (`is-dropping`, `translate3d(...) scale(1.0)`), haptic feedback, and updates the lineup.
+  * **Roster Chip Drag-to-Seat**: Dragging an unassigned player chip from below directly onto any seat drops the player into that seat with a floating ghost pill and target seat illumination.
+  * **Rotation Removed**: Table rotation buttons removed per user preference; center table emblem displays classic Whist suits (`♠ ♥ ♦ ♣`).
+  * Tapping the `✕` on any seat clears that player back to an empty placeholder.
 * **⚡ "Use Last Lineup" & Fast Assignment**:
-  - Restores the exact 4-player arrangement from the previous match in one tap.
-  - Tapping an unassigned profile chip in the roster assigns them to the target seat and auto-advances to the next empty seat slot.
-  - "Clear All" (`🗑️`) button resets all 4 seats back to placeholders.
-  - Inline profile creation button opens `showCreateEditProfileModal()` and places the new player into the active seat.
+  * Restores the exact 4-player arrangement from the previous match in one tap.
+  * Tapping an unassigned profile chip in the roster assigns them to the target seat and auto-advances to the next empty seat slot.
+  * "Clear All" (`🗑️`) button resets all 4 seats back to placeholders.
+  * Inline profile creation button opens `showCreateEditProfileModal()` and places the new player into the active seat.
 
 ### C. Dedicated Roster & Career Statistics Modal (`showProfilesModal`)
 * Accessible from:

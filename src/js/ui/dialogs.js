@@ -177,10 +177,367 @@ export class Dialogs {
     });
   }
 
+  /**
+   * Helper: Attaches smooth physics-driven drag-and-drop to circular table seating cards
+   */
+  attachSeatingDragDrop({ grid, getCards, onSwap, onTap }) {
+    if (!grid) return;
+    let isAnyDragging = false;
+
+    const triggerHaptic = (pattern = 25) => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    };
+
+    const cards = getCards();
+    cards.forEach((card) => {
+      let startX = 0;
+      let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
+      let lastX = 0;
+      let currentTilt = 0;
+      let targetTilt = 0;
+      let isThisDragging = false;
+      let fromSlotIndex = null;
+      let currentHoverSlot = null;
+      let initialSlotRects = [];
+      let rafId = null;
+      let activePointerId = null;
+
+      const computeSlotPositions = () => {
+        const all = getCards();
+        return all.map(c => {
+          const r = c.getBoundingClientRect();
+          return {
+            left: r.left,
+            top: r.top,
+            width: r.width,
+            height: r.height,
+            centerX: r.left + r.width / 2,
+            centerY: r.top + r.height / 2
+          };
+        });
+      };
+
+      const applyLiveSlotShifts = (hoveredSlot) => {
+        const all = getCards();
+        all.forEach((c, sIdx) => {
+          if (sIdx === fromSlotIndex) return;
+
+          if (hoveredSlot !== null && sIdx === hoveredSlot && hoveredSlot !== fromSlotIndex) {
+            const fromRect = initialSlotRects[fromSlotIndex];
+            const targetRect = initialSlotRects[hoveredSlot];
+            if (fromRect && targetRect) {
+              const dx = fromRect.left - targetRect.left;
+              const dy = fromRect.top - targetRect.top;
+              c.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+              c.classList.add('is-hovered-target');
+            }
+          } else {
+            c.style.transform = '';
+            c.classList.remove('is-hovered-target');
+          }
+        });
+      };
+
+      const resetCardShifts = () => {
+        const all = getCards();
+        all.forEach(c => {
+          c.style.transform = '';
+          c.style.zIndex = '';
+          c.classList.remove('is-hovered-target');
+        });
+      };
+
+      const updateDragLoop = () => {
+        if (!isThisDragging) return;
+
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+
+        // Damped physics tilt
+        currentTilt += (targetTilt - currentTilt) * 0.2;
+        card.style.transform = `translate3d(${dx}px, ${dy - 8}px, 0) scale(1.12) rotate(${currentTilt.toFixed(2)}deg)`;
+
+        // Center coordinates of the dragged card
+        const originRect = initialSlotRects[fromSlotIndex];
+        const cardCenterX = originRect.centerX + dx;
+        const cardCenterY = originRect.centerY + dy;
+
+        let bestSlot = currentHoverSlot;
+        let minScore = Infinity;
+
+        initialSlotRects.forEach((rect, sIdx) => {
+          const dist = Math.hypot(cardCenterX - rect.centerX, cardCenterY - rect.centerY);
+          const bias = (sIdx === currentHoverSlot) ? 0.75 : 1.0;
+          const score = dist * bias;
+          if (score < minScore) {
+            minScore = score;
+            bestSlot = sIdx;
+          }
+        });
+
+        if (bestSlot !== currentHoverSlot) {
+          currentHoverSlot = bestSlot;
+          triggerHaptic(18);
+          applyLiveSlotShifts(currentHoverSlot);
+        }
+
+        rafId = requestAnimationFrame(updateDragLoop);
+      };
+
+      const onPointerMove = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        if (!isThisDragging) {
+          const dist = Math.hypot(clientX - startX, clientY - startY);
+          if (dist > 5) {
+            if (isAnyDragging) return;
+            isAnyDragging = true;
+            isThisDragging = true;
+            fromSlotIndex = parseInt(card.dataset.seatIdx, 10);
+            currentHoverSlot = fromSlotIndex;
+            initialSlotRects = computeSlotPositions();
+
+            card.classList.add('is-lifted');
+            card.style.zIndex = '500';
+            triggerHaptic([30, 40]);
+
+            currentX = clientX;
+            currentY = clientY;
+            lastX = clientX;
+            currentTilt = 0;
+            targetTilt = 0;
+
+            rafId = requestAnimationFrame(updateDragLoop);
+          }
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        currentX = clientX;
+        currentY = clientY;
+
+        const vx = clientX - lastX;
+        lastX = clientX;
+        targetTilt = Math.max(-10, Math.min(10, vx * 0.45));
+      };
+
+      const onPointerUp = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+        activePointerId = null;
+
+        if (rafId) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        if (isThisDragging) {
+          isThisDragging = false;
+          isAnyDragging = false;
+
+          const targetSlot = currentHoverSlot;
+          const originRect = initialSlotRects[fromSlotIndex];
+          const targetRect = initialSlotRects[targetSlot];
+
+          if (originRect && targetRect && fromSlotIndex !== targetSlot) {
+            const dropDx = targetRect.left - originRect.left;
+            const dropDy = targetRect.top - originRect.top;
+
+            card.classList.add('is-dropping');
+            card.style.transform = `translate3d(${dropDx}px, ${dropDy}px, 0) scale(1.0) rotate(0deg)`;
+            triggerHaptic(35);
+
+            setTimeout(() => {
+              card.classList.remove('is-lifted', 'is-dropping');
+              resetCardShifts();
+              onSwap(fromSlotIndex, targetSlot);
+            }, 240);
+          } else {
+            // Snap back
+            card.classList.add('is-dropping');
+            card.style.transform = `translate3d(0, 0, 0) scale(1.0) rotate(0deg)`;
+            setTimeout(() => {
+              card.classList.remove('is-lifted', 'is-dropping');
+              resetCardShifts();
+            }, 220);
+          }
+        } else {
+          if (onTap) {
+            onTap(parseInt(card.dataset.seatIdx, 10), e);
+          }
+        }
+      };
+
+      const onPointerDown = (e) => {
+        if (e.target.closest('.btn-clear-seat')) return;
+        if (isAnyDragging) return;
+
+        activePointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        currentX = e.clientX;
+        currentY = e.clientY;
+        lastX = e.clientX;
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+      };
+
+      card.addEventListener('pointerdown', onPointerDown);
+      card.addEventListener('contextmenu', (e) => e.preventDefault());
+    });
+  }
+
+  /**
+   * Helper: Attaches drag-and-drop from unassigned roster chips onto table seats
+   */
+  attachRosterChipDragDrop({ rosterContainer, getSeatCards, onAssignToSeat }) {
+    if (!rosterContainer) return;
+
+    const triggerHaptic = (pattern = 25) => {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate(pattern); } catch (e) {}
+      }
+    };
+
+    const chips = rosterContainer.querySelectorAll('.profile-chip');
+    chips.forEach(chip => {
+      let startX = 0;
+      let startY = 0;
+      let isChipDragging = false;
+      let ghost = null;
+      let activePointerId = null;
+      let hoveredSeatIdx = null;
+
+      const getSeatPositions = () => {
+        const seatCards = getSeatCards();
+        return seatCards.map(c => {
+          const r = c.getBoundingClientRect();
+          return {
+            idx: parseInt(c.dataset.seatIdx, 10),
+            left: r.left,
+            top: r.top,
+            right: r.right,
+            bottom: r.bottom,
+            card: c
+          };
+        });
+      };
+
+      let seatRects = [];
+
+      const onPointerMove = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        if (!isChipDragging) {
+          const dist = Math.hypot(clientX - startX, clientY - startY);
+          if (dist > 8) {
+            isChipDragging = true;
+            seatRects = getSeatPositions();
+            triggerHaptic([25, 35]);
+
+            ghost = chip.cloneNode(true);
+            ghost.className = 'profile-chip ghost-chip-drag';
+            ghost.style.position = 'fixed';
+            ghost.style.left = `${clientX}px`;
+            ghost.style.top = `${clientY}px`;
+            ghost.style.zIndex = '1000';
+            ghost.style.pointerEvents = 'none';
+            document.body.appendChild(ghost);
+            chip.style.opacity = '0.35';
+          }
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (ghost) {
+          ghost.style.left = `${clientX}px`;
+          ghost.style.top = `${clientY}px`;
+        }
+
+        let matchedSeat = null;
+        for (const s of seatRects) {
+          if (clientX >= s.left && clientX <= s.right && clientY >= s.top && clientY <= s.bottom) {
+            matchedSeat = s.idx;
+            break;
+          }
+        }
+
+        if (matchedSeat !== hoveredSeatIdx) {
+          hoveredSeatIdx = matchedSeat;
+          seatRects.forEach(s => {
+            if (s.idx === hoveredSeatIdx) {
+              s.card.classList.add('is-hovered-target');
+              triggerHaptic(15);
+            } else {
+              s.card.classList.remove('is-hovered-target');
+            }
+          });
+        }
+      };
+
+      const onPointerUp = (e) => {
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
+        activePointerId = null;
+
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointercancel', onPointerUp);
+
+        seatRects.forEach(s => s.card.classList.remove('is-hovered-target'));
+
+        if (isChipDragging) {
+          isChipDragging = false;
+          chip.style.opacity = '';
+          if (ghost) {
+            ghost.remove();
+            ghost = null;
+          }
+
+          if (hoveredSeatIdx !== null) {
+            triggerHaptic(35);
+            const profId = chip.dataset.profId;
+            onAssignToSeat(profId, hoveredSeatIdx);
+          }
+        }
+      };
+
+      const onPointerDown = (e) => {
+        activePointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        window.addEventListener('pointermove', onPointerMove, { passive: false });
+        window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('pointercancel', onPointerUp);
+      };
+
+      chip.addEventListener('pointerdown', onPointerDown);
+    });
+  }
+
   showReorganizeSeatingModal(initialSelectedPlayerIdx = null) {
     const t = this.app.i18n;
+    const isHe = t.lang === 'he';
     const session = this.app.session;
-    let selectedIdx = initialSelectedPlayerIdx !== null ? initialSelectedPlayerIdx : null;
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -199,31 +556,33 @@ export class Dialogs {
           </div>
 
           <!-- Circular Seating Table 2x2 Grid -->
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1rem 0.75rem; margin: 0.75rem 0; position: relative;">
-            
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #a5b4fc; text-align: center; pointer-events: none;">
-              TABLE<br>↻
+          <div class="table-seating-container">
+            <div class="table-center-emblem">
+              ♠ ♥<br>♦ ♣
             </div>
 
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
               ${session.players.map((p, idx) => {
-                const isSel = selectedIdx === idx;
                 const isDeal = isDealer(idx);
 
                 return `
-                  <div class="player-card seat-swap-card ${isSel ? 'seat-selected' : ''} ${isDeal ? 'is-dealer' : ''}" 
+                  <div class="player-card seat-swap-card ${isDeal ? 'is-dealer' : ''}" 
                        data-seat-idx="${idx}" 
-                       style="cursor: pointer; transition: all 0.18s ease; ${isSel ? 'border: 2px solid #fbbf24; background: rgba(251, 191, 36, 0.15); transform: scale(1.04);' : ''}">
+                       title="${t.dragToReorder}">
                     ${isDeal ? `<span class="tag-dealer">${t.dealer.toUpperCase()}</span>` : ''}
-                    <div style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; margin-bottom: 2px;">
-                      ${t.seatNumber} #${idx + 1}
+                    <div class="seat-top-row">
+                      <span>${t.seatNumber} #${idx + 1}</span>
                     </div>
-                    <div class="player-title" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-                      <span class="player-dot" style="background: ${p.color}; width: 9px; height: 9px;"></span>
-                      <span>${p.name}</span>
+                    <div style="margin: 2px 0;">
+                      <div class="seat-avatar-bubble" style="border-color: ${p.color}; background: ${p.color}24;">
+                        ${p.avatar || '👤'}
+                      </div>
                     </div>
-                    <div style="font-size: 0.72rem; color: ${isSel ? '#fde68a' : 'var(--accent-primary)'}; font-weight: 700; margin-top: 4px;">
-                      ${isSel ? '✓ Selected' : 'Tap to Swap'}
+                    <div class="seat-player-name">
+                      ${p.name}
+                    </div>
+                    <div class="seat-action-hint" style="color: var(--accent-primary);">
+                      ${isHe ? 'גרור להחלפה' : 'Drag to swap'}
                     </div>
                   </div>
                 `;
@@ -233,17 +592,7 @@ export class Dialogs {
 
           <!-- Swap Hint Banner -->
           <div style="background: rgba(99, 102, 241, 0.12); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.75rem; text-align: center; color: #c7d2fe; margin-bottom: 0.85rem;">
-            ${selectedIdx !== null ? `${t.tapToSwap} <strong>${session.players[selectedIdx].name}</strong>` : t.swapSeatsHint}
-          </div>
-
-          <!-- 1-Tap Table Rotation Controls -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin-bottom: 0.85rem;">
-            <button class="btn-outline" id="btn-rot-ccw" style="font-size: 0.78rem; min-height: 38px;">
-              ${t.rotateCounterClockwise}
-            </button>
-            <button class="btn-outline" id="btn-rot-cw" style="font-size: 0.78rem; min-height: 38px;">
-              ${t.rotateClockwise}
-            </button>
+            ✋ ${isHe ? 'גרור כרטיס שחקן לכיסא אחר כדי להחליף מקום' : 'Drag any player card onto another seat to swap'}
           </div>
 
           <button class="btn-block modal-close">
@@ -254,47 +603,14 @@ export class Dialogs {
 
       modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', () => modal.remove()));
 
-      modal.querySelectorAll('.seat-swap-card').forEach(card => {
-        card.addEventListener('click', () => {
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(15); } catch(e) {}
-          }
-          const idx = parseInt(card.dataset.seatIdx, 10);
-          if (selectedIdx === null) {
-            selectedIdx = idx;
-            renderContent();
-          } else if (selectedIdx === idx) {
-            selectedIdx = null;
-            renderContent();
-          } else {
-            session.swapPlayers(selectedIdx, idx);
-            selectedIdx = null;
-            renderContent();
-          }
-        });
+      this.attachSeatingDragDrop({
+        grid: modal.querySelector('.seating-modal-grid'),
+        getCards: () => Array.from(modal.querySelectorAll('.seat-swap-card')),
+        onSwap: (fromIdx, toIdx) => {
+          session.swapPlayers(fromIdx, toIdx);
+          renderContent();
+        }
       });
-
-      const btnCw = modal.querySelector('#btn-rot-cw');
-      if (btnCw) {
-        btnCw.addEventListener('click', () => {
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(15); } catch(e) {}
-          }
-          session.rotateSeatingClockwise();
-          renderContent();
-        });
-      }
-
-      const btnCcw = modal.querySelector('#btn-rot-ccw');
-      if (btnCcw) {
-        btnCcw.addEventListener('click', () => {
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(15); } catch(e) {}
-          }
-          session.rotateSeatingCounterClockwise();
-          renderContent();
-        });
-      }
     };
 
     renderContent();
@@ -612,7 +928,6 @@ export class Dialogs {
     let seatPlayers = [null, null, null, null];
 
     let activeTargetSeatIdx = 0; // Where next chosen player lands
-    let selectedSwapIdx = null;  // For 1-tap seat swapping with NO jiggle
 
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
@@ -630,10 +945,10 @@ export class Dialogs {
             <button class="btn-pill modal-close">✕</button>
           </div>
 
-          <!-- Circular Seating Table 2x2 Grid (Reused Seating UI) -->
+          <!-- Circular Seating Table 2x2 Grid with Drag & Drop Physics -->
           <div class="table-seating-container">
             <div class="table-center-emblem">
-              ${isHe ? 'שולחן<br>↻' : 'TABLE<br>↻'}
+              ♠ ♥<br>♦ ♣
             </div>
 
             <div class="leaderboard-grid seating-modal-grid" style="margin-bottom: 0;">
@@ -641,17 +956,15 @@ export class Dialogs {
                 const player = seatPlayers[idx];
                 const isFilled = !!(player && player.name);
                 const isDealer = (idx === 0);
-                const isSwapSel = (selectedSwapIdx === idx);
                 const isActiveTarget = (activeTargetSeatIdx === idx);
 
                 let cardClass = 'player-card seat-card-interactive';
                 if (!isFilled) cardClass += ' is-placeholder';
                 else cardClass += ' is-filled';
-                if (isSwapSel) cardClass += ' is-swap-selected';
-                else if (isActiveTarget) cardClass += ' is-active-target';
+                if (isActiveTarget) cardClass += ' is-active-target';
 
                 return `
-                  <div class="${cardClass}" data-player-idx="${idx}" data-seat-idx="${idx}" title="${isFilled ? (isHe ? 'לחץ להחלפת מקום' : 'Tap to swap seat') : (isHe ? 'לחץ לבחירת שחקן' : 'Tap to assign player')}">
+                  <div class="${cardClass}" data-player-idx="${idx}" data-seat-idx="${idx}" title="${isFilled ? t.dragToSwapSeats : (isHe ? 'לחץ לבחירת שחקן' : 'Tap to assign player')}">
                     <div class="seat-top-row">
                       <span>${t.seatNumber} #${idx + 1}</span>
                       ${isDealer ? `<span class="tag-dealer" style="position: static;">${t.dealer.toUpperCase()}</span>` : ''}
@@ -674,9 +987,8 @@ export class Dialogs {
                       ${isFilled ? player.name : t.emptySeatPlaceholder}
                     </div>
 
-                    <div class="seat-action-hint" style="color: ${isSwapSel ? '#fde68a' : isFilled ? 'var(--accent-primary)' : 'var(--text-muted)'};">
-                      ${isSwapSel ? '✓ ' + (isHe ? 'נבחר להחלפה' : 'Selected') :
-                        isFilled ? (isHe ? 'לחץ להחלפה' : 'Tap to swap') :
+                    <div class="seat-action-hint" style="color: ${isFilled ? 'var(--accent-primary)' : 'var(--text-muted)'};">
+                      ${isFilled ? (isHe ? 'גרור להחלפה' : 'Drag to swap') :
                         isActiveTarget ? (isHe ? 'יעד לבחירה' : 'Target seat') :
                         (isHe ? 'לחץ לבחירה' : 'Tap to pick')}
                     </div>
@@ -684,16 +996,6 @@ export class Dialogs {
                 `;
               }).join('')}
             </div>
-          </div>
-
-          <!-- 1-Tap Table Rotation Controls (Move them around with NO jiggle) -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; margin: 0.4rem 0 0.65rem;">
-            <button type="button" class="btn-outline" id="btn-new-game-rot-ccw" style="font-size: 0.78rem; min-height: 34px; padding: 4px 8px;">
-              ↺ ${t.rotateCounterClockwise}
-            </button>
-            <button type="button" class="btn-outline" id="btn-new-game-rot-cw" style="font-size: 0.78rem; min-height: 34px; padding: 4px 8px;">
-              ↻ ${t.rotateClockwise}
-            </button>
           </div>
 
           <!-- Quick Picker Roster Section (Wrapped, fits mobile perfectly) -->
@@ -803,38 +1105,21 @@ export class Dialogs {
       const closeModal = () => modal.remove();
       modal.querySelectorAll('.modal-close').forEach(b => b.addEventListener('click', closeModal));
 
-      // Seat Card Clicks: Swap or Target focus with NO jiggle!
-      modal.querySelectorAll('.seat-card-interactive').forEach(card => {
-        card.addEventListener('click', (e) => {
-          if (e.target.closest('.btn-clear-seat')) return;
-
-          const idx = parseInt(card.dataset.seatIdx, 10);
-          const hasPlayer = !!(seatPlayers[idx] && seatPlayers[idx].name);
-
-          if (selectedSwapIdx === null) {
-            if (hasPlayer) {
-              selectedSwapIdx = idx;
-              activeTargetSeatIdx = idx;
-            } else {
-              activeTargetSeatIdx = idx;
-            }
-            renderModalContent();
-          } else if (selectedSwapIdx === idx) {
-            selectedSwapIdx = null;
-            renderModalContent();
-          } else {
-            // Swap selectedSwapIdx with idx
-            const temp = seatPlayers[selectedSwapIdx];
-            seatPlayers[selectedSwapIdx] = seatPlayers[idx];
-            seatPlayers[idx] = temp;
-            selectedSwapIdx = null;
-            activeTargetSeatIdx = idx;
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              try { navigator.vibrate(15); } catch(e) {}
-            }
-            renderModalContent();
-          }
-        });
+      // Attach Drag & Drop Physics across Seating Table
+      this.attachSeatingDragDrop({
+        grid: modal.querySelector('.seating-modal-grid'),
+        getCards: () => Array.from(modal.querySelectorAll('.seat-card-interactive')),
+        onSwap: (fromIdx, toIdx) => {
+          const temp = seatPlayers[fromIdx];
+          seatPlayers[fromIdx] = seatPlayers[toIdx];
+          seatPlayers[toIdx] = temp;
+          activeTargetSeatIdx = toIdx;
+          renderModalContent();
+        },
+        onTap: (seatIdx) => {
+          activeTargetSeatIdx = seatIdx;
+          renderModalContent();
+        }
       });
 
       // Clear single seat
@@ -844,35 +1129,40 @@ export class Dialogs {
           const idx = parseInt(btn.dataset.seatIdx, 10);
           seatPlayers[idx] = null;
           activeTargetSeatIdx = idx;
-          selectedSwapIdx = null;
           renderModalContent();
         });
       });
 
-      // Table Rotation Buttons (No jiggle)
-      const btnCw = modal.querySelector('#btn-new-game-rot-cw');
-      if (btnCw) {
-        btnCw.addEventListener('click', () => {
-          seatPlayers = [seatPlayers[3], seatPlayers[0], seatPlayers[1], seatPlayers[2]];
-          selectedSwapIdx = null;
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(15); } catch(e) {}
-          }
-          renderModalContent();
-        });
-      }
+      // Attach Drag & Drop from Roster Chips onto Table Seats!
+      this.attachRosterChipDragDrop({
+        rosterContainer: modal.querySelector('#roster-chips-container'),
+        getSeatCards: () => Array.from(modal.querySelectorAll('.seat-card-interactive')),
+        onAssignToSeat: (profId, targetSeatIdx) => {
+          const prof = ProfileManager.getProfile(profId);
+          if (!prof) return;
 
-      const btnCcw = modal.querySelector('#btn-new-game-rot-ccw');
-      if (btnCcw) {
-        btnCcw.addEventListener('click', () => {
-          seatPlayers = [seatPlayers[1], seatPlayers[2], seatPlayers[3], seatPlayers[0]];
-          selectedSwapIdx = null;
-          if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(15); } catch(e) {}
+          // Remove if assigned in another seat
+          const prevSeat = seatPlayers.findIndex(s => s && s.name && s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
+          if (prevSeat >= 0 && prevSeat !== targetSeatIdx) {
+            seatPlayers[prevSeat] = null;
+          }
+
+          seatPlayers[targetSeatIdx] = {
+            name: prof.name,
+            color: prof.color,
+            avatar: prof.avatar,
+            baselineScore: 0
+          };
+
+          const nextEmpty = seatPlayers.findIndex((s, i) => !s || !s.name);
+          if (nextEmpty >= 0) {
+            activeTargetSeatIdx = nextEmpty;
+          } else {
+            activeTargetSeatIdx = (targetSeatIdx + 1) % 4;
           }
           renderModalContent();
-        });
-      }
+        }
+      });
 
       // Profile chips click: Assign to activeTargetSeatIdx and auto-advance
       modal.querySelectorAll('.profile-chip').forEach(chip => {
@@ -884,7 +1174,6 @@ export class Dialogs {
           // Check if already assigned
           const alreadySeatIdx = seatPlayers.findIndex(s => s && s.name && s.name.trim().toLowerCase() === prof.name.trim().toLowerCase());
           if (alreadySeatIdx >= 0) {
-            selectedSwapIdx = alreadySeatIdx;
             activeTargetSeatIdx = alreadySeatIdx;
             renderModalContent();
             return;
@@ -911,10 +1200,9 @@ export class Dialogs {
           } else {
             activeTargetSeatIdx = (targetIdx + 1) % 4;
           }
-          selectedSwapIdx = null;
 
           if (typeof navigator !== 'undefined' && navigator.vibrate) {
-            try { navigator.vibrate(12); } catch(e) {}
+            try { navigator.vibrate(12); } catch (e) {}
           }
           renderModalContent();
         });
@@ -926,7 +1214,6 @@ export class Dialogs {
         btnClearAll.addEventListener('click', () => {
           seatPlayers = [null, null, null, null];
           activeTargetSeatIdx = 0;
-          selectedSwapIdx = null;
           renderModalContent();
         });
       }
@@ -943,7 +1230,6 @@ export class Dialogs {
               color: p.color || COLOR_OPTIONS[idx % COLOR_OPTIONS.length],
               baselineScore: 0
             }));
-            selectedSwapIdx = null;
             renderModalContent();
           }
         });

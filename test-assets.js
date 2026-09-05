@@ -39,8 +39,8 @@ const jsMatch = htmlContent.match(/app\.bundle\.js\?v=(\d+)/);
 if (!cssMatch || !jsMatch || cssMatch[1] !== jsMatch[1]) {
   throw new Error('src/index.html must reference versioned styles.min.css and app.bundle.js with matching ?v= parameter');
 }
-if (cssMatch[1] !== '12') {
-  throw new Error(`src/index.html version is ${cssMatch[1]}, expected 12`);
+if (cssMatch[1] !== '13') {
+  throw new Error(`src/index.html version is ${cssMatch[1]}, expected 13`);
 }
 console.log(`✓ PASS: index.html correctly loads v=${cssMatch[1]} production bundle and minified CSS`);
 

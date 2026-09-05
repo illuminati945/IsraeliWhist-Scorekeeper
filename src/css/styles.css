@@ -1093,16 +1093,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: #a5b4fc;
   text-align: center;
   pointer-events: none;
   z-index: 2;
-  line-height: 1.2;
+  line-height: 1.25;
+  letter-spacing: 2px;
 }
 
-.seat-card-interactive {
+.seat-card-interactive,
+.seat-swap-card {
   min-height: 84px;
   padding: 0.55rem 0.45rem;
   display: flex;
@@ -1110,16 +1112,43 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  cursor: grab;
+  touch-action: none !important;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   box-sizing: border-box;
   border-radius: var(--radius-md);
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  will-change: transform;
 }
 
-.seat-card-interactive:active {
-  transform: scale(0.97);
+.seat-card-interactive:active,
+.seat-swap-card:active {
+  cursor: grabbing;
+}
+
+/* Dragging & Lifted State with Physics */
+.seat-card-interactive.is-lifted,
+.seat-swap-card.is-lifted {
+  z-index: 500 !important;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.85), 0 0 32px rgba(99, 102, 241, 0.75) !important;
+  border-color: var(--accent-primary) !important;
+  cursor: grabbing !important;
+  transition: box-shadow 0.15s ease !important;
+}
+
+.seat-card-interactive.is-dropping,
+.seat-swap-card.is-dropping {
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.seat-card-interactive.is-hovered-target,
+.seat-swap-card.is-hovered-target {
+  border-color: #6366f1 !important;
+  background: rgba(99, 102, 241, 0.28) !important;
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.6) !important;
+  transform: scale(1.02);
 }
 
 /* Placeholder State when no player is chosen */
@@ -1138,14 +1167,6 @@ body {
   border: 2px solid var(--accent-primary) !important;
   background: rgba(99, 102, 241, 0.16) !important;
   box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
-}
-
-/* Selected for Swap (No Jiggle - Golden Highlight) */
-.seat-card-interactive.is-swap-selected {
-  border: 2px solid #fbbf24 !important;
-  background: rgba(251, 191, 36, 0.18) !important;
-  box-shadow: 0 0 14px rgba(251, 191, 36, 0.55);
-  transform: scale(1.03);
 }
 
 /* Filled State */
