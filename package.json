@@ -6,7 +6,10 @@
   "scripts": {
     "build": "esbuild src/js/app.js --bundle --minify --format=esm --outfile=src/js/app.bundle.js && esbuild src/css/styles.css --minify --outfile=src/css/styles.min.css",
     "test": "npm run build && node test-assets.js && node test-engine.js && node test-full-game.js && node test-sync-protection.js && node test-history-edit-baseline.js",
-    "serve": "npx serve src -p 3000"
+    "serve": "npx serve src -p 3000",
+    "release": "bash scripts/release.sh",
+    "deploy:dev": "bash scripts/deploy_dev.sh",
+    "deploy:prod": "bash scripts/deploy_prod.sh"
   },
   "keywords": [
     "israeli-whist",

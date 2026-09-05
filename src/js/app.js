@@ -63,11 +63,8 @@ class IsraeliWhistApp {
   async fetchRoomStateFromServer(roomId) {
     if (!roomId) return;
     try {
-      const loc = window.location;
-      let apiUrl = `/whist/api/session/${roomId}`;
-      if (loc.pathname === '/' || !loc.pathname.startsWith('/whist')) {
-        apiUrl = `/api/session/${roomId}`;
-      }
+      const basePath = ArchiveManager.getBasePath();
+      const apiUrl = `${basePath}/api/session/${roomId}`;
       const res = await fetch(apiUrl);
       if (res.ok) {
         const data = await res.json();
@@ -160,6 +157,16 @@ class IsraeliWhistApp {
     this.btnLangToggle = document.getElementById('btn-lang-toggle');
     this.btnShare = document.getElementById('btn-open-share');
     this.btnMenu = document.getElementById('btn-open-menu');
+
+    if (ArchiveManager.getBasePath() === '/whist-dev') {
+      if (this.btnBrandHome && !document.getElementById('dev-env-badge')) {
+        const badge = document.createElement('span');
+        badge.id = 'dev-env-badge';
+        badge.className = 'dev-badge';
+        badge.textContent = 'DEV';
+        this.btnBrandHome.parentNode.insertBefore(badge, this.btnBrandHome.nextSibling);
+      }
+    }
   }
 
   initControllers() {

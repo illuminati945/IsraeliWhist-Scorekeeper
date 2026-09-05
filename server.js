@@ -264,14 +264,21 @@ const server = http.createServer((req, res) => {
   const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   let reqPath = parsedUrl.pathname;
 
-  // Handle /whist/ prefix
-  if (reqPath.startsWith('/whist/')) {
+  // Handle /whist/ and /whist-dev/ prefixes
+  if (reqPath.startsWith('/whist-dev/')) {
+    reqPath = reqPath.slice(10);
+  } else if (reqPath === '/whist-dev') {
+    res.writeHead(301, { 'Location': '/whist-dev/' });
+    res.end();
+    return;
+  } else if (reqPath.startsWith('/whist/')) {
     reqPath = reqPath.slice(6);
   } else if (reqPath === '/whist') {
     res.writeHead(301, { 'Location': '/whist/' });
     res.end();
     return;
   }
+
 
   // REST API Endpoints
   if (reqPath === '/api/new-room') {

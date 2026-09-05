@@ -76,11 +76,14 @@ export class SyncManager {
     const loc = window.location;
     const protocol = loc.protocol === 'https:' ? 'wss:' : 'ws:';
     
-    // In nginx, /whist/ is reverse proxied
-    let wsUrl = `${protocol}//${loc.host}/whist/ws`;
-    if (loc.pathname === '/' || !loc.pathname.startsWith('/whist')) {
-      wsUrl = `${protocol}//${loc.host}/ws`;
+    // Support root, /whist/, and /whist-dev/ reverse-proxy paths
+    let basePath = '';
+    if (loc.pathname.startsWith('/whist-dev')) {
+      basePath = '/whist-dev';
+    } else if (loc.pathname.startsWith('/whist')) {
+      basePath = '/whist';
     }
+    const wsUrl = `${protocol}//${loc.host}${basePath}/ws`;
 
     try {
       this.ws = new WebSocket(wsUrl);

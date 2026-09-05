@@ -1,2 +1,7 @@
 node_modules/
 .DS_Store
+data/sessions/*
+!data/sessions/.gitkeep
+data/backups/*
+!data/backups/.gitkeep
+

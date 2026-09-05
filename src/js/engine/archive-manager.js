@@ -24,14 +24,17 @@ export class ArchiveManager {
     return [];
   }
 
+  static getBasePath() {
+    if (typeof window === 'undefined') return '';
+    const loc = window.location;
+    if (loc.pathname.startsWith('/whist-dev')) return '/whist-dev';
+    if (loc.pathname.startsWith('/whist')) return '/whist';
+    return '';
+  }
+
   static async syncWithServer(onUpdate = null) {
     try {
-      const loc = typeof window !== 'undefined' ? window.location : null;
-      let apiUrl = '/whist/api/recent-games';
-      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
-        apiUrl = '/api/recent-games';
-      }
-
+      const apiUrl = `${this.getBasePath()}/api/recent-games`;
       const res = await fetch(apiUrl);
       if (res.ok) {
         const json = await res.json();
@@ -139,11 +142,7 @@ export class ArchiveManager {
       }
 
       // Also persist to server via REST API
-      const loc = typeof window !== 'undefined' ? window.location : null;
-      let postUrl = `/whist/api/session/${summary.roomId}`;
-      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
-        postUrl = `/api/session/${summary.roomId}`;
-      }
+      const postUrl = `${this.getBasePath()}/api/session/${summary.roomId}`;
 
       fetch(postUrl, {
         method: 'POST',
@@ -174,11 +173,7 @@ export class ArchiveManager {
       }
 
       // Also delete from server
-      const loc = typeof window !== 'undefined' ? window.location : null;
-      let delUrl = `/whist/api/delete-session/${roomId}`;
-      if (loc && (loc.pathname === '/' || !loc.pathname.startsWith('/whist'))) {
-        delUrl = `/api/delete-session/${roomId}`;
-      }
+      const delUrl = `${this.getBasePath()}/api/delete-session/${roomId}`;
       fetch(delUrl).catch(() => {});
     } catch (e) {
       console.warn('Failed to delete game from archive:', e);
